@@ -98,7 +98,7 @@ export default function OnboardingWizard() {
     else schema = onboardingFullSchema
     const result = schema.safeParse(form)
     if (!result.success) {
-      setError(result.error.errors[0]?.message || "Please fill all required fields.")
+      setError(result.error.issues[0]?.message || "Please fill all required fields.")
       return
     }
     setStep((s) => Math.min(s + 1, steps.length - 1))

@@ -32,7 +32,7 @@ export const POST = withErrorHandling(async (req) => {
   const body = await req.json()
   const step1 = onboardingStep1Schema.safeParse(body)
   if (!step1.success) {
-    return NextResponse.json({ error: "Validation Error", details: step1.error.errors }, { status: 400 })
+    return NextResponse.json({ error: "Validation Error", details: step1.error.issues }, { status: 400 })
   }
   const { businessName, businessType, industry, description } = step1.data
   // Find or create user
@@ -97,7 +97,7 @@ export const PATCH = withErrorHandling(async (req) => {
   // Validate all possible fields
   const patch = onboardingPatchSchema.safeParse(body)
   if (!patch.success) {
-    return NextResponse.json({ error: "Validation Error", details: patch.error.errors }, { status: 400 })
+    return NextResponse.json({ error: "Validation Error", details: patch.error.issues }, { status: 400 })
   }
   // Find latest onboarding for user's latest project
   const user = await prisma.user.findUnique({ where: { email: session.user.email } })
