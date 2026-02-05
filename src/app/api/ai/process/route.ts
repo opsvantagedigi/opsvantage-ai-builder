@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { PrismaClient, Status } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
+import { Status } from "@prisma/client"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createSanityClient } from "@/lib/sanity"
-
-const prisma = new PrismaClient()
 
 export async function POST() {
   // 1. Find the next pending AI task

@@ -1,7 +1,5 @@
 import { createSanityClient } from "@/lib/sanity"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 export default async function DynamicPage({ params }: any) {
   const { subdomain, slug } = params

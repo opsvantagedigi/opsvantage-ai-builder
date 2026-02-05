@@ -17,7 +17,7 @@
     "next": "16.1.6",
     "next-auth": "^4.24.13",
     "next-sanity": "^11.6.12",
-    "prisma": "^6.19.2",
+    "prisma": "^7.3.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sanity": "^4.22.0",
