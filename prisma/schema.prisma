@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// =========================
+// Prisma Generator & DB
+// =========================
 
 generator client {
   provider = "prisma-client-js"
@@ -12,34 +10,178 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id       Int       @id @default(autoincrement())
-  email    String    @unique
-  name     String?
-  projects Project[]
-}
-
-model Project {
-  id            Int      @id @default(autoincrement())
-  user          User     @relation(fields: [userId], references: [id])
-  userId        Int
-  sanityDataset String
-  AiTask        AiTask[]
-}
-
-model AiTask {
-  id        Int      @id @default(autoincrement())
-  status    Status   @default(PENDING)
-  payload   Json
-  result    Json?
-  error     String?
-  project   Project  @relation(fields: [projectId], references: [id])
-  projectId Int
-}
+// =========================
+// Enums
+// =========================
 
 enum Status {
   PENDING
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum TaskType {
+  ONBOARDING_TO_SITEMAP
+  SITEMAP_TO_PAGES
+  PAGE_TO_SECTIONS
+  GENERATE_COPY
+}
+
+enum Provider {
+  GEMINI
+  OPENAI
+}
+
+enum PageType {
+  HOME
+  LANDING
+  CUSTOM
+}
+
+enum SectionType {
+  HERO
+  FEATURES
+  TESTIMONIALS
+  FAQ
+  CUSTOM
+}
+
+// =========================
+// Auth Models (NextAuth)
+// =========================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  projects  Project[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// =========================
+// Core App Models
+// =========================
+
+model Project {
+  id            String    @id @default(cuid())
+  ownerId       String
+  name          String
+  subdomain     String?   @unique
+  sanityDataset String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  onboarding Onboarding?
+  pages      Page[]
+  aiTasks    AiTask[]
+  domains    Domain[]
+}
+
+model Domain {
+  id         String   @id @default(cuid())
+  projectId  String
+  hostname   String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Onboarding {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  businessName String?
+  industry    String?
+  goal        String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model AiTask {
+  id          String    @id @default(cuid())
+  projectId   String
+  type        TaskType
+  status      Status    @default(PENDING)
+  provider    Provider  @default(GEMINI)
+  payload     Json
+  result      Json?
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Page {
+  id          String    @id @default(cuid())
+  projectId   String
+  title       String
+  slug        String
+  type        PageType  @default(CUSTOM)
+  isHome      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sections Section[]
+
+  @@unique([projectId, slug])
+}
+
+model Section {
+  id          String      @id @default(cuid())
+  pageId      String
+  type        SectionType @default(CUSTOM)
+  variant     String?
+  data        Json
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
 }
