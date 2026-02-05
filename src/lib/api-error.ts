@@ -30,7 +30,7 @@ export function withErrorHandling(handler: ApiHandler): ApiHandler {
       // Handle Zod Validation Errors
       if (error instanceof ZodError) {
         return NextResponse.json(
-          { error: "Validation Error", details: error.errors },
+          { error: "Validation Error", details: (error as ZodError).errors },
           { status: 400 }
         );
       }
