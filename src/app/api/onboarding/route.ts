@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   const aiTask = await prisma.aiTask.create({
     data: {
       projectId: project.id,
-      type: "SITE_GEN",
+      type: "ONBOARDING_TO_SITEMAP",
       payload: {
         businessName,
         industry,
