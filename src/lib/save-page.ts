@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma"
 import { pageGenerationResponseSchema, PageGenerationResponse } from "@/lib/page-generation-schema"
-import { client as sanityClient } from "@/sanity/lib/client"
 import { logger } from "@/lib/logger"
 
 export async function saveGeneratedPage(userEmail: string, pagePayload: PageGenerationResponse) {
@@ -37,20 +36,25 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
     }
   }
 
-  // Publish to Sanity (best-effort)
+  // Publish to Sanity (best-effort) — only if Sanity env is configured
   let sanityId: string | null = null
-  try {
-    const doc: any = {
-      _type: "page",
-      title: payload.title,
-      slug: { _type: "slug", current: payload.slug },
-      sections: payload.sections.map((s) => ({ _type: "section", ...s })),
-      projectRef: { _type: "reference", _ref: project.id },
+  if (process.env.NEXT_PUBLIC_SANITY_DATASET && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
+    try {
+      const { client: sanityClient } = await import("@/sanity/lib/client")
+      const doc: any = {
+        _type: "page",
+        title: payload.title,
+        slug: { _type: "slug", current: payload.slug },
+        sections: payload.sections.map((s) => ({ _type: "section", ...s })),
+        projectRef: { _type: "reference", _ref: project.id },
+      }
+      const res = await sanityClient.create(doc)
+      sanityId = res?._id || null
+    } catch (e) {
+      logger.warn({ msg: "Sanity publish failed", err: String(e) })
     }
-    const res = await sanityClient.create(doc)
-    sanityId = res?._id || null
-  } catch (e) {
-    logger.warn({ msg: "Sanity publish failed", err: String(e) })
+  } else {
+    logger.info({ msg: "Sanity not configured — skipping publish" })
   }
 
   return { pageId: created.id, sanityId }
