@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
 
-const providers = [
+const providers: any[] = [
   CredentialsProvider({
     name: "Credentials",
     credentials: {
