@@ -14,13 +14,13 @@ interface HeroProps {
 export function HeroSection({ content, onUpdate }: HeroProps) {
   return (
     <section className={cn(
-      "relative min-h-[600px] flex items-center justify-center overflow-hidden",
+      "relative min-h-150 flex items-center justify-center overflow-hidden",
       content.theme === "futuristic" && "bg-slate-950 text-white"
     )}>
       
       {/* Dynamic Background */}
       {content.theme === "futuristic" && (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-950 to-slate-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-blue-900/40 via-slate-950 to-slate-950" />
       )}
 
       <div className="container relative z-10 text-center max-w-4xl">
@@ -32,7 +32,7 @@ export function HeroSection({ content, onUpdate }: HeroProps) {
            </button>
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-b from-white to-white/60">
           <EditableText 
             value={content.headline} 
             onChange={(val) => onUpdate('headline', val)} 
