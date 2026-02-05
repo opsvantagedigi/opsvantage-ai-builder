@@ -42,6 +42,18 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   // Ensure a secret is always present to avoid runtime errors in production
   secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.user = user as any
+      return token
+    },
+    async session({ session, token }) {
+      if (token && (token as any).user) {
+        session.user = (token as any).user
+      }
+      return session
+    }
+  },
   pages: {
     signIn: '/login'
   }

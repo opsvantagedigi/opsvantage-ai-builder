@@ -35,13 +35,23 @@ async function main(){
     let payload
     try { payload = JSON.parse(registerPayload) } catch(e){ console.error('Invalid REGISTER_PAYLOAD JSON'); process.exit(3) }
     console.log('Posting /api/register with payload keys:', Object.keys(payload))
-    const { res, body } = await jsonFetch(BASE + '/api/register', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    console.log('/api/register ->', res.status)
-    console.log(JSON.stringify(body, null, 2))
+      // Try multiple register endpoints in case routing differs (API vs app route)
+      const registerPaths = ['/api/register', '/api/register/', '/register', '/register/']
+      let res, body
+      for (const p of registerPaths) {
+        const url = BASE + p
+        console.log('Attempting POST', url)
+        const result = await jsonFetch(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'accept': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        res = result.res; body = result.body
+        console.log(p, '->', res.status)
+        if (res.status !== 404 && res.status !== 405) break
+      }
+      console.log('Final register response ->', res.status)
+      console.log(JSON.stringify(body, null, 2))
   }
 
   const loginPayloadEnv = process.env.LOGIN_PAYLOAD
