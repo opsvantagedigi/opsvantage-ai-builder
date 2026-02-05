@@ -23,13 +23,36 @@ export async function POST(req: Request) {
     }
   })
 
-  // 2. Create a new Project for this user
+  // 2. Find or create a Workspace for the user (since Project now belongs to Workspace)
+  const existingMember = await prisma.workspaceMember.findFirst({
+    where: { userId: user.id },
+    include: { workspace: true }
+  });
+  
+  let workspaceId = existingMember?.workspaceId;
+  
+  if (!workspaceId) {
+     const safeName = (user.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '-');
+     const newWorkspace = await prisma.workspace.create({
+        data: {
+            name: `${user.name || 'User'}'s Workspace`,
+            slug: `${safeName}-${Date.now()}`,
+            ownerId: user.id,
+            members: {
+                create: { userId: user.id, role: "OWNER" }
+            }
+        }
+     });
+     workspaceId = newWorkspace.id;
+  }
+
+  // 3. Create a new Project for this workspace
   const project = await prisma.project.create({
     data: {
       name: businessName,
-      owner: {
+      workspace: {
         connect: {
-          id: user.id
+            id: workspaceId
         }
       },
       subdomain: `${businessName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`
