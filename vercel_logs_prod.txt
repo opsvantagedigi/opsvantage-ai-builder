@@ -1,0 +1,28 @@
+Vercel CLI 50.1.6
+The "--since" option was ignored because it is now deprecated. Please remove it.
+Fetching deployment "opsvantage-ai-builder-g2yyajzbw-ajay-sidals-projects-131a40e9.vercel.app" in ajay-sidals-projects-131a40e9
+Displaying runtime logs for deployment opsvantage-ai-builder-g2yyajzbw-ajay-sidals-projects-131a40e9.vercel.app (dpl_3hTFhZYLLtnEttuBw9Tak33pCXmo) starting from Feb Th 22:01:04.32
+
+waiting for new logs...
+22:02:45.57  ­ƒÜ½  GET  ---  opsvantage-ai-builder-g2yyajzbw-ajay-sidals-projects-131a40e9.vercel.app  ãÆ  /dashboard
+------------------------------------------------------------------------------------------------------------------
+[next-auth][error][NO_SECRET] 
+https://next-auth.js.org/errors#no_secret Please define a `secret` in production. Error [MissingSecretError]: Please define a `secret` in production.
+    at c.assertConfig (.next/server/chunks/ssr/_a389dfd1._.js:34:11925)
+    at q (.next/server/chunks/ssr/_a389dfd1._.js:34:17811)
+    at async h (.next/server/chunks/ssr/_a389dfd1._.js:37:24752)
+    at async f (.next/server/chunks/ssr/_a389dfd1._.js:37:36634) {
+  code: 'NO_SECRET'
+}
+
+waiting for new logs...
+22:02:45.57  ­ƒÜ½  GET  ---  opsvantage-ai-builder-g2yyajzbw-ajay-sidals-projects-131a40e9.vercel.app  ãÆ  /dashboard
+------------------------------------------------------------------------------------------------------------------
+Error: There is a problem with the server configuration. Check the server logs for more information.
+    at h (.next/server/chunks/ssr/_a389dfd1._.js:37:25000)
+    at async f (.next/server/chunks/ssr/_a389dfd1._.js:37:36634) {
+  digest: '2468440036'
+}
+
+waiting for new logs...
+^C^C

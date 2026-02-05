@@ -19,7 +19,6 @@
     "@sanity/image-url": "^1.2.0",
     "@sanity/vision": "^4.22.0",
     "clsx": "^1.2.1",
-    "tailwind-merge": "^1.14.0",
     "lru-cache": "^11.2.5",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
@@ -31,10 +30,12 @@
     "react-dom": "19.2.3",
     "sanity": "^4.22.0",
     "styled-components": "^6.3.8",
+    "tailwind-merge": "^1.14.0",
     "ws": "^8.19.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
