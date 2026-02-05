@@ -109,7 +109,24 @@ export default function GeneratePagesPage() {
                   ctaLabel: hero.cta?.label || "Get started",
                   theme: (hero.theme as any) || "minimal",
                 }
-                return <HeroPreview content={content} />
+                return (
+                  <div className="space-y-3">
+                    <HeroPreview content={content} />
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={async () => {
+                        try {
+                          const res = await fetch('/api/page/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: pageJson }) })
+                          const body = await res.json()
+                          if (!res.ok) throw new Error(body.error || 'Save failed')
+                          alert('Page saved: ' + body.pageId)
+                        } catch (e: any) {
+                          alert('Save failed: ' + (e.message || String(e)))
+                        }
+                      }} className="bg-green-600 text-white px-4 py-2 rounded">Save page</button>
+                      <button onClick={() => navigator.clipboard.writeText(JSON.stringify(pageJson, null, 2))} className="bg-gray-100 px-4 py-2 rounded">Copy JSON</button>
+                    </div>
+                  </div>
+                )
               }
               return <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">{JSON.stringify(pageJson, null, 2)}</pre>
             })()
