@@ -3,11 +3,16 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/login")
+  let session = null
+  try {
+    session = await getServerSession(authOptions)
+  } catch (err) {
+    // If session retrieval fails, redirect to login to recover gracefully
+    console.error('getServerSession error:', err)
+    redirect('/login')
   }
+
+  if (!session) redirect('/login')
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
