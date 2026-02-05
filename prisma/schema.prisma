@@ -10,11 +10,36 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
+  name     String?
+  projects Project[]
+}
+
+model Project {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  sanityDataset String
+  AiTask        AiTask[]
+}
+
+model AiTask {
+  id        Int      @id @default(autoincrement())
+  status    Status   @default(PENDING)
+  payload   Json
+  result    Json?
+  error     String?
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId Int
+}
+
+enum Status {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
