@@ -137,7 +137,3 @@ ${JSON.stringify(task.payload, null, 2)}
 }
 
 export const POST = withErrorHandling(handler);
-
-    return NextResponse.json({ error: err.message }, { status: 500 })
-  }
-}

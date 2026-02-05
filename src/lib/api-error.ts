@@ -3,25 +3,28 @@ import { ZodError } from "zod";
 import { logger } from "./logger";
 import { Prisma } from "@prisma/client";
 
-export type ApiHandler<T = any> = (
+export type ApiHandler<T = unknown> = (
   req: Request,
-  params?: any
+  props?: { params: Promise<Record<string, string | string[]>> | Record<string, string | string[]> }
 ) => Promise<NextResponse<T>>;
 
 export function withErrorHandling(handler: ApiHandler): ApiHandler {
-  return async (req: Request, params?: any) => {
+  return async (req: Request, props?: { params: Promise<Record<string, string | string[]>> | Record<string, string | string[]> }) => {
     try {
-      return await handler(req, params);
-    } catch (error: any) {
+      return await handler(req, props);
+    } catch (error: unknown) {
       const url = req.url;
       const method = req.method;
+      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : undefined;
 
       logger.error({
         msg: "API Error occurred",
         url,
         method,
-        error: error.message,
-        stack: error.stack,
+        error: errorMessage,
+        stack: errorStack,
       });
 
       // Handle Zod Validation Errors

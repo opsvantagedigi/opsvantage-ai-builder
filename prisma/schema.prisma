@@ -47,6 +47,19 @@ enum SectionType {
   CUSTOM
 }
 
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  PRO
+  AGENCY
+}
+
 // =========================
 // Auth Models (NextAuth)
 // =========================
@@ -61,7 +74,7 @@ model User {
 
   accounts  Account[]
   sessions  Session[]
-  projects  Project[]
+  workspaces WorkspaceMember[]
 }
 
 model Account {
@@ -106,14 +119,18 @@ model VerificationToken {
 
 model Project {
   id            String    @id @default(cuid())
-  ownerId       String
   name          String
   subdomain     String?   @unique
   sanityDataset String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // ownerId       String?
+  // owner         User?       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   onboarding Onboarding?
   pages      Page[]
   aiTasks    AiTask[]
@@ -184,4 +201,51 @@ model Section {
   updatedAt   DateTime    @updatedAt
 
   page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  ownerId     String
+  
+  // Relations
+  members     WorkspaceMember[]
+  projects    Project[]
+  // billing     Billing?
+  auditLogs   AuditLog[]
+  usage       Usage?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role      @default(VIEWER)
+
+  @@unique([workspaceId, userId]) // Prevent duplicate membership
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  actorId     String   // User who performed the action
+  action      String   // e.g. "PUBLISHED_SITE", "DELETED_PAGE"
+  metadata    Json?
+  createdAt   DateTime @default(now())
+}
+
+model Usage {
+  id               String @id @default(cuid())
+  workspaceId      String @unique
+  workspace        Workspace @relation(fields: [workspaceId], references: [id])
+  aiTokensUsed     Int    @default(0)
+  pagesGenerated   Int    @default(0)
+  month            DateTime @default(now()) // Reset logic relies on this
 }
