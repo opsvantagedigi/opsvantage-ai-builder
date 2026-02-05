@@ -17,5 +17,10 @@ export const authOptions: NextAuthOptions = {
       }
     })
   ],
-  session: { strategy: "jwt" }
+  session: { strategy: "jwt" },
+  // Ensure a secret is always present to avoid runtime errors in production
+  secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
+  pages: {
+    signIn: '/login'
+  }
 }

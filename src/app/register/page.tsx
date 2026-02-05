@@ -8,9 +8,25 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
 
-    // TEMPORARY: We will replace this with a real API route later
-    alert("Registration logic will be added soon.")
+      const json = await res.json()
+      if (!res.ok) {
+        alert(json.error || 'Registration failed')
+        return
+      }
+
+      // Redirect to login on success
+      window.location.href = '/login'
+    } catch (e) {
+      console.error(e)
+      alert('Registration failed')
+    }
   }
 
   return (
