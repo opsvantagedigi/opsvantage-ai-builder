@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import saveGeneratedPage from "@/lib/save-page"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 import { pageGenerationResponseSchema } from "@/lib/page-generation-schema"
@@ -22,30 +23,11 @@ export const POST = withErrorHandling(async (req) => {
   const project = await prisma.project.findFirst({ where: { workspaceId: member.workspaceId }, orderBy: { createdAt: "desc" } })
   if (!project) return NextResponse.json({ error: "No project found" }, { status: 404 })
 
-  // Create Page
-  const created = await prisma.page.create({
-    data: {
-      projectId: project.id,
-      title: pagePayload.title,
-      slug: pagePayload.slug,
-    }
-  })
-
-  // Create sections
-  for (const sec of pagePayload.sections) {
-    try {
-      await prisma.section.create({
-        data: {
-          pageId: created.id,
-          type: sec.type as any,
-          variant: null,
-          data: sec as any,
-        }
-      })
-    } catch (e) {
-      logger.warn({ msg: "Failed to create section", err: String(e), section: sec })
-    }
+  try {
+    const result = await saveGeneratedPage(session.user.email as string, pagePayload)
+    return NextResponse.json({ ok: true, pageId: result.pageId, sanityId: result.sanityId })
+  } catch (e: any) {
+    logger.error({ msg: "Failed to save generated page", err: String(e) })
+    return NextResponse.json({ error: "Failed to save page" }, { status: 500 })
   }
-
-  return NextResponse.json({ ok: true, pageId: created.id })
 })
