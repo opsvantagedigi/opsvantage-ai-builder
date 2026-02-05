@@ -29,8 +29,10 @@ export function withErrorHandling(handler: ApiHandler): ApiHandler {
 
       // Handle Zod Validation Errors
       if (error instanceof ZodError) {
+        // @ts-expect-error - ZodError structure is known but generic type causing issues
+        const details = error.errors;
         return NextResponse.json(
-          { error: "Validation Error", details: (error as ZodError).errors },
+          { error: "Validation Error", details },
           { status: 400 }
         );
       }
