@@ -6,6 +6,7 @@ import { sitemapResponseSchema } from "@/lib/sitemap-schema"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
+import generateValidatedJSON from "@/lib/ai"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -29,26 +30,19 @@ export const POST = withErrorHandling(async (req) => {
   if (!onboarding) return NextResponse.json({ error: "No onboarding found" }, { status: 404 })
 
   // Construct a clear prompt asking Gemini to return JSON with pages
-  const prompt = `Generate a sitemap JSON for a website based on the following onboarding information. Return ONLY valid JSON with a top-level "pages" array. Each page must have: title, slug, type (HOME|LANDING|CUSTOM), and priority (1-10). Onboarding: ${JSON.stringify(onboarding)}\n\nExample output: { "pages": [ { "title":"Home","slug":"/","type":"HOME","priority":10 } ] }`;
+
+  const prompt = `You are an expert SaaS website information architect. Given this onboarding data: ${JSON.stringify(
+    onboarding
+  )} generate a sitemap. Respond ONLY with valid JSON matching this schema: { "sitemap": [ { "id": "string", "title": "string", "slug": "kebab-case", "type": "HOME|ABOUT|SERVICES|CONTACT|BLOG|CUSTOM", "children": [] } ] }`;
 
   logger.info({ msg: "Sitemap generation prompt", projectId: project.id })
 
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" })
-  const result = await model.generateContent(prompt)
-  const raw = result.response.text().trim()
-
-  let parsed: any = null
+  let validated: any
   try {
-    parsed = JSON.parse(raw)
-  } catch (e) {
-    logger.error({ msg: "Failed to parse sitemap JSON from Gemini", raw, err: String(e) })
-    return NextResponse.json({ error: "Failed to parse sitemap from AI" }, { status: 500 })
-  }
-
-  const validated = sitemapResponseSchema.safeParse(parsed)
-  if (!validated.success) {
-    logger.error({ msg: "Sitemap validation failed", issues: validated.error.issues, raw })
-    return NextResponse.json({ error: "AI returned invalid sitemap format" }, { status: 500 })
+    validated = await generateValidatedJSON(genAI, prompt, sitemapResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
+  } catch (err: any) {
+    logger.error({ msg: "Sitemap generation failed", err: String(err) })
+    return NextResponse.json({ error: "AI failed to generate a valid sitemap" }, { status: 500 })
   }
 
   // Persist an AiTask record for traceability
