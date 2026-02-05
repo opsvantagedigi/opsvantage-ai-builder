@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
+import { z } from "zod"
+import generateValidatedJSON from "@/lib/ai"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -20,6 +22,8 @@ const SUGGESTION_PROMPTS: Record<string, (data: any) => string> = {
   competitors: (data) => `List 3 example competitors for a ${data.businessType || 'SaaS'} company in the ${data.industry || 'technology'} industry. Return as a comma-separated list of URLs.`,
 }
 
+const suggestionResponseSchema = z.object({ suggestion: z.string().min(1) })
+
 export const POST = withErrorHandling(async (req) => {
   const session = await getServerSession(authOptions)
   if (!session || !session.user?.email) {
@@ -29,11 +33,17 @@ export const POST = withErrorHandling(async (req) => {
   if (!field || !(field in SUGGESTION_PROMPTS)) {
     return NextResponse.json({ error: "Invalid field" }, { status: 400 })
   }
-  const prompt = SUGGESTION_PROMPTS[field](data || {})
+  // Instruct model to return JSON { "suggestion": "..." }
+  const basePrompt = SUGGESTION_PROMPTS[field](data || {})
+  const prompt = `${basePrompt}\n\nRespond only with valid JSON in this shape: { "suggestion": "string" }`
   logger.info({ msg: "Gemini suggestion prompt", field, prompt })
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" })
-  const result = await model.generateContent(prompt)
-  const suggestion = result.response.text().trim()
-  logger.info({ msg: "Gemini suggestion result", field, suggestion })
-  return NextResponse.json({ suggestion })
+
+  try {
+    const validated = await generateValidatedJSON(genAI, prompt, suggestionResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
+    logger.info({ msg: "Gemini suggestion result", field, suggestion: validated.suggestion })
+    return NextResponse.json({ suggestion: validated.suggestion })
+  } catch (err: any) {
+    logger.error({ msg: "Gemini suggestion failed", field, err: String(err) })
+    return NextResponse.json({ error: "AI suggestion failed" }, { status: 500 })
+  }
 })
