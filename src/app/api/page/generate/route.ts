@@ -8,9 +8,12 @@ import { logger } from "@/lib/logger"
 import generateValidatedJSON from "@/lib/ai"
 import { pageGenerationResponseSchema } from "@/lib/page-generation-schema"
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
-
 export const POST = withErrorHandling(async (req) => {
+  // Lazily instantiate AI client to avoid import-time failures
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
+
+  // Defensive top-level guard for unexpected runtime errors
+  try {
   const session = await getServerSession(authOptions)
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -76,5 +79,9 @@ export const POST = withErrorHandling(async (req) => {
     }
 
     return NextResponse.json({ error: "AI failed to generate page" }, { status: 500 })
+  }
+  } catch (err: unknown) {
+    logger.error({ msg: "Page POST failed (unexpected)", err: String(err) })
+    return NextResponse.json({ error: "Internal Server Error", message: String(err) }, { status: 500 })
   }
 })

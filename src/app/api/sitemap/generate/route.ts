@@ -8,10 +8,13 @@ import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 import generateValidatedJSON from "@/lib/ai"
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
-
 // Generates a simple sitemap JSON from onboarding data via Gemini
 export const POST = withErrorHandling(async (req) => {
+  // Lazily instantiate AI client to avoid import-time failures
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
+
+  // Extra top-level guard so any unexpected errors at runtime still produce JSON
+  try {
   const session = await getServerSession(authOptions)
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -59,4 +62,9 @@ export const POST = withErrorHandling(async (req) => {
 
   logger.info({ msg: "Sitemap generated", projectId: project.id, aiTaskId: aiTask.id })
   return NextResponse.json({ ok: true, sitemap: validated.data.sitemap, aiTaskId: aiTask.id })
+  } catch (err: unknown) {
+    // Last-resort defensive JSON response
+    logger.error({ msg: "Sitemap POST failed (unexpected)", err: String(err) })
+    return NextResponse.json({ error: "Internal Server Error", message: String(err) }, { status: 500 })
+  }
 })
