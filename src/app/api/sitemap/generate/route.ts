@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { randomUUID } from "crypto"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -14,6 +15,9 @@ export const POST = withErrorHandling(async (req) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
   // Extra top-level guard so any unexpected errors at runtime still produce JSON
+  // generate or propagate a request id to help correlate logs
+  const requestId = req.headers.get("x-request-id") || randomUUID()
+
   try {
   const session = await getServerSession(authOptions)
   if (!session || !session.user?.email) {
@@ -63,8 +67,14 @@ export const POST = withErrorHandling(async (req) => {
   logger.info({ msg: "Sitemap generated", projectId: project.id, aiTaskId: aiTask.id })
   return NextResponse.json({ ok: true, sitemap: validated.data.sitemap, aiTaskId: aiTask.id })
   } catch (err: unknown) {
-    // Last-resort defensive JSON response
-    logger.error({ msg: "Sitemap POST failed (unexpected)", err: String(err) })
-    return NextResponse.json({ error: "Internal Server Error", message: String(err) }, { status: 500 })
+    // Last-resort defensive JSON response with headers for debugging
+    const headersToLog = {
+      host: req.headers.get('host'),
+      ua: req.headers.get('user-agent'),
+      xVercelId: req.headers.get('x-vercel-id'),
+      xForwardedFor: req.headers.get('x-forwarded-for')
+    }
+    logger.error({ msg: "Sitemap POST failed (unexpected)", err: String(err), requestId, headers: headersToLog })
+    return NextResponse.json({ error: "Internal Server Error", message: String(err), requestId }, { status: 500 })
   }
 })
