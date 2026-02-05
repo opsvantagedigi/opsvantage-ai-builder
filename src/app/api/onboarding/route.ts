@@ -27,7 +27,11 @@ export async function POST(req: Request) {
   const project = await prisma.project.create({
     data: {
       name: businessName,
-      userId: user.id,
+      owner: {
+        connect: {
+          id: user.id
+        }
+      },
       subdomain: `${businessName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`
     }
   })
