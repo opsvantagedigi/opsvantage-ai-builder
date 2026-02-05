@@ -24,14 +24,16 @@
 
 ### 4. AI Onboarding Wizard (Gemini‑powered)
 Implement a multi‑step onboarding flow:
-- [ ] Business type
-- [ ] Industry
-- [ ] Brand voice
-- [ ] Color palette
-- [ ] Target audience
-- [ ] Competitors
-- [ ] Website goals
-- [ ] Store results in `Onboarding` table.
+- [x] Business type
+- [x] Industry
+- [x] Brand voice
+- [x] Color palette
+- [x] Target audience
+- [x] Competitors
+- [x] Website goals
+- [x] Store results in `Onboarding` table (Prisma Schema updated).
+- [ ] Build Onboarding UI (Multi-step form).
+- [ ] Connect to `/api/onboarding` endpoints.
 
 ### 5. AI Sitemap Generator
 - [ ] Convert onboarding data → sitemap structure.

@@ -21,6 +21,11 @@ enum Status {
   FAILED
 }
 
+enum OnboardingStatus {
+  DRAFT
+  COMPLETED
+}
+
 enum TaskType {
   ONBOARDING_TO_SITEMAP
   SITEMAP_TO_PAGES
@@ -148,14 +153,31 @@ model Domain {
 }
 
 model Onboarding {
-  id          String   @id @default(cuid())
-  projectId   String   @unique
-  businessName String?
-  industry    String?
-  goal        String?
-  payload     Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  projectId      String   @unique
+  
+  // Step 1: Business Identity
+  businessName   String?
+  businessType   String?  // e.g., "SaaS", "E-commerce", "Local Business"
+  industry       String?  // e.g., "Technology", "Healthcare"
+  description    String?  // Short description of what they do
+
+  // Step 2: Brand & Audience
+  brandVoice     String?  // e.g., "Professional", "Playful", "Luxurious"
+  targetAudience String?  // e.g., "Small business owners involved in tech"
+  
+  // Step 3: Design Preferences
+  colorPalette   Json?    // Array of hex codes or a preset name
+  designStyle    String?  // e.g., "Minimalist", "Bold", "Corporate"
+
+  // Step 4: Strategic Goals
+  goals          String?  // Primary website goal
+  competitors    Json?    // Array of competitor URLs or names
+  
+  status         OnboardingStatus @default(DRAFT)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
