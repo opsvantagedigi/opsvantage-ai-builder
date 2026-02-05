@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { randomUUID } from "crypto"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -13,6 +14,8 @@ export const POST = withErrorHandling(async (req) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
   // Defensive top-level guard for unexpected runtime errors
+  const requestId = req.headers.get("x-request-id") || randomUUID()
+
   try {
   const session = await getServerSession(authOptions)
   if (!session || !session.user?.email) {
@@ -81,7 +84,13 @@ export const POST = withErrorHandling(async (req) => {
     return NextResponse.json({ error: "AI failed to generate page" }, { status: 500 })
   }
   } catch (err: unknown) {
-    logger.error({ msg: "Page POST failed (unexpected)", err: String(err) })
-    return NextResponse.json({ error: "Internal Server Error", message: String(err) }, { status: 500 })
+    const headersToLog = {
+      host: req.headers.get('host'),
+      ua: req.headers.get('user-agent'),
+      xVercelId: req.headers.get('x-vercel-id'),
+      xForwardedFor: req.headers.get('x-forwarded-for')
+    }
+    logger.error({ msg: "Page POST failed (unexpected)", err: String(err), requestId, headers: headersToLog })
+    return NextResponse.json({ error: "Internal Server Error", message: String(err), requestId }, { status: 500 })
   }
 })
