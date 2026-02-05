@@ -61,16 +61,16 @@ export function withErrorHandling(handler: ApiHandler): ApiHandler {
       }
 
       // Handle Google Generative AI Errors (basic check)
-      if (error.message?.includes("GoogleGenerativeAI")) {
+      if (errorMessage?.includes("GoogleGenerativeAI")) {
           return NextResponse.json(
-              { error: "AI Service Error", details: error.message },
+              { error: "AI Service Error", details: errorMessage },
               { status: 503 }
           );
       }
 
       // Default Server Error
       return NextResponse.json(
-        { error: "Internal Server Error", message: error.message },
+        { error: "Internal Server Error", message: errorMessage },
         { status: 500 }
       );
     }
