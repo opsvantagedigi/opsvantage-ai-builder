@@ -5,7 +5,7 @@ export default function Home() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-8">
       <main className="flex flex-col items-center justify-center text-center max-w-4xl space-y-12">
         <div className="space-y-6">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent pb-2">
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-linear-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent pb-2">
             OpsVantage AI Builder
           </h1>
           <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto">
