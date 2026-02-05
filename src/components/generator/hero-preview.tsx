@@ -11,7 +11,7 @@ interface HeroPreviewProps {
 
 export default function HeroPreview({ content }: HeroPreviewProps) {
   return (
-    <section className={`relative min-h-[220px] flex items-center justify-center overflow-hidden ${content.theme === 'futuristic' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'} rounded-lg shadow-sm p-8`}>
+    <section className={`relative min-h-55 flex items-center justify-center overflow-hidden ${content.theme === 'futuristic' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'} rounded-lg shadow-sm p-8`}>
       <div className="max-w-3xl text-center">
         <h2 className="text-3xl font-bold mb-3">{content.headline}</h2>
         {content.subhead && <p className="text-lg text-slate-500 mb-4">{content.subhead}</p>}
