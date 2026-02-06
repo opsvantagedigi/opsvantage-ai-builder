@@ -65,7 +65,7 @@ function parseColorPaletteResponse(responseText: string): ColorRecommendation[] 
     const parsed = JSON.parse(jsonMatch[1]);
     // TODO: Add Zod validation here
     return parsed as ColorRecommendation[];
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse color palette from AI response.');
   }
 }
@@ -112,7 +112,7 @@ function parseFontPairingResponse(responseText: string): FontPairingRecommendati
     const parsed = JSON.parse(jsonMatch[1]);
     // TODO: Add Zod validation here
     return parsed as FontPairingRecommendation[];
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse font pairing from AI response.');
   }
 }
@@ -167,7 +167,7 @@ function parseLayoutSuggestionsResponse(responseText: string): { description: st
     const parsed = JSON.parse(jsonMatch[1]);
     // TODO: Add Zod validation here
     return parsed as { description: string }[];
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse layout suggestion from AI response.');
   }
 }
@@ -206,7 +206,7 @@ function parseHeroImagePromptsResponse(responseText: string): HeroImagePrompt[] 
   }
   try {
     return JSON.parse(jsonMatch[1]) as HeroImagePrompt[];
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse hero image prompts from AI response.');
   }
 }
@@ -254,7 +254,7 @@ function parseIconSetResponse(responseText: string): IconSetSuggestion[] {
   }
   try {
     return JSON.parse(jsonMatch[1]) as IconSetSuggestion[];
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse icon set from AI response.');
   }
 }
@@ -299,7 +299,7 @@ function parseBackgroundTextureResponse(responseText: string): BackgroundTexture
   }
   try {
     return JSON.parse(jsonMatch[1]) as BackgroundTexturePrompt[];
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse background textures from AI response.');
   }
 }

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import type { Prisma } from '@prisma/client';
 import { generateBackgroundTextures } from '@/lib/ai/design-assistant';
 
 export async function POST(request: Request) {
@@ -22,10 +21,15 @@ export async function POST(request: Request) {
 
     const backgroundTexturePrompts = await generateBackgroundTextures(project.onboarding);
 
-    await db.onboarding.update({
+    // Use `any` cast here because generated Prisma types may not have the
+    // newly-added `backgroundTexturePrompts` field in some environments.
+    // This is a narrow escape hatch; once Prisma client is regenerated in all
+    // environments this can be reverted to a typed call.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (db as any).onboarding.update({
       where: { projectId },
       data: {
-        backgroundTexturePrompts: backgroundTexturePrompts as unknown as Prisma.InputJsonValue,
+        backgroundTexturePrompts: backgroundTexturePrompts,
       },
     });
 
