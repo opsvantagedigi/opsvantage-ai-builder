@@ -14,7 +14,7 @@ const steps = [
   { title: "Business Basics", description: "Tell us about your business." },
   { title: "Brand Voice & Audience", description: "Define your brand and audience." },
   { title: "Design Preferences", description: "Choose your design style." },
-  { title: "Strategy", description: "Set your goals and competitors." },
+    { title: "Your Business Strategy", description: "Tell us your goals and list any competitors to benchmark against." },
   { title: "Review & Submit", description: "Review and finalize your onboarding." },
 ]
 
@@ -54,7 +54,14 @@ export default function OnboardingWizard() {
       .then((res) => res.json())
       .then((data) => {
         if (data.onboarding) {
-          setForm(data.onboarding)
+            // Normalize competitors: backend may store an array; UI expects a
+            // comma-separated string for the input. Convert arrays to string
+            // so the input stays editable and auto-save will convert back.
+            const normalized = { ...data.onboarding }
+            if (Array.isArray(normalized.competitors)) {
+              normalized.competitors = normalized.competitors.join(', ')
+            }
+            setForm(normalized)
           setOnboardingId(data.onboarding.id)
           // Resume logic: find first incomplete step
           let resumeStep = 0
@@ -75,10 +82,21 @@ export default function OnboardingWizard() {
     if (step === 4 || !onboardingId) return
     if (Object.keys(form).length === 0) return
     setLoading(true)
+    // Prepare payload: ensure `competitors` is sent as an array of strings
+    // as expected by the backend. If the UI stores it as a comma-separated
+    // string, sanitize and split it here.
+    const payload = { ...form }
+    if (typeof payload.competitors === 'string') {
+      payload.competitors = payload.competitors
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s)
+    }
+
     fetch("/api/onboarding", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -137,6 +155,36 @@ export default function OnboardingWizard() {
       setError("AI suggestion failed")
     } finally {
       setAiLoading(null)
+    }
+  }
+
+  async function handleFinish() {
+    setError(null)
+    setLoading(true)
+    try {
+      const payload = { ...form }
+      if (typeof payload.competitors === 'string') {
+        payload.competitors = payload.competitors
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => s)
+      }
+      const res = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Submission failed')
+        return
+      }
+      // Navigate to generate page after successful submission
+      window.location.href = '/generate'
+    } catch (e) {
+      setError('Submission failed')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -213,16 +261,17 @@ export default function OnboardingWizard() {
       case 3:
         return (
           <div className="transition-all duration-500 animate-fade-in">
-            <label className="block mb-2 font-medium">Goals</label>
+            <label className="block mb-2 font-medium">What are the primary goals for your website?</label>
             <div className="flex gap-2 items-center">
-              <input className="input" value={form.goals || ""} onChange={e => handleChange("goals", e.target.value)} required />
+              <input className="input" placeholder="e.g., Generate more leads, sell products, build brand awareness" value={form.goals || ""} onChange={e => handleChange("goals", e.target.value)} required />
               <button type="button" className="px-2 py-1 bg-purple-100 rounded text-purple-700 flex items-center" onClick={() => handleSuggest("goals")}>{aiLoading==="goals" ? <span className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></span> : "✨"}</button>
             </div>
-            <label className="block mt-4 mb-2 font-medium">Competitors (comma separated URLs)</label>
+            <label className="block mt-4 mb-2 font-medium">Who are your main competitors?</label>
             <div className="flex gap-2 items-center">
-              <input className="input" value={form.competitors || ""} onChange={e => handleChange("competitors", e.target.value)} />
+              <input className="input" placeholder="Enter competitor URLs, separated by commas" value={form.competitors || ""} onChange={e => handleChange("competitors", e.target.value)} />
               <button type="button" className="px-2 py-1 bg-purple-100 rounded text-purple-700 flex items-center" onClick={() => handleSuggest("competitors")}>{aiLoading==="competitors" ? <span className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></span> : "✨"}</button>
             </div>
+            <p className="text-sm text-gray-500 mt-2">Enter website URLs separated by commas (e.g., 10web.io, wix.com). We'll parse these into separate entries for you.</p>
           </div>
         )
       case 4:
@@ -230,7 +279,7 @@ export default function OnboardingWizard() {
           <div className="transition-all duration-500 animate-fade-in">
             <h3 className="font-bold mb-2">Review your information</h3>
             <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">{JSON.stringify(form, null, 2)}</pre>
-            <button type="button" className="mt-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => alert("Onboarding complete! Redirecting to /generate ...")}>Finish & Generate</button>
+              <button type="button" className="mt-4 px-4 py-2 bg-blue-600 text-white rounded" onClick={handleFinish} disabled={loading}>{loading ? 'Submitting...' : 'Finish & Generate'}</button>
           </div>
         )
       default:
