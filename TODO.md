@@ -82,6 +82,7 @@ Implement:
 - [x] Section duplication
 - [x] Section deletion
 - [ ] Inline text editing
+- [x] Inline text editing
 - [x] Live preview
 
 ### 10. AI Design Assistant

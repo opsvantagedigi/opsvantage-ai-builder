@@ -40,7 +40,7 @@ interface ProjectClientPageProps {
 }
 
 const SectionPreview = ({ section }: { section: Section }) => {
-  const content = section.data as SectionData;
+  const content = section.data as unknown as SectionData;
 
   switch (section.type) {
     case 'HERO':

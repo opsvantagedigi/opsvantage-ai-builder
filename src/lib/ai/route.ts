@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../db';
-import { generatePageSections } from '@/lib/ai/page-generator';
+import { generatePageData, GeneratedSection } from '@/lib/ai/page-generator';
 import type { Prisma } from '@prisma/client';
 import { TaskType } from '@prisma/client';
 
@@ -46,12 +46,13 @@ export async function POST(
 
     await db.aiTask.update({ where: { id: task.id }, data: { status: 'PROCESSING' } });
 
-    const sections = await generatePageSections(project.onboarding, page);
+    const pageData = await generatePageData(project.onboarding, page);
+    const sections: GeneratedSection[] = pageData.sections;
 
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.section.deleteMany({ where: { pageId } });
       await tx.section.createMany({
-        data: sections.map((section) => ({
+        data: sections.map((section: GeneratedSection) => ({
           pageId,
           type: section.type,
           variant: section.variant,
