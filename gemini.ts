@@ -3,6 +3,7 @@
 // e.g., import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function getGenerativeModel(modelName: string = 'gemini-pro') {
+  console.log('[GENERIC_MODEL] using model:', modelName);
   // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   // return genAI.getGenerativeModel({ model: modelName });
 

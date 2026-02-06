@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import type { Section } from '@prisma/client';
 
 export async function POST(
   request: Request,
@@ -50,7 +51,7 @@ export async function POST(
     ];
 
     // Update the order of all sections in a single transaction
-    const transactions = finalOrder.map((s, index) =>
+    const transactions = finalOrder.map((s: Section, index: number) =>
       db.section.update({ where: { id: s.id }, data: { order: index } })
     );
     await db.$transaction(transactions);

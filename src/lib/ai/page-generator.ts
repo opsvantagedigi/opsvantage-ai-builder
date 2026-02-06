@@ -1,5 +1,5 @@
 import { Onboarding, Page, PageType, SectionType } from '@prisma/client';
-import { getGenerativeModel } from './gemini';
+import { getGenerativeModel } from '@/gemini';
 
 // This defines the structure of the `data` field in a Section
 export interface SectionData {
@@ -102,8 +102,8 @@ function parsePageGenerationResponse(responseText: string): GeneratedPageData {
     const parsed = JSON.parse(jsonMatch[1]);
     // TODO: Add Zod validation here to ensure the structure is correct.
     return parsed as GeneratedPageData;
-  } catch (error) {
-    throw new Error('Failed to parse page data from AI response.');
+  } catch (err) {
+    throw new Error('Failed to parse page data from AI response: ' + (err as Error).message);
   }
 }
 
