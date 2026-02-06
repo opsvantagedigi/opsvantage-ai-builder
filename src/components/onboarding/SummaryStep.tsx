@@ -1,9 +1,7 @@
 import React from 'react'
+import { OnboardingData } from '@/types/onboarding'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// TODO: replace `any` usages with proper types
-
-export default function SummaryStep({ onBack, onGenerate, formData, isSaving }: any) {
+export default function SummaryStep({ onBack, onGenerate, formData, isSaving }: { onBack?: () => void; onGenerate: () => void; formData?: OnboardingData; isSaving?: boolean }) {
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow">
       <h2 className="text-xl font-bold mb-4">Review & Generate</h2>

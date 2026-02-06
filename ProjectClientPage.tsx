@@ -90,21 +90,21 @@ const SectionPreview = ({
   projectId,
 }: {
   section: Section;
-  onDataChange: (id: string, data: SectionData) => void;
+  onDataChange: (id: string, data: Partial<SectionData>) => void;
   projectId: string;
 }) => {
-  const content = section.data as unknown as SectionData;
+  const content = section.data as unknown as Partial<SectionData>;
 
-  const handleDataChange = (newContent: SectionData) => {
+  const handleDataChange = (newContent: Partial<SectionData>) => {
     onDataChange(section.id, newContent);
   };
   switch (section.type as unknown as string) {
     case 'HERO':
-      return <HeroPreview content={content} onContentChange={handleDataChange} projectId={projectId} />;
+      return <HeroPreview content={content as SectionData} onContentChange={(nc: SectionData) => handleDataChange(nc)} projectId={projectId} />;
     case 'FEATURES':
-      return <FeaturesPreview content={content} onContentChange={handleDataChange} />;
+      return <FeaturesPreview content={content as unknown as import('@/types/preview').FeaturesContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
     case 'FOOTER':
-      return <FooterPreview content={content} onContentChange={handleDataChange} />;
+      return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
     default:
       return <DefaultPreview type={section.type} content={content} />;
   }
@@ -120,7 +120,7 @@ const SortableSection = ({
   section: Section;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
-  onDataChange: (id: string, data: SectionData) => void;
+  onDataChange: (id: string, data: Partial<SectionData>) => void;
   projectId: string;
 }) => {
   const {
@@ -246,7 +246,7 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
 
   const debouncedSaveSection = useDebouncedSave((...args: unknown[]) => { void saveSection(args[0] as SectionWithOrder); }, 1500);
 
-  const handleSectionDataChange = (sectionId: string, newSectionData: SectionData) => {
+  const handleSectionDataChange = (sectionId: string, newSectionData: Partial<SectionData>) => {
     setSections(currentSections => currentSections.map(s => {
       if (s.id === sectionId) {
         const updatedSection = { ...s, data: newSectionData as unknown as SectionWithOrder['data'] };

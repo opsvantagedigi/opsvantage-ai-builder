@@ -96,6 +96,7 @@ Add support for:
 - [x] Generating hero images from AI prompts
 - [x] Generating background textures
 - [ ] Generating illustrations for features
+- [x] Generating illustrations for features
 - [ ] Generating icons
 - [ ] Generating product mockups
 

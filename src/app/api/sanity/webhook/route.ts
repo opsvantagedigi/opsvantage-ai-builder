@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
@@ -24,9 +23,9 @@ export const POST = async (req: Request) => {
     logger.info({ msg: "SANITY_WEBHOOK_SECRET not set — skipping signature verification" })
   }
 
-  let payload: any
+  let payload: unknown
   try {
-    payload = JSON.parse(raw)
+    payload = JSON.parse(raw) as unknown
   } catch (e: unknown) {
     const ex = e as Error
     logger.warn({ msg: "Sanity webhook: invalid JSON", err: String(ex) })
@@ -34,14 +33,23 @@ export const POST = async (req: Request) => {
   }
 
   // Sanity webhook payloads vary; support direct document or documents array
-  const doc = payload._type ? payload : (Array.isArray(payload.documents) ? payload.documents[0] : payload.document || payload.result || null)
+  const asObj = payload as Record<string, unknown>
+  let doc: Record<string, unknown> | null = null
+  if (asObj && typeof asObj === 'object' && asObj['_type']) doc = asObj
+  else {
+    const maybeDocs = asObj['documents']
+    if (Array.isArray(maybeDocs) && maybeDocs.length > 0) doc = maybeDocs[0] as Record<string, unknown>
+    else if (asObj['document'] && typeof asObj['document'] === 'object') doc = asObj['document'] as Record<string, unknown>
+    else if (asObj['result'] && typeof asObj['result'] === 'object') doc = asObj['result'] as Record<string, unknown>
+  }
+
   if (!doc) {
     logger.info({ msg: "Sanity webhook: no document in payload" })
     return NextResponse.json({ ok: true })
   }
 
-  const slug = doc.slug?.current || doc.slug
-  const projectRef = doc.projectRef?._ref || doc.projectId || null
+  const slug = (doc['slug'] && (doc['slug'] as Record<string, unknown>)['current']) || doc['slug']
+  const projectRef = ((doc['projectRef'] && (doc['projectRef'] as Record<string, unknown>)['_ref']) || doc['projectId'] || null) as string | null
 
   // Determine path(s) to revalidate
   const pathsToRevalidate: string[] = []

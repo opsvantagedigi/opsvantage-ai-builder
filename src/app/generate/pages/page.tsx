@@ -1,15 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState } from "react"
 import HeroPreview from "@/components/generator/hero-preview"
 
+type SitemapNode = { id: string; title?: string; slug?: string }
+type GeneratedPage = { title?: string; slug?: string; sections?: Array<Record<string, unknown>> }
+
 export default function GeneratePagesPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pageJson, setPageJson] = useState<any | null>(null)
+  const [pageJson, setPageJson] = useState<GeneratedPage | null>(null)
   const [prompt, setPrompt] = useState("")
-  const [sitemap, setSitemap] = useState<any[] | null>(null)
+  const [sitemap, setSitemap] = useState<SitemapNode[] | null>(null)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   async function loadSitemap() {
@@ -17,8 +19,9 @@ export default function GeneratePagesPage() {
     try {
       const res = await fetch("/api/sitemap/generate", { method: "POST", headers: { "Content-Type": "application/json" } })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error((body as any).error || "Failed to load sitemap")
+        const body = await res.json().catch(() => ({} as Record<string, unknown>))
+        const maybeError = (body as Record<string, unknown>)["error"]
+        throw new Error(typeof maybeError === 'string' ? maybeError : "Failed to load sitemap")
       }
       const data = await res.json()
       setSitemap(data.sitemap || [])
@@ -41,8 +44,9 @@ export default function GeneratePagesPage() {
         body: JSON.stringify({ prompt: prompt || null, sitemapNode: selected }),
       })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error((body as any).error || "Generation failed")
+        const body = await res.json().catch(() => ({} as Record<string, unknown>))
+        const maybeError = (body as Record<string, unknown>)["error"]
+        throw new Error(typeof maybeError === 'string' ? maybeError : "Generation failed")
       }
       const data = await res.json()
       setPageJson(data.page)
@@ -76,9 +80,9 @@ export default function GeneratePagesPage() {
           <div className="mt-2">
             <label className="text-sm block mb-1">Sitemap node:</label>
             <select value={selectedNodeId ?? ""} onChange={(e) => setSelectedNodeId(e.target.value)} className="w-full border rounded p-2">
-              {sitemap.map((node: any) => (
-                <option key={node.id} value={node.id}>{node.title} — {node.slug}</option>
-              ))}
+              {sitemap.map((node) => (
+                  <option key={node.id} value={node.id}>{node.title} — {node.slug}</option>
+                ))}
             </select>
           </div>
         )}
@@ -102,15 +106,18 @@ export default function GeneratePagesPage() {
           </div>
 
           {/* Hero preview: map the first HERO section if present */}
-          {Array.isArray(pageJson.sections) && (
+            {Array.isArray(pageJson.sections) && (
             (() => {
-              const hero = pageJson.sections.find((s: any) => s.type === "HERO")
+              const hero = pageJson.sections.find((s) => (s as Record<string, unknown>)['type'] === "HERO")
               if (hero) {
+                const heroObj = hero as Record<string, unknown>
+                const rawTheme = (heroObj['theme'] as string) || "minimal"
+                const theme = ["minimal", "futuristic", "corporate"].includes(rawTheme) ? (rawTheme as "minimal" | "futuristic" | "corporate") : "minimal"
                 const content = {
-                  headline: hero.heading || hero.title || pageJson.title,
-                  subhead: hero.body || "",
-                  ctaLabel: hero.cta?.label || "Get started",
-                  theme: (hero.theme as any) || "minimal",
+                  headline: (heroObj['heading'] ?? heroObj['title'] ?? pageJson.title ?? "") as string,
+                  subhead: (heroObj['body'] as string) || "",
+                  ctaLabel: ((heroObj['cta'] as Record<string, unknown> | undefined)?.['label'] as string) || "Get started",
+                  theme,
                 }
                 return (
                   <div className="space-y-3">
@@ -119,9 +126,10 @@ export default function GeneratePagesPage() {
                       <button onClick={async () => {
                         try {
                           const res = await fetch('/api/page/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: pageJson }) })
-                          const body = await res.json()
-                          if (!res.ok) throw new Error(body.error || 'Save failed')
-                          alert('Page saved: ' + body.pageId)
+                          const body = await res.json().catch(() => ({} as Record<string, unknown>))
+                          const maybeError = (body as Record<string, unknown>)["error"]
+                          if (!res.ok) throw new Error(typeof maybeError === 'string' ? maybeError : 'Save failed')
+                          alert('Page saved: ' + (body.pageId ?? ''))
                         } catch (e: unknown) {
                           const ex = e as Error
                           alert('Save failed: ' + (ex.message || String(ex)))

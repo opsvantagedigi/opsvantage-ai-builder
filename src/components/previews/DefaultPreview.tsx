@@ -1,9 +1,7 @@
-import React from 'react';
+import React from 'react'
+import { DefaultContent } from '@/types/preview'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// TODO: replace `any` usages with proper types
-
-const DefaultPreview = ({ type, content }: { type: string; content: any }) => {
+const DefaultPreview = ({ type, content }: { type: string; content: DefaultContent }) => {
 	return (
 		<section className="p-4 bg-white rounded-md shadow-sm">
 			<h4 className="font-medium">{type}</h4>

@@ -1,9 +1,18 @@
 import React, { useState } from 'react'
+import { OnboardingData } from '@/types/onboarding'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// TODO: replace `any` usages with proper types
-export default function DesignPreferencesStep({ onNext, onBack, onSaveAndExit, initialData, isSaving }: any) {
-  const [colorPalette, setColorPalette] = useState(Array.isArray(initialData?.colorPalette) ? (initialData.colorPalette || []).join(', ') : (initialData?.colorPalette || ''))
+type Props = {
+  onNext: (data: Partial<OnboardingData>) => Promise<void> | void
+  onBack?: () => void
+  onSaveAndExit?: () => void
+  initialData?: OnboardingData
+  isSaving?: boolean
+}
+
+export default function DesignPreferencesStep({ onNext, onBack, onSaveAndExit, initialData, isSaving }: Props) {
+  const [colorPalette, setColorPalette] = useState(
+    Array.isArray(initialData?.colorPalette) ? (initialData.colorPalette || []).join(', ') : (initialData?.colorPalette || '')
+  )
   const [designStyle, setDesignStyle] = useState(initialData?.designStyle || '')
 
   const handleNext = () => {

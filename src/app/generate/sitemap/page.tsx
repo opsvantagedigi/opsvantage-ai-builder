@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import Link from "next/link"
@@ -21,8 +20,9 @@ export default function GenerateSitemapPage() {
     try {
       const res = await fetch("/api/sitemap/generate", { method: "POST" })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error((body as any).error || "Failed to generate sitemap")
+        const body = await res.json().catch(() => ({} as Record<string, unknown>))
+        const maybeError = (body as Record<string, unknown>)["error"]
+        throw new Error(typeof maybeError === 'string' ? maybeError : "Failed to generate sitemap")
       }
       const data: SitemapResponse = await res.json()
       setSitemap(data.sitemap)

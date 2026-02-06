@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { sitemapResponseSchema } from "@/lib/sitemap-schema"
+import { sitemapResponseSchema, SitemapResponse } from "@/lib/sitemap-schema"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import type { Prisma } from "@prisma/client"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 import generateValidatedJSON from "@/lib/ai"
@@ -45,7 +45,7 @@ export const POST = withErrorHandling(async (req) => {
 
   logger.info({ msg: "Sitemap generation prompt", projectId: project.id })
 
-  let validated: any
+  let validated: SitemapResponse
   try {
     validated = await generateValidatedJSON(genAI, prompt, sitemapResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
   } catch (err: unknown) {
@@ -61,13 +61,13 @@ export const POST = withErrorHandling(async (req) => {
       type: "ONBOARDING_TO_SITEMAP",
       provider: "GEMINI",
       payload: { onboardingId: onboarding.id },
-      result: validated.data,
+      result: validated as unknown as Prisma.InputJsonValue,
       status: "COMPLETED",
     }
   })
 
   logger.info({ msg: "Sitemap generated", projectId: project.id, aiTaskId: aiTask.id })
-  return NextResponse.json({ ok: true, sitemap: validated.data.sitemap, aiTaskId: aiTask.id })
+  return NextResponse.json({ ok: true, sitemap: validated.sitemap, aiTaskId: aiTask.id })
   } catch (err: unknown) {
     // Last-resort defensive JSON response with headers for debugging
     const headersToLog = {
