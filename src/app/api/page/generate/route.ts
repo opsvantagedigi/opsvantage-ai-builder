@@ -55,7 +55,7 @@ export const POST = withErrorHandling(async (req) => {
   }
   prompt += `\nRespond ONLY with valid JSON matching this schema: ${pageGenerationResponseSchema.toString()}`
 
-  logger.info({ msg: "Page generation prompt", projectId: project.id })
+    logger.info({ msg: "Page generation prompt", projectId: project.id, requestId })
 
   try {
     const validated = await generateValidatedJSON(genAI, prompt, pageGenerationResponseSchema, { model: "gemini-pro", maxAttempts: 3 })

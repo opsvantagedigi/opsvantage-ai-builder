@@ -8,7 +8,7 @@ C:\Users\AjaySidal\opsvantage-ai-builder\scripts\check-prod-auth.js
   60:55  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\health\db\route.ts
-  6:24  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+  6:24  warning  '_req' is defined but never used  @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\onboarding\route.ts
     4:18   warning  'withRetry' is defined but never used              @typescript-eslint/no-unused-vars
@@ -20,8 +20,7 @@ C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\onboarding\route.ts
   128:9    warning  'updated' is assigned a value but never used       @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\page\generate\route.ts
-   19:9   warning  'requestId' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  117:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+  117:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\register\route.ts
   20:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
@@ -59,5 +58,5 @@ C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\prisma.ts
 C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\rate-limit.ts
   2:10  warning  'NextResponse' is defined but never used  @typescript-eslint/no-unused-vars
 
-Ô£û 24 problems (0 errors, 24 warnings)
+Ô£û 23 problems (0 errors, 23 warnings)
 

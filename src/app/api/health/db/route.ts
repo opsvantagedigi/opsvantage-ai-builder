@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-async function handler(req: Request) {
+async function handler(_req: Request) {
   // Check Prisma connection
   try {
     await prisma.$queryRaw`SELECT 1`;
