@@ -1,0 +1,14 @@
+HTTP/1.1 200 OK
+Age: 0
+Cache-Control: public, max-age=0, must-revalidate
+Content-Type: application/json
+Date: Fri, 06 Feb 2026 03:14:20 GMT
+Server: Vercel
+Strict-Transport-Security: max-age=63072000
+Vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+X-Matched-Path: /api/auth/[...nextauth]
+X-Vercel-Cache: MISS
+X-Vercel-Id: syd1::iad1::lmlj8-1770347659959-6d12030cb0cb
+Transfer-Encoding: chunked
+
+{"credentials":{"id":"credentials","name":"Credentials","type":"credentials","signinUrl":"https://www.opsvantagedigital.online/api/auth/signin/credentials","callbackUrl":"https://www.opsvantagedigital.online/api/auth/callback/credentials"},"google":{"id":"google","name":"Google","type":"oauth","signinUrl":"https://www.opsvantagedigital.online/api/auth/signin/google","callbackUrl":"https://www.opsvantagedigital.online/api/auth/callback/google"}}
