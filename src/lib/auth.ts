@@ -42,8 +42,9 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   // Ensure a secret is always present to avoid runtime errors in production
   secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
-  // Enable debug mode when explicitly set in environment
-  debug: process.env.NEXTAUTH_DEBUG === 'true',
+  // Temporarily enable debug mode unconditionally to capture detailed
+  // NextAuth logs in production. Revert this change after diagnostics.
+  debug: true,
   // Ensure server-side errors and warnings are logged to runtime logs
   logger: {
     error(code, metadata) {
