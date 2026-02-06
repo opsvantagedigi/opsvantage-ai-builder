@@ -202,6 +202,8 @@ model Page {
   projectId   String
   title       String
   slug        String
+  seoTitle    String?
+  seoDescription String?
   type        PageType  @default(CUSTOM)
   isHome      Boolean   @default(false)
   createdAt   DateTime  @default(now())

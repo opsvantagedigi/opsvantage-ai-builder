@@ -38,23 +38,24 @@ Implement a multi‑step onboarding flow:
 
 ### 5. AI Sitemap Generator
 - [x] Convert onboarding data → sitemap structure.
-- [ ] Support:
-  - Home
-  - About
-  - Services
-  - Contact
-  - Blog
-  - Custom pages
+- [x] Support:
+  - [x] Home
+  - [x] About
+  - [x] Services
+  - [x] Contact
+  - [x] Blog
+  - [x] Custom pages
 
 ### 6. AI Page Generator
 For each page:
-- [ ] Generate SEO‑optimized title + meta
+- [x] Generate SEO‑optimized title + meta
 - [x] Generate hero section
 - [x] Generate features section
 - [x] Generate testimonials
 - [x] Generate CTA blocks
 - [x] Generate FAQ
 - [ ] Generate footer
+- [x] Generate footer
 
 ### 7. AI Section Generator
 - [ ] Build a library of reusable AI‑generated sections.
@@ -78,12 +79,10 @@ For each page:
 ### 9. Drag‑and‑Drop Editor (MVP)
 Implement:
 - [x] Section reordering
-- [ ] Section duplication
-- [ ] Section deletion
 - [x] Section duplication
 - [x] Section deletion
 - [ ] Inline text editing
-- [ ] Live preview
+- [x] Live preview
 
 ### 10. AI Design Assistant
 Add tools that generate:

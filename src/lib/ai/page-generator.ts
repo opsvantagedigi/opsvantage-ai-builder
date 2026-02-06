@@ -1,5 +1,5 @@
 import { Onboarding, Page, PageType, SectionType } from '@prisma/client';
-import { getGenerativeModel } from '../../../gemini';
+import { getGenerativeModel } from './gemini';
 
 // This defines the structure of the `data` field in a Section
 export interface SectionData {
@@ -23,6 +23,12 @@ export interface GeneratedSection {
   data: SectionData;
 }
 
+export interface GeneratedPageData {
+  seoTitle: string;
+  seoDescription: string;
+  sections: GeneratedSection[];
+}
+
 function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
   const { businessName, description, brandVoice, targetAudience } = onboardingData;
 
@@ -37,7 +43,7 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
   const requestedSections = sectionTypes[page.type] || sectionTypes.CUSTOM;
 
   return `
-    You are an expert web designer and copywriter. Based on the business information and the specific page details, generate the content for all sections of a webpage.
+    You are an expert web designer, copywriter, and SEO specialist. Based on the business information and the specific page details, generate the content for a webpage.
 
     Business Information:
     - Business Name: ${businessName}
@@ -49,47 +55,62 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
     - Page Title: "${page.title}"
     - Page Type: ${page.type}
 
-    Generate the following sections: ${requestedSections.join(', ')}.
-    For each section, provide a type, a variant (e.g., "default", "centered_text"), and the data for the content. The data should include a headline, and may include a subheadline, body text, and a call-to-action (CTA).
+    Generate the following:
+    1. An SEO-optimized title for the page (around 50-60 characters).
+    2. An SEO-optimized meta description for the page (around 150-160 characters).
+    3. The content for the following sections: ${requestedSections.join(', ')}.
 
-    Return the response as a valid JSON array of objects, inside a single JSON code block. Do not include any other text.
-    Each object in the array must be a "GeneratedSection" with these properties:
+    Return the response as a single valid JSON object, inside a single JSON code block. Do not include any other text.
+    The JSON object must have these properties:
+    - "seoTitle": string
+    - "seoDescription": string
+    - "sections": array of "GeneratedSection" objects.
+
+    Each "GeneratedSection" object must have:
     - "type": string (one of "HERO", "FEATURES", "TESTIMONIALS", "FAQ", "CUSTOM")
     - "variant": string (e.g., "default", "image_right")
     - "data": object (A "SectionData" object with "headline", optional "subheadline", "body", "cta", and "items" array for features/faq)
 
-    Example for a HERO section:
+    Example output format:
+    \`\`\`json
     {
-      "type": "HERO",
-      "variant": "image_right",
-      "data": {
-        "headline": "Welcome to ${businessName}",
-        "subheadline": "Your one-stop solution for amazing things.",
-        "cta": { "text": "Get Started", "link": "/contact" }
-      }
+      "seoTitle": "Expert Web Design Services | ${businessName}",
+      "seoDescription": "Get a stunning, high-performance website tailored to your business. ${businessName} offers professional web design and development services to help you grow.",
+      "sections": [
+        {
+          "type": "HERO",
+          "variant": "image_right",
+          "data": {
+            "headline": "Welcome to ${businessName}",
+            "subheadline": "Your one-stop solution for amazing things.",
+            "cta": { "text": "Get Started", "link": "/contact" }
+          }
+        }
+      ]
     }
+    \`\`\`
   `;
 }
 
-function parsePageSectionsResponse(responseText: string): GeneratedSection[] {
+function parsePageGenerationResponse(responseText: string): GeneratedPageData {
   const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
   if (!jsonMatch || !jsonMatch[1]) {
-    throw new Error('Invalid AI response format for page sections: missing JSON code block.');
+    throw new Error('Invalid AI response format for page generation: missing JSON code block.');
   }
 
   try {
     const parsed = JSON.parse(jsonMatch[1]);
     // TODO: Add Zod validation here to ensure the structure is correct.
-    return parsed as GeneratedSection[];
+    return parsed as GeneratedPageData;
   } catch (error) {
-    throw new Error('Failed to parse page sections from AI response.');
+    throw new Error('Failed to parse page data from AI response.');
   }
 }
 
-export async function generatePageSections(onboardingData: Onboarding, page: Page): Promise<GeneratedSection[]> {
+export async function generatePageData(onboardingData: Onboarding, page: Page): Promise<GeneratedPageData> {
   const prompt = buildPagePrompt(onboardingData, page);
   const model = await getGenerativeModel();
   const result = await model.generateContent(prompt);
   const text = result.response.text();
-  return parsePageSectionsResponse(text);
+  return parsePageGenerationResponse(text);
 }
