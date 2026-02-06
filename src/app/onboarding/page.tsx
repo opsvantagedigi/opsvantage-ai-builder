@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { OnboardingStatus } from '@prisma/client';
 
-import BusinessDetailsStep from '@/components/onboarding/BusinessDetailsStep';
-import BrandIdentityStep from '@/components/onboarding/BrandIdentityStep';
-import StrategyStep from '@/components/onboarding/StrategyStep';
-import DesignPreferencesStep from '@/components/onboarding/DesignPreferencesStep';
-import SummaryStep from '@/components/onboarding/SummaryStep';
+import BusinessDetailsStep from '../../components/onboarding/BusinessDetailsStep';
+import BrandIdentityStep from '../../components/onboarding/BrandIdentityStep';
+import StrategyStep from '../../components/onboarding/StrategyStep';
+import DesignPreferencesStep from '../../components/onboarding/DesignPreferencesStep';
+import SummaryStep from '../../components/onboarding/SummaryStep';
 
 export interface OnboardingData {
   businessName?: string;

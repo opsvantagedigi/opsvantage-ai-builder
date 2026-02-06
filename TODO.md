@@ -77,10 +77,11 @@ For each page:
 
 ### 9. Drag‑and‑Drop Editor (MVP)
 Implement:
-- [ ] Section reordering
 - [x] Section reordering
 - [ ] Section duplication
 - [ ] Section deletion
+- [x] Section duplication
+- [x] Section deletion
 - [ ] Inline text editing
 - [ ] Live preview
 
