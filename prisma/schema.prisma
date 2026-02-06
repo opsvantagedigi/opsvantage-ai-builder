@@ -8,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // =========================
@@ -244,6 +245,7 @@ model Workspace {
   
   // Relations
   members     WorkspaceMember[]
+  invitations Invitation[]
   projects    Project[]
   // billing     Billing?
   auditLogs   AuditLog[]
@@ -262,6 +264,22 @@ model WorkspaceMember {
   role        Role      @default(VIEWER)
 
   @@unique([workspaceId, userId]) // Prevent duplicate membership
+}
+
+model Invitation {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  email       String
+  role        Role     @default(VIEWER)
+  expiresAt   DateTime
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([email, workspaceId]) // A user can only have one pending invite per workspace
 }
 
 model AuditLog {
