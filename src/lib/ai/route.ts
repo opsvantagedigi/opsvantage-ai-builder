@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { generateBackgroundTextures } from '@/lib/ai/design-assistant';
+import type { BackgroundTexturePrompt } from '@/lib/ai/design-assistant';
 import type { OnboardingData } from '@/types/onboarding';
 
-function normalizeOnboarding(raw: any): OnboardingData {
+function normalizeOnboarding(raw: unknown): OnboardingData {
+  const r = raw as Record<string, unknown>;
   return {
-    businessName: raw.businessName ?? undefined,
-    businessType: raw.businessType ?? undefined,
-    industry: raw.industry ?? undefined,
-    description: raw.description ?? undefined,
-    brandVoice: raw.brandVoice ?? undefined,
-    targetAudience: raw.targetAudience ?? undefined,
-    goals: raw.goals ?? undefined,
-    competitors: Array.isArray(raw.competitors) ? raw.competitors : undefined,
-    colorPalette: Array.isArray(raw.colorPalette) ? raw.colorPalette : undefined,
-    designStyle: raw.designStyle ?? undefined,
-    fonts: Array.isArray(raw.fonts) ? raw.fonts : undefined,
-    logoUrl: raw.logoUrl ?? undefined,
+    businessName: (r.businessName as string) ?? undefined,
+    businessType: (r.businessType as string) ?? undefined,
+    industry: (r.industry as string) ?? undefined,
+    description: (r.description as string) ?? undefined,
+    brandVoice: (r.brandVoice as string) ?? undefined,
+    targetAudience: (r.targetAudience as string) ?? undefined,
+    goals: (r.goals as string) ?? undefined,
+    competitors: Array.isArray(r.competitors) ? (r.competitors as string[]) : undefined,
+    colorPalette: Array.isArray(r.colorPalette) ? (r.colorPalette as string[]) : undefined,
+    designStyle: (r.designStyle as string) ?? undefined,
+    fonts: Array.isArray(r.fonts) ? (r.fonts as string[]) : undefined,
+    logoUrl: (r.logoUrl as string) ?? undefined,
   };
 }
 
@@ -39,12 +41,17 @@ export async function POST(request: Request) {
 
     const backgroundTexturePrompts = await generateBackgroundTextures(normalizeOnboarding(project.onboarding));
 
-    // Use `any` cast here because generated Prisma types may not have the
-    // newly-added `backgroundTexturePrompts` field in some environments.
-    // This is a narrow escape hatch; once Prisma client is regenerated in all
-    // environments this can be reverted to a typed call.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (db as any).onboarding.update({
+    // The Prisma client in some environments may not include the
+    // `backgroundTexturePrompts` field yet. Create a narrow typed view
+    // for the update call to avoid using `any` while keeping the call
+    // explicit about the payload we send.
+    type OnboardingUpdateCall = {
+      onboarding: {
+        update(args: { where: { projectId: string }; data: { backgroundTexturePrompts: BackgroundTexturePrompt[] } }): Promise<unknown>;
+      };
+    };
+
+    await (db as unknown as OnboardingUpdateCall).onboarding.update({
       where: { projectId },
       data: {
         backgroundTexturePrompts: backgroundTexturePrompts,
