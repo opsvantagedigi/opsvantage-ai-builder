@@ -1,15 +1,16 @@
+
 'use client';
 
-import useSWR from 'swr';
-import { User, WorkspaceMember, Invitation } from '@prisma/client';
+import useSWR, { useSWRConfig } from 'swr';
+import { useState } from 'react';
+import { User, WorkspaceMember, Invitation, Role } from '@prisma/client';
+import Image from 'next/image';
 
 interface WorkspaceMembersListProps {
   workspaceId: string;
 }
 
-type MemberWithUser = WorkspaceMember & {
-  user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
-};
+// Remove unused MemberWithUser type
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -17,20 +18,83 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
  * A component to display existing members and pending invitations for a workspace.
  */
 export function WorkspaceMembersList({ workspaceId }: WorkspaceMembersListProps) {
+  const { mutate } = useSWRConfig();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const membersApiUrl = `/api/workspaces/${workspaceId}/members`;
+  const invitationsApiUrl = `/api/workspaces/${workspaceId}/invitations`;
   const {
     data: members,
     error: membersError,
     isLoading: membersLoading,
-  } = useSWR<MemberWithUser[]>(`/api/workspaces/${workspaceId}/members`, fetcher);
-
+  } = useSWR<(WorkspaceMember & { user: Pick<User, 'id' | 'name' | 'email' | 'image'> })[]>(membersApiUrl, fetcher);
   const {
     data: invitations,
     error: invitationsError,
     isLoading: invitationsLoading,
-  } = useSWR<Invitation[]>(`/api/workspaces/${workspaceId}/invitations`, fetcher);
+  } = useSWR<Invitation[]>(invitationsApiUrl, fetcher);
 
   const isLoading = membersLoading || invitationsLoading;
   const error = membersError || invitationsError;
+
+  const handleRemoveMember = async (memberId: string) => {
+    setActionError(null);
+    if (!confirm('Are you sure you want to remove this member?')) return;
+
+    try {
+      const res = await fetch(`${membersApiUrl}/${memberId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to remove member.');
+      }
+      mutate(membersApiUrl);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setActionError(err.message);
+      } else {
+        setActionError('An unknown error occurred.');
+      }
+    }
+  };
+
+  const handleRevokeInvitation = async (invitationId: string) => {
+    setActionError(null);
+    if (!confirm('Are you sure you want to revoke this invitation?')) return;
+
+    try {
+      const res = await fetch(`${invitationsApiUrl}/${invitationId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to revoke invitation.');
+      }
+      mutate(invitationsApiUrl);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setActionError(err.message);
+      } else {
+        setActionError('An unknown error occurred.');
+      }
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, role: Role) => {
+    setActionError(null);
+    try {
+      const res = await fetch(`${membersApiUrl}/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to update role.');
+      mutate(membersApiUrl);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setActionError(err.message);
+      } else {
+        setActionError('An unknown error occurred.');
+      }
+    }
+  };
 
   if (isLoading) {
     return <div className="p-4 text-center">Loading members...</div>;
@@ -42,6 +106,7 @@ export function WorkspaceMembersList({ workspaceId }: WorkspaceMembersListProps)
 
   return (
     <div className="space-y-8">
+      {actionError && <p className="text-sm text-red-600">Error: {actionError}</p>}
       {/* Existing Members List */}
       <div>
         <h3 className="text-lg font-semibold mb-4">Members</h3>
@@ -64,11 +129,27 @@ export function WorkspaceMembersList({ workspaceId }: WorkspaceMembersListProps)
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600 capitalize">{member.role.toLowerCase()}</span>
-                  {/* Placeholder for future actions */}
-                  <button className="text-sm text-red-500 hover:text-red-700" disabled>
-                    Remove
-                  </button>
+                  {member.role === 'OWNER' ? (
+                    <span className="text-sm text-gray-600 capitalize">{member.role.toLowerCase()}</span>
+                  ) : (
+                    <select
+                      value={member.role}
+                      onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
+                      className="text-sm text-gray-600 capitalize border-gray-300 rounded-md"
+                    >
+                      <option value="ADMIN">Admin</option>
+                      <option value="EDITOR">Editor</option>
+                      <option value="VIEWER">Viewer</option>
+                    </select>
+                  )}
+                  {member.role !== 'OWNER' && (
+                    <button
+                      onClick={() => handleRemoveMember(member.id)}
+                      className="text-sm text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -96,8 +177,10 @@ export function WorkspaceMembersList({ workspaceId }: WorkspaceMembersListProps)
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-gray-600 capitalize">{invitation.role.toLowerCase()}</span>
-                  {/* Placeholder for future actions */}
-                  <button className="text-sm text-red-500 hover:text-red-700" disabled>
+                  <button
+                    onClick={() => handleRevokeInvitation(invitation.id)}
+                    className="text-sm text-red-500 hover:text-red-700"
+                  >
                     Revoke
                   </button>
                 </div>
