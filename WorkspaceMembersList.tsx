@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { Role, User, WorkspaceMember, Invitation } from '@prisma/client';
+import { User, WorkspaceMember, Invitation } from '@prisma/client';
 
 interface WorkspaceMembersListProps {
   workspaceId: string;
@@ -50,10 +50,13 @@ export function WorkspaceMembersList({ workspaceId }: WorkspaceMembersListProps)
             members.map((member) => (
               <div key={member.id} className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-4">
-                  <img
+                  <Image
                     src={member.user.image ?? `https://avatar.vercel.sh/${member.user.email}`}
                     alt={member.user.name ?? 'User avatar'}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full"
+                    unoptimized
                   />
                   <div>
                     <p className="font-medium text-gray-900">{member.user.name}</p>
