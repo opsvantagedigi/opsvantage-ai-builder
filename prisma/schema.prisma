@@ -175,6 +175,7 @@ model Onboarding {
   heroImagePrompts     Json?
   iconSet              Json?
   fontPairing          Json?
+  backgroundTexturePrompts Json?
 
   // Step 4: Strategic Goals
   goals          String?  // Primary website goal

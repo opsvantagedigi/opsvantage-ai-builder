@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { SitemapPage as SitemapPageType } from "@/lib/sitemap-schema"
 
@@ -61,7 +62,7 @@ export default function GenerateSitemapPage() {
             <SitemapTree nodes={sitemap} />
             <div className="flex gap-3 pt-4">
               <button onClick={handleGenerate} disabled={loading} className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm">🔁 Regenerate</button>
-              <a href="/generate/pages" className="inline-flex items-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white">Continue to Page Generation →</a>
+              <Link href="/generate/pages" className="inline-flex items-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white">Continue to Page Generation →</Link>
             </div>
           </div>
         )}

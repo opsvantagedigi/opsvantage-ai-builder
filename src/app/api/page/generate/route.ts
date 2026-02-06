@@ -3,6 +3,7 @@ import { randomUUID } from "crypto"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from '@prisma/client'
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
@@ -17,7 +18,7 @@ export const POST = withErrorHandling(async (req) => {
   const requestId = req.headers.get("x-request-id") || randomUUID()
 
   let projectIdRef: string | null = null;
-  let sitemapNodeRef: any = null;
+  let sitemapNodeRef: unknown = null;
   let userPromptRef: string | null = null;
 
   try {
@@ -64,7 +65,7 @@ export const POST = withErrorHandling(async (req) => {
         projectId: projectIdRef!,
         type: "SITEMAP_TO_PAGES",
         provider: "GEMINI",
-        payload: { sitemapNode: sitemapNodeRef, prompt: userPromptRef },
+        payload: { sitemapNode: sitemapNodeRef as Prisma.InputJsonValue, prompt: userPromptRef },
         result: validated,
         status: "COMPLETED",
       }
@@ -76,13 +77,13 @@ export const POST = withErrorHandling(async (req) => {
     logger.error({ msg: "Page generation failed", err: String(e) })
     // Persist failed AiTask
     try {
-      if (projectIdRef) {
+        if (projectIdRef) {
         await prisma.aiTask.create({
           data: {
             projectId: projectIdRef,
             type: "SITEMAP_TO_PAGES",
             provider: "GEMINI",
-            payload: { sitemapNode: sitemapNodeRef, prompt: userPromptRef },
+            payload: { sitemapNode: sitemapNodeRef as Prisma.InputJsonValue, prompt: userPromptRef },
             error: String(err),
             status: "FAILED",
           }
@@ -100,13 +101,13 @@ export const POST = withErrorHandling(async (req) => {
     logger.error({ msg: "Page generation failed", err: String(ex) })
     // Persist failed AiTask
     try {
-      if (projectIdRef) {
+        if (projectIdRef) {
         await prisma.aiTask.create({
           data: {
             projectId: projectIdRef,
             type: "SITEMAP_TO_PAGES",
             provider: "GEMINI",
-            payload: { sitemapNode: sitemapNodeRef, prompt: userPromptRef },
+            payload: { sitemapNode: sitemapNodeRef as Prisma.InputJsonValue, prompt: userPromptRef },
             error: String(ex),
             status: "FAILED",
           }

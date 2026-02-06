@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { authOptions } from "@/lib/auth"
 
 export const dynamic = 'force-dynamic'
@@ -27,12 +28,12 @@ export default async function DashboardPage() {
           You are now logged in. This is where your onboarding wizard will begin.
         </p>
 
-        <a
+        <Link
           href="/onboarding"
           className="inline-block bg-blue-600 text-white px-6 py-2 rounded"
         >
           Start Onboarding
-        </a>
+        </Link>
       </div>
     </div>
   )

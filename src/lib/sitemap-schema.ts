@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const sitemapPageSchema: z.ZodType<any> = z.lazy(() =>
   z.object({
     id: z.string().min(1),

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
 type Props = {
@@ -8,7 +9,6 @@ type Props = {
   isSaving?: boolean;
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // TODO: replace `any` usages with proper types
 export default function BrandIdentityStep(_: Props) {
   return <div />;

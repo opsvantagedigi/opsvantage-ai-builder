@@ -58,7 +58,7 @@ export const POST = withErrorHandling(async (req) => {
     create: { email: session.user.email, name: session.user.email.split("@")[0] }
   })
   // Find or create workspace
-  let member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
+  const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
   let workspaceId = member?.workspaceId
   if (!workspaceId) {
     const safeName = (user.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '-')

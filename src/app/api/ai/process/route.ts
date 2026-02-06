@@ -118,21 +118,20 @@ ${JSON.stringify(task.payload, null, 2)}
 
     logger.info({ msg: "Task completed successfully", taskId: task.id });
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    logger.error({ msg: "Task processing failed", taskId: task.id, error: err.message });
+  } catch (err: unknown) {
+    const e = err as Error
+    logger.error({ msg: "Task processing failed", taskId: task.id, error: e.message });
 
     await prisma.aiTask.update({
       where: { id: task.id },
       data: {
         status: Status.FAILED,
-        error: err.message
+        error: e.message
       }
     })
     
-    // Re-throw to let the global handler also log it (or we could just return here)
-    // But since we updated the DB status, we might want to return a cleaner error or rethrow.
-    // The global handler will return a 500 response.
-    throw err; 
+    // Re-throw the original error to let the global handler log it
+    throw err;
   }
 }
 

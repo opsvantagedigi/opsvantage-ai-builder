@@ -1,5 +1,6 @@
 // Usage: node scripts/create-test-user.js email
 // This script creates a user + workspace + project directly via Prisma.
+/* eslint-disable @typescript-eslint/no-require-imports */
 require('dotenv').config()
 const { PrismaClient } = require('@prisma/client')
 const { PrismaNeon } = require('@prisma/adapter-neon')
