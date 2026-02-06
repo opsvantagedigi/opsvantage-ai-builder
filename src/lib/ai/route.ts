@@ -55,18 +55,19 @@ export async function POST(
           pageId,
           type: section.type,
           variant: section.variant,
-          data: section.data as any,
+          data: section.data as unknown as Prisma.InputJsonValue,
         })),
       });
     });
 
-    await db.aiTask.update({ where: { id: task.id }, data: { status: 'COMPLETED', result: sections as any } });
+    await db.aiTask.update({ where: { id: task.id }, data: { status: 'COMPLETED', result: sections as unknown as Prisma.InputJsonValue } });
 
     return NextResponse.json({ message: `Sections generated for page ${pageId}` });
-  } catch (error: any) {
-    console.error(`[PAGE_GENERATION_ERROR] ProjectID: ${projectId}, PageID: ${pageId}`, error);
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[PAGE_GENERATION_ERROR] ProjectID: ${projectId}, PageID: ${pageId}`, errMsg);
     if (task) {
-      await db.aiTask.update({ where: { id: task.id }, data: { status: 'FAILED', error: error.message } });
+      await db.aiTask.update({ where: { id: task.id }, data: { status: 'FAILED', error: errMsg } });
     }
     return NextResponse.json({ error: 'Page section generation failed.' }, { status: 500 });
   }
