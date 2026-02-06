@@ -1,7 +1,7 @@
 import React from 'react';
 import { FeaturesContent, FeatureItem } from '@/types/preview'
 
-const FeaturesPreview = ({ content, onContentChange }: { content: FeaturesContent; onContentChange?: (c: FeaturesContent) => void }) => {
+const FeaturesPreview = ({ content }: { content: FeaturesContent }) => {
 	const items: FeatureItem[] = content?.items || [];
 	return (
 		<section className="p-4 bg-white rounded-md shadow-sm">

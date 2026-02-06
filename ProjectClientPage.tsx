@@ -104,7 +104,7 @@ const SectionPreview = ({
     case 'HERO':
       return <HeroPreview content={content as SectionData} onContentChange={(nc: SectionData) => handleDataChange(nc)} projectId={projectId} />;
     case 'FEATURES':
-      return <FeaturesPreview content={content as unknown as import('@/types/preview').FeaturesContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
+      return <FeaturesPreview content={content as unknown as import('@/types/preview').FeaturesContent} />;
     case 'FOOTER':
       return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
     default:
