@@ -73,7 +73,13 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     // Handle potential unique constraint violation if user is already a member
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'P2002') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      typeof (error as { code?: unknown }).code === 'string' &&
+      (error as { code: string }).code === 'P2002'
+    ) {
       return NextResponse.json(
         { error: 'You are already a member of this workspace.' },
         { status: 409 }
