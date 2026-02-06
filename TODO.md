@@ -34,9 +34,10 @@ Implement a multi‑step onboarding flow:
 - [x] Store results in `Onboarding` table (Prisma Schema updated).
 - [x] Build Onboarding UI (Multi-step form).
 - [x] Connect to `/api/onboarding` endpoints.
+- [x] Create a status page for website generation.
 
 ### 5. AI Sitemap Generator
-- [ ] Convert onboarding data → sitemap structure.
+- [x] Convert onboarding data → sitemap structure.
 - [ ] Support:
   - Home
   - About
@@ -48,11 +49,11 @@ Implement a multi‑step onboarding flow:
 ### 6. AI Page Generator
 For each page:
 - [ ] Generate SEO‑optimized title + meta
-- [ ] Generate hero section
-- [ ] Generate features section
-- [ ] Generate testimonials
-- [ ] Generate CTA blocks
-- [ ] Generate FAQ
+- [x] Generate hero section
+- [x] Generate features section
+- [x] Generate testimonials
+- [x] Generate CTA blocks
+- [x] Generate FAQ
 - [ ] Generate footer
 
 ### 7. AI Section Generator
@@ -77,6 +78,7 @@ For each page:
 ### 9. Drag‑and‑Drop Editor (MVP)
 Implement:
 - [ ] Section reordering
+- [x] Section reordering
 - [ ] Section duplication
 - [ ] Section deletion
 - [ ] Inline text editing
