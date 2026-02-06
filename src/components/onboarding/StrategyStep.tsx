@@ -1,12 +1,13 @@
 import React from 'react';
 
 type Props = {
-	onNext: (data: any) => Promise<void> | void;
+	onNext: (data: unknown) => Promise<void> | void;
 	onBack?: () => void;
-	initialData?: any;
+	initialData?: unknown;
 	isSaving?: boolean;
 };
 
-export default function StrategyStep(_: Props) {
+export default function StrategyStep(props: Props) {
+	void props;
 	return <div />;
 }

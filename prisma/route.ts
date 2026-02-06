@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '../db';
 
 /**
  * NOTE: This API route assumes you have added an `order` field to your `Section` model

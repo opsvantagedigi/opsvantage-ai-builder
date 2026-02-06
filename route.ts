@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from './db';
-import type { AiTask, Page, Prisma } from '@prisma/client';
+import type { AiTask, Page } from '@prisma/client';
 import { OnboardingStatus, TaskType } from '@prisma/client';
 
 export async function GET(
@@ -98,8 +98,9 @@ export async function GET(
       previewUrl: `/dashboard`,
     });
 
-  } catch (error: any) {
-    console.error(`[STATUS_ERROR] ProjectID: ${projectId}`, error);
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[STATUS_ERROR] ProjectID: ${projectId}`, errMsg);
     return NextResponse.json({ error: 'Failed to get generation status.' }, { status: 500 });
   }
 }
