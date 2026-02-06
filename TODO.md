@@ -104,13 +104,13 @@ Add support for:
 ## PHASE 4 — MULTI‑TENANT SAAS INFRASTRUCTURE
 
 ### 12. Workspace & Team System
-(IN PROGRESS)
-Add models:
-- [ ] Workspace
-- [ ] WorkspaceMember
-- [ ] Roles: Owner, Admin, Editor
+- [x] Add models:
+  - [x] Workspace
+  - [x] WorkspaceMember
+  - [x] Roles: Owner, Admin, Editor
 
 ### 13. Client Management (Agency Mode)
+(IN PROGRESS)
 Agencies can:
 - [ ] Create client accounts
 - [ ] Manage multiple websites
