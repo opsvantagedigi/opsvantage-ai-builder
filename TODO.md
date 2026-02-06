@@ -16,7 +16,7 @@
 ### 3. Sanity CMS Hardening
 - [x] Add schema validation for all generated content (Project schema).
 - [x] Add a “draft vs published” workflow for generated pages (Project status).
-- [ ] Add a Sanity webhook to auto‑revalidate Next.js routes.
+- [x] Add a Sanity webhook to auto‑revalidate Next.js routes.
 
 ---
 
@@ -32,8 +32,9 @@ Implement a multi‑step onboarding flow:
 - [x] Competitors
 - [x] Website goals
 - [x] Store results in `Onboarding` table (Prisma Schema updated).
-- [ ] Build Onboarding UI (Multi-step form).
-- [ ] Connect to `/api/onboarding` endpoints.
+- [x] Build Onboarding UI (Multi-step form).
+- [x] Connect to `/api/onboarding` endpoints.
+- [x] Create a status page for website generation.
 
 ### 5. AI Sitemap Generator
 - [ ] Convert onboarding data → sitemap structure.

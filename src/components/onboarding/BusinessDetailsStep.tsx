@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import type { OnboardingData } from '@/app/onboarding/page'
 
 export default function BusinessDetailsStep({ onNext, onSaveAndExit, initialData, isSaving }: any) {
   const [businessName, setBusinessName] = useState(initialData?.businessName || '')
