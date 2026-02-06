@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 import { generateBackgroundTextures } from '@/lib/ai/design-assistant';
 
 export async function POST(request: Request) {
@@ -21,10 +22,10 @@ export async function POST(request: Request) {
 
     const backgroundTexturePrompts = await generateBackgroundTextures(project.onboarding);
 
-    await (db as any).onboarding.update({
+    await db.onboarding.update({
       where: { projectId },
       data: {
-        backgroundTexturePrompts: backgroundTexturePrompts as any,
+        backgroundTexturePrompts: backgroundTexturePrompts as unknown as Prisma.InputJsonValue,
       },
     });
 

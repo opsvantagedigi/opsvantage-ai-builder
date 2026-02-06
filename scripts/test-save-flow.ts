@@ -1,6 +1,7 @@
 import "dotenv/config"
 import { prisma } from "@/lib/prisma"
 import saveGeneratedPage from "@/lib/save-page"
+import type { PageGenerationResponse } from "@/lib/page-generation-schema"
 
 async function ensureTestUser(email: string) {
   let user = await prisma.user.findUnique({ where: { email } })
@@ -8,7 +9,7 @@ async function ensureTestUser(email: string) {
     user = await prisma.user.create({ data: { email, name: "Test User" } })
   }
   // ensure workspace and project
-  let member = await prisma.workspaceMember.findFirst({ where: { userId: user.id } })
+  const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id } })
   if (!member) {
     const workspace = await prisma.workspace.create({ data: { name: "Test WS", slug: `test-ws-${Date.now()}`, ownerId: user.id } })
     await prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: "OWNER" } })
@@ -26,7 +27,7 @@ async function run() {
   const email = process.env.TEST_USER_EMAIL || "test+dev@example.com"
   const user = await ensureTestUser(email)
 
-  const samplePage = {
+  const samplePage: PageGenerationResponse = {
     title: "Test Generated Page",
     metaDescription: "A page generated during automated test",
     slug: `test-generated-${Date.now()}`.replace(/[^a-z0-9-]/g, "").toLowerCase(),
@@ -37,7 +38,7 @@ async function run() {
   }
 
   try {
-    const res = await saveGeneratedPage(user.email, samplePage as any)
+    const res = await saveGeneratedPage(user.email, samplePage)
     console.log("Saved page:", res)
   } catch (e) {
     console.error("Save flow failed:", e)

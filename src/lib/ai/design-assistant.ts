@@ -269,7 +269,7 @@ export async function generateIconSet(onboardingData: Onboarding): Promise<IconS
 
 function buildBackgroundTexturePrompt(onboardingData: Onboarding): string {
   const { designStyle, colorPalette } = onboardingData;
-  const colors = (colorPalette as any as ColorRecommendation[])?.map(c => c.hex).join(', ') || 'brand colors';
+  const colors = (colorPalette as unknown as ColorRecommendation[])?.map(c => c.hex).join(', ') || 'brand colors';
 
   return `
     You are a digital artist specializing in background textures. Based on the following design style, generate 3 prompts for subtle, seamless background textures for a website.

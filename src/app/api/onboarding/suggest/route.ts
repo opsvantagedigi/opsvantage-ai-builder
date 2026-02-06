@@ -9,17 +9,17 @@ import generateValidatedJSON from "@/lib/ai"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
-const SUGGESTION_PROMPTS: Record<string, (data: any) => string> = {
+const SUGGESTION_PROMPTS: Record<string, (data: unknown) => string> = {
   businessName: () => `Suggest a catchy business name for a modern SaaS startup.`,
   businessType: () => `Suggest a business type for a digital-first company.`,
   industry: () => `Suggest an industry for a tech-forward business.`,
-  description: (data) => `Write a short, engaging business description for a company named "${data.businessName || 'Acme'}" in the ${data.industry || 'technology'} industry.`,
-  brandVoice: (data) => `Suggest a brand voice for a company targeting ${data.targetAudience || 'small business owners'} in the ${data.industry || 'technology'} industry.`,
-  targetAudience: (data) => `Suggest a target audience for a ${data.businessType || 'SaaS'} business in the ${data.industry || 'technology'} industry.`,
-  colorPalette: (data) => `Suggest a modern color palette (hex codes) for a ${data.designStyle || 'minimalist'} website in the ${data.industry || 'technology'} industry.`,
-  designStyle: (data) => `Suggest a design style (e.g., modern, bold, luxury) for a ${data.businessType || 'SaaS'} company.`,
-  goals: (data) => `Suggest a primary website goal for a ${data.businessType || 'SaaS'} company.`,
-  competitors: (data) => `List 3 example competitors for a ${data.businessType || 'SaaS'} company in the ${data.industry || 'technology'} industry. Return as a comma-separated list of URLs.`,
+  description: (data) => `Write a short, engaging business description for a company named "${(data as Record<string, unknown>).businessName || 'Acme'}" in the ${(data as Record<string, unknown>).industry || 'technology'} industry.`,
+  brandVoice: (data) => `Suggest a brand voice for a company targeting ${(data as Record<string, unknown>).targetAudience || 'small business owners'} in the ${(data as Record<string, unknown>).industry || 'technology'} industry.`,
+  targetAudience: (data) => `Suggest a target audience for a ${(data as Record<string, unknown>).businessType || 'SaaS'} business in the ${(data as Record<string, unknown>).industry || 'technology'} industry.`,
+  colorPalette: (data) => `Suggest a modern color palette (hex codes) for a ${(data as Record<string, unknown>).designStyle || 'minimalist'} website in the ${(data as Record<string, unknown>).industry || 'technology'} industry.`,
+  designStyle: (data) => `Suggest a design style (e.g., modern, bold, luxury) for a ${(data as Record<string, unknown>).businessType || 'SaaS'} company.`,
+  goals: (data) => `Suggest a primary website goal for a ${(data as Record<string, unknown>).businessType || 'SaaS'} company.`,
+  competitors: (data) => `List 3 example competitors for a ${(data as Record<string, unknown>).businessType || 'SaaS'} company in the ${(data as Record<string, unknown>).industry || 'technology'} industry. Return as a comma-separated list of URLs.`,
 }
 
 const suggestionResponseSchema = z.object({ suggestion: z.string().min(1) })

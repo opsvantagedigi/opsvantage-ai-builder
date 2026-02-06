@@ -42,7 +42,7 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
   if (process.env.NEXT_PUBLIC_SANITY_DATASET && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
     try {
       const { client: sanityClient } = await import("@/sanity/lib/client")
-      const doc: any = {
+      const doc = {
         _type: "page",
         title: payload.title,
         slug: { _type: "slug", current: payload.slug },

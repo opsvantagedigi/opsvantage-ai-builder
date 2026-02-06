@@ -6,9 +6,12 @@ export const GET = async () => {
     const hasSecret = !!process.env.NEXTAUTH_SECRET
     const googleClientId = process.env.GOOGLE_CLIENT_ID || null
     const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ? '***' : null
-    const providers = (authOptions.providers || []).map((p: any) => ({ id: p.id || p.name, name: p.name }))
+    const providers = (authOptions.providers || []).map((p: unknown) => {
+      const o = p as Record<string, unknown>
+      return { id: (o.id as string) || (o.name as string), name: (o.name as string) }
+    })
     return NextResponse.json({ hasSecret, googleClientId, googleClientSecret, providers })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }

@@ -6,7 +6,7 @@ import { signIn } from "next-auth/react"
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [providers, setProviders] = useState<Record<string, any> | null>(null)
+  const [providers, setProviders] = useState<Record<string, unknown> | null>(null)
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -70,21 +70,21 @@ export default function LoginPage() {
         </div>
 
         {providers && Object.keys(providers).filter(k => k !== 'credentials').map((key) => {
-          const prov = (providers as any)[key]
+          const prov = providers ? (providers[key] as Record<string, unknown>) : null
           return (
             <button
-              key={prov.id}
+              key={String(prov?.id)}
               type="button"
-              onClick={() => signIn(prov.id, { callbackUrl: '/dashboard' })}
+              onClick={() => signIn(String(prov?.id), { callbackUrl: '/dashboard' })}
               className="w-full border border-gray-300 py-2 rounded flex items-center justify-center gap-2 mb-3 bg-white hover:bg-gray-50"
             >
-              {prov.id === 'google' ? (
+              {String(prov?.id) === 'google' ? (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18"><path fill="#EA4335" d="M24 9.5c3.9 0 6.8 1.6 8.5 2.9l6.2-6.1C35 3.1 30.9 1.5 24 1.5 14.6 1.5 6.9 6.9 3.4 14.5l7 5.4C12.6 15 17.7 9.5 24 9.5z"/><path fill="#34A853" d="M46.5 24c0-1.6-.1-2.6-.4-3.8H24v7.2h12.7c-.5 3-2.9 7-8.2 9.2l6.2 4.8C43.5 37.1 46.5 31.1 46.5 24z"/><path fill="#4A90E2" d="M10.4 29.9A14.9 14.9 0 0 1 9.2 24c0-1.2.2-2.3.5-3.4L3 15.2A23.9 23.9 0 0 0 1.5 24c0 3.9 1 7.6 2.9 10.9l6-5z"/><path fill="#FBBC05" d="M24 46.5c6.9 0 12.9-2.3 17.2-6.2l-6.2-4.8c-2 1.4-5.1 2.7-11 2.7-6.3 0-11.4-5.5-12.9-12.6l-7 5.4C6.9 41.1 14.6 46.5 24 46.5z"/></svg>
                   <span className="text-sm text-gray-700">Continue with Google</span>
                 </>
               ) : (
-                <span className="text-sm text-gray-700">Continue with {prov.name}</span>
+                <span className="text-sm text-gray-700">Continue with {String(prov?.name)}</span>
               )}
             </button>
           )
