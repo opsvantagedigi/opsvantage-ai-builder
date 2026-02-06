@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from './db';
+import type { AiTask, Page, Prisma } from '@prisma/client';
 import { OnboardingStatus, TaskType } from '@prisma/client';
 
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     // Step 1: Sitemap Generation
-    let sitemapTask = project.aiTasks.find((t: any) => t.type === TaskType.ONBOARDING_TO_SITEMAP);
+    let sitemapTask = project.aiTasks.find((t: AiTask) => t.type === TaskType.ONBOARDING_TO_SITEMAP);
 
     if (!sitemapTask && project.onboarding?.status === OnboardingStatus.COMPLETED) {
       sitemapTask = await db.aiTask.create({ data: { projectId, type: TaskType.ONBOARDING_TO_SITEMAP, status: 'PENDING', provider: 'GEMINI', payload: {} } });
@@ -46,10 +47,10 @@ export async function GET(
       return NextResponse.json({ status: 'COMPLETED', progress: 100, message: 'Site structure defined. No pages to generate.', previewUrl: `/dashboard` });
     }
 
-    const pageTasks = project.aiTasks.filter((t: any) => t.type === TaskType.PAGE_TO_SECTIONS);
+    const pageTasks = project.aiTasks.filter((t: AiTask) => t.type === TaskType.PAGE_TO_SECTIONS);
 
     if (pageTasks.length === 0 && pages.length > 0) {
-      const newTasksData = pages.map((page: any) => ({
+      const newTasksData = pages.map((page: Page) => ({
         projectId,
         type: TaskType.PAGE_TO_SECTIONS,
         status: 'PENDING' as const,
@@ -59,7 +60,7 @@ export async function GET(
       await db.aiTask.createMany({ data: newTasksData });
 
       const workerUrl = new URL(`/api/generate/${projectId}/page`, request.url);
-      pages.forEach((page: any) => {
+      pages.forEach((page: Page) => {
         fetch(workerUrl.toString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-internal-secret': process.env.INTERNAL_API_SECRET! },
@@ -70,8 +71,8 @@ export async function GET(
       return NextResponse.json({ status: 'GENERATING_PAGES', progress: 30, message: `Generating content for ${pages.length} pages...` });
     }
 
-    const completedPageTasks = pageTasks.filter((t: any) => t.status === 'COMPLETED').length;
-    const failedPageTasks = pageTasks.filter((t: any) => t.status === 'FAILED').length;
+    const completedPageTasks = pageTasks.filter((t: AiTask) => t.status === 'COMPLETED').length;
+    const failedPageTasks = pageTasks.filter((t: AiTask) => t.status === 'FAILED').length;
 
     if (failedPageTasks > 0) {
       return NextResponse.json({ status: 'FAILED', progress: 0, message: 'Failed to generate content for one or more pages.' });

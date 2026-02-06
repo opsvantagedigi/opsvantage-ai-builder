@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../db';
 import { generatePageSections } from '@/lib/ai/page-generator';
+import type { Prisma } from '@prisma/client';
 import { TaskType } from '@prisma/client';
 
 // This is our "worker" route for generating sections for a single page.
@@ -47,7 +48,7 @@ export async function POST(
 
     const sections = await generatePageSections(project.onboarding, page);
 
-    await db.$transaction(async (tx: any) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.section.deleteMany({ where: { pageId } });
       await tx.section.createMany({
         data: sections.map((section) => ({
