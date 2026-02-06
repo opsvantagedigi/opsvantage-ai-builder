@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { Status } from "@prisma/client"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createSanityClient } from "@/lib/sanity"
 import { withErrorHandling } from "@/lib/api-error"
@@ -9,6 +8,14 @@ import { rateLimit } from "@/lib/rate-limit"
 
 // Basic rate limiter: 10 requests per minute
 const limiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
+
+// Local task status constants (avoid importing Prisma enums in editor-facing code)
+const TASK_STATUS = {
+  PENDING: "PENDING",
+  PROCESSING: "PROCESSING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+} as const;
 
 async function handler(req: Request) {
   // Rate Limiting Check
@@ -23,7 +30,7 @@ async function handler(req: Request) {
   logger.info("Starting AI Task Processor");
   // 1. Find the next pending AI task
   const task = await prisma.aiTask.findFirst({
-    where: { status: Status.PENDING },
+    where: { status: TASK_STATUS.PENDING },
     include: { project: true }
   })
 
@@ -37,7 +44,7 @@ async function handler(req: Request) {
   // 2. Mark task as PROCESSING
   await prisma.aiTask.update({
     where: { id: task.id },
-    data: { status: Status.PROCESSING }
+    data: { status: TASK_STATUS.PROCESSING }
   })
 
   try {
@@ -111,7 +118,7 @@ ${JSON.stringify(task.payload, null, 2)}
     await prisma.aiTask.update({
       where: { id: task.id },
       data: {
-        status: Status.COMPLETED,
+        status: TASK_STATUS.COMPLETED,
         result: ai
       }
     })
@@ -125,7 +132,7 @@ ${JSON.stringify(task.payload, null, 2)}
     await prisma.aiTask.update({
       where: { id: task.id },
       data: {
-        status: Status.FAILED,
+        status: TASK_STATUS.FAILED,
         error: e.message
       }
     })
