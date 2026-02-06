@@ -42,6 +42,20 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   // Ensure a secret is always present to avoid runtime errors in production
   secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
+  // Enable debug mode when explicitly set in environment
+  debug: process.env.NEXTAUTH_DEBUG === 'true',
+  // Ensure server-side errors and warnings are logged to runtime logs
+  logger: {
+    error(code, metadata) {
+      console.error('NextAuth ERROR', code, metadata)
+    },
+    warn(code) {
+      console.warn('NextAuth WARN', code)
+    },
+    debug(code) {
+      console.debug('NextAuth DEBUG', code)
+    }
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) token.user = user as any
@@ -57,4 +71,8 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login'
   }
+  ,
+  // Note: We rely on the `logger.error` handler above to capture runtime
+  // NextAuth errors. Avoid adding an `events` block with incompatible typing
+  // to keep the TypeScript build clean in production.
 }

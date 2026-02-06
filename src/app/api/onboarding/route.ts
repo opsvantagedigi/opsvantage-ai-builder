@@ -7,20 +7,35 @@ import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 
 // GET: Fetch onboarding state for current user (latest project)
-export const GET = withErrorHandling(async (req) => {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user?.email) {
+      logger.error({ msg: "Onboarding GET: Unauthorized", session })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    logger.info({ msg: "Onboarding GET: session", email: session.user.email })
+    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    if (!user) {
+      logger.error({ msg: "Onboarding GET: User not found", email: session.user.email })
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
+    if (!member) {
+      logger.error({ msg: "Onboarding GET: No workspace found", userId: user.id })
+      return NextResponse.json({ error: "No workspace found" }, { status: 404 })
+    }
+    const project = await prisma.project.findFirst({ where: { workspaceId: member.workspaceId }, orderBy: { createdAt: "desc" } })
+    if (!project) {
+      logger.error({ msg: "Onboarding GET: No project found", workspaceId: member.workspaceId })
+      return NextResponse.json({ error: "No project found" }, { status: 404 })
+    }
+    const onboarding = await prisma.onboarding.findUnique({ where: { projectId: project.id } })
+    logger.info({ msg: "Onboarding GET: Success", projectId: project.id, onboardingId: onboarding?.id })
+    return NextResponse.json({ onboarding, projectId: project.id })
+  } catch (err) {
+    logger.error({ msg: "Onboarding GET: Exception", err: String(err) })
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
-  // Find latest onboarding for user's latest project
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
-  const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
-  if (!member) return NextResponse.json({ error: "No workspace found" }, { status: 404 })
-  const project = await prisma.project.findFirst({ where: { workspaceId: member.workspaceId }, orderBy: { createdAt: "desc" } })
-  if (!project) return NextResponse.json({ error: "No project found" }, { status: 404 })
-  const onboarding = await prisma.onboarding.findUnique({ where: { projectId: project.id } })
-  return NextResponse.json({ onboarding, projectId: project.id })
 })
 
 // POST: Create onboarding record (step 1)
