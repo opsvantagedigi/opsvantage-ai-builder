@@ -44,3 +44,6 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Ignore demo node_modules accidentally committed
+demo/node_modules/
