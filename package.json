@@ -30,6 +30,7 @@
     "react-dom": "19.2.3",
     "sanity": "^4.22.0",
     "styled-components": "^6.3.8",
+    "swr": "^2.4.0",
     "tailwind-merge": "^1.14.0",
     "ws": "^8.19.0",
     "zod": "^4.3.6"
@@ -45,7 +46,7 @@
     "dotenv": "^17.2.4",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "prisma": "^7.3.0",
+    "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
