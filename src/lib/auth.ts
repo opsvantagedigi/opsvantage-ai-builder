@@ -71,7 +71,9 @@ export const authOptions: NextAuthOptions = {
       console.warn('NextAuth WARN', code)
     },
     debug(code) {
-      console.debug('NextAuth DEBUG', code)
+      // Use console.error for debug-level messages so they are visible
+      // in production runtime logs where console.debug may be filtered.
+      console.error('NextAuth DEBUG', code)
     }
   },
   callbacks: {
