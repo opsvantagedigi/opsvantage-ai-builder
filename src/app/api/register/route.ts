@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { logger } from "@/lib/logger"
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -9,7 +10,25 @@ const bodySchema = z.object({
 
 export const POST = async (req: Request) => {
   try {
-    const body = await req.json()
+    // Log request metadata to help diagnose 405/validation issues in production
+    const headerObj = Object.fromEntries(req.headers.entries())
+    const rawText = await req.text().catch(() => '')
+    // Prefer console logging so it always appears even if pino transport fails
+    console.error('[api/register] incoming request', { method: req.method, headers: headerObj, bodyPreview: rawText?.slice(0, 1000) })
+    try {
+      logger.info?.({ msg: 'api/register incoming', method: req.method, headers: headerObj })
+    } catch (e) {
+      // ignore logger failures
+    }
+
+    let body: any = {}
+    if (rawText) {
+      try {
+        body = JSON.parse(rawText)
+      } catch (e) {
+        return NextResponse.json({ error: 'Invalid JSON', message: String(e), rawBodyPreview: rawText.slice(0, 1000) }, { status: 400 })
+      }
+    }
     const parsed = bodySchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: 'Validation error', details: parsed.error.issues }, { status: 400 })
