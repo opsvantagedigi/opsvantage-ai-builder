@@ -90,11 +90,11 @@ const OnboardingPage = () => {
     }
   };
 
-  const handleNext = async (data: Partial<OnboardingData>) => {
-    const updatedData = { ...formData, ...data };
+  const handleNext = async (data: unknown) => {
+    const updatedData = { ...formData, ...(data as Partial<OnboardingData>) };
     setFormData(updatedData);
     try {
-      await saveData(data);
+      await saveData(data as Partial<OnboardingData>);
       setStep((prev) => prev + 1);
     } catch (error) {
       console.error("Save failed, not moving to next step.", error);

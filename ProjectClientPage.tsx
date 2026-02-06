@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Page, Project, Section } from '@prisma/client';
-import HeroPreview from '@/components/previews/HeroPreview';
-import FeaturesPreview from '@/components/previews/FeaturesPreview';
-import DefaultPreview from '@/components/previews/DefaultPreview';
-import { SectionData } from '@/lib/ai/page-generator';
+import HeroPreview from './src/components/previews/HeroPreview';
+import FeaturesPreview from './src/components/previews/FeaturesPreview';
+import DefaultPreview from './src/components/previews/DefaultPreview';
+import { SectionData } from './src/lib/ai/page-generator';
 import {
   DndContext,
   closestCenter,
