@@ -1,4 +1,6 @@
 import React from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// TODO: replace `any` usages with proper types
 
 const FooterPreview = ({ content, onContentChange }: { content: any; onContentChange?: (c: any) => void }) => {
   return (

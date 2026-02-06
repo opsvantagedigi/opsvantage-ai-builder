@@ -1,15 +1,16 @@
-import pino from 'pino';
+import pino, { type LoggerOptions, type LevelWithSilent } from 'pino';
 
 const logLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'development' ? 'debug' : 'info');
 
 // Only enable the `pino-pretty` transport in development where it's available.
-const pinoOptions: any = {
-  level: logLevel,
+const pinoOptions: LoggerOptions = {
+  level: logLevel as LevelWithSilent,
   base: { env: process.env.NODE_ENV },
 };
 
 if (process.env.NODE_ENV === 'development') {
-  pinoOptions.transport = {
+  // transport isn't always present in older pino types; assign via a generic record to avoid `any`
+  (pinoOptions as unknown as Record<string, unknown>).transport = {
     target: 'pino-pretty',
     options: {
       colorize: true,

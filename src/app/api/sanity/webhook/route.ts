@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
@@ -26,8 +27,9 @@ export const POST = async (req: Request) => {
   let payload: any
   try {
     payload = JSON.parse(raw)
-  } catch (e) {
-    logger.warn({ msg: "Sanity webhook: invalid JSON", err: String(e) })
+  } catch (e: unknown) {
+    const ex = e as Error
+    logger.warn({ msg: "Sanity webhook: invalid JSON", err: String(ex) })
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
@@ -68,9 +70,10 @@ export const POST = async (req: Request) => {
         logger.warn({ msg: "Failed to revalidate path", path: p, err: String(e) })
       }
     }
-  } catch (e: any) {
-    logger.error({ msg: "Error processing Sanity webhook", err: String(e) })
-    return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 })
+  } catch (e: unknown) {
+    const ex = e as Error
+    logger.error({ msg: "Error processing Sanity webhook", err: String(ex) })
+    return NextResponse.json({ error: "Failed to process webhook", message: String(ex) }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, revalidated: pathsToRevalidate })

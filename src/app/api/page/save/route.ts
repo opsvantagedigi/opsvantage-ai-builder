@@ -26,8 +26,9 @@ export const POST = withErrorHandling(async (req) => {
   try {
     const result = await saveGeneratedPage(session.user.email as string, pagePayload)
     return NextResponse.json({ ok: true, pageId: result.pageId, sanityId: result.sanityId })
-  } catch (e: any) {
-    logger.error({ msg: "Failed to save generated page", err: String(e) })
-    return NextResponse.json({ error: "Failed to save page" }, { status: 500 })
+    } catch (err: unknown) {
+      const e = err as Error
+      logger.error({ msg: "Failed to save generated page", err: String(e) })
+      return NextResponse.json({ error: "Failed to save page" }, { status: 500 })
   }
 })

@@ -5,9 +5,9 @@ interface DesignSuggestionsPreviewProps {
 }
 
 const DesignSuggestionsPreview = ({ content }: DesignSuggestionsPreviewProps) => {
-  const { colorRecommendations, typographyRecommendations } = content;
+  const { colorRecommendations, typographyRecommendations, layoutRecommendations, fontPairingRecommendations } = content;
 
-  if (!colorRecommendations?.length && !typographyRecommendations?.length) {
+  if (!colorRecommendations?.length && !typographyRecommendations?.length && !layoutRecommendations?.length && !fontPairingRecommendations?.length) {
     return null;
   }
 
@@ -43,6 +43,30 @@ const DesignSuggestionsPreview = ({ content }: DesignSuggestionsPreviewProps) =>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Layout Recommendations */}
+        {layoutRecommendations && layoutRecommendations.length > 0 && (
+          <div>
+            <h5 className="text-xs font-bold text-gray-500 uppercase mb-2">Layout</h5>
+            <div className="space-y-2">
+              {layoutRecommendations.map((layout, index) => (
+                <div key={index} className="p-2 bg-gray-100 rounded-md">
+                  <p className="text-xs text-gray-600">{layout.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Font Pairing Recommendations */}
+        {fontPairingRecommendations && fontPairingRecommendations.length > 0 && (
+          <div>
+            <h5 className="text-xs font-bold text-gray-500 uppercase mb-2">Font Pairing</h5>
+            {fontPairingRecommendations.map((font, index) => (
+              <div key={index} className="p-2 bg-gray-100 rounded-md text-xs text-gray-600"><b>H:</b> {font.heading} / <b>B:</b> {font.body}</div>
+            ))}
           </div>
         )}
       </div>

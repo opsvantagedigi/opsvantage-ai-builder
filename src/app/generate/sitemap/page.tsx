@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -24,8 +25,9 @@ export default function GenerateSitemapPage() {
       }
       const data: SitemapResponse = await res.json()
       setSitemap(data.sitemap)
-    } catch (err: any) {
-      setError(err.message || "Something went wrong")
+    } catch (err: unknown) {
+      const e = err as Error
+      setError(e.message || "Something went wrong")
     } finally {
       setLoading(false)
     }

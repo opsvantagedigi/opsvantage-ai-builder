@@ -13,10 +13,11 @@ async function handler(req: Request) {
         database: "connected", 
         timestamp: new Date().toISOString() 
     });
-  } catch (error: any) {
-    logger.error({ msg: "Health Check: DB Connection Failed", error: error.message });
+  } catch (error: unknown) {
+    const e = error as Error
+    logger.error({ msg: "Health Check: DB Connection Failed", error: e.message });
     return NextResponse.json(
-      { status: "error", database: "disconnected", error: error.message },
+      { status: "error", database: "disconnected", error: e.message },
       { status: 503 }
     );
   }

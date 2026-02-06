@@ -21,12 +21,13 @@ export const POST = async (req: Request) => {
       // ignore logger failures
     }
 
-    let body: any = {}
+    let body: unknown = {}
     if (rawText) {
       try {
         body = JSON.parse(rawText)
       } catch (e) {
-        return NextResponse.json({ error: 'Invalid JSON', message: String(e), rawBodyPreview: rawText.slice(0, 1000) }, { status: 400 })
+        const ex = e as Error
+        return NextResponse.json({ error: 'Invalid JSON', message: String(ex), rawBodyPreview: rawText.slice(0, 1000) }, { status: 400 })
       }
     }
     const parsed = bodySchema.safeParse(body)
@@ -49,7 +50,8 @@ export const POST = async (req: Request) => {
     await prisma.project.create({ data: { name: "Default Project", workspaceId: workspace.id } })
 
     return NextResponse.json({ ok: true, userId: user.id })
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Server error', message: String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    const e = err as Error
+    return NextResponse.json({ error: 'Server error', message: String(e) }, { status: 500 })
   }
 }

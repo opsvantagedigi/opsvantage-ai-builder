@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// TODO: replace `any` usages with proper types
 export default function DesignPreferencesStep({ onNext, onBack, onSaveAndExit, initialData, isSaving }: any) {
   const [colorPalette, setColorPalette] = useState(Array.isArray(initialData?.colorPalette) ? (initialData.colorPalette || []).join(', ') : (initialData?.colorPalette || ''))
   const [designStyle, setDesignStyle] = useState(initialData?.designStyle || '')

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { getServerSession } from "next-auth"
@@ -47,8 +48,9 @@ export const POST = withErrorHandling(async (req) => {
   let validated: any
   try {
     validated = await generateValidatedJSON(genAI, prompt, sitemapResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
-  } catch (err: any) {
-    logger.error({ msg: "Sitemap generation failed", err: String(err) })
+  } catch (err: unknown) {
+    const e = err as Error
+    logger.error({ msg: "Sitemap generation failed", err: String(e) })
     return NextResponse.json({ error: "AI failed to generate a valid sitemap" }, { status: 500 })
   }
 

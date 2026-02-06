@@ -170,6 +170,12 @@ model Onboarding {
   colorPalette   Json?    // Array of hex codes or a preset name
   designStyle    String?  // e.g., "Minimalist", "Bold", "Corporate"
 
+  // Additional AI-generated suggestions
+  layoutRecommendations Json?
+  heroImagePrompts     Json?
+  iconSet              Json?
+  fontPairing          Json?
+
   // Step 4: Strategic Goals
   goals          String?  // Primary website goal
   competitors    Json?    // Array of competitor URLs or names

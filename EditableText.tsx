@@ -95,7 +95,7 @@ const EditableText: React.FC<EditableTextProps> = ({ value, onSave, className, a
   return (
     <div className="relative group" onFocus={() => setIsFocused(true)} onBlur={handleBlur}>
       <Component
-        ref={elementRef as any}
+        ref={(el) => { elementRef.current = el as HTMLElement | null }}
         contentEditable={!isRefining}
         suppressContentEditableWarning
         onKeyDown={handleKeyDown}

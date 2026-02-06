@@ -27,7 +27,7 @@ export async function generateValidatedJSON<T extends z.ZodTypeAny>(
     lastRaw = raw
 
     // Try to parse JSON
-    let parsed: any = null
+    let parsed: unknown = null
     try {
       parsed = JSON.parse(raw)
     } catch (e) {

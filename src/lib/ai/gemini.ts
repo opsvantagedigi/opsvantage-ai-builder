@@ -91,6 +91,76 @@ export async function getGenerativeModel(modelName: string = 'gemini-pro') {
         };
       }
 
+      if (prompt.includes('generate a cohesive and accessible color palette')) {
+        const mockPalette = [
+          { "name": "Primary", "hex": "#0D47A1" },
+          { "name": "Secondary", "hex": "#FFC107" },
+          { "name": "Accent", "hex": "#D81B60" },
+          { "name": "Background", "hex": "#F5F5F5" },
+          { "name": "Text", "hex": "#212121" }
+        ];
+        return {
+          response: { text: () => `\`\`\`json\n${JSON.stringify(mockPalette, null, 2)}\n\`\`\`` },
+        };
+      }
+
+      if (prompt.includes('generate a layout suggestion for a webpage section')) {
+        const mockLayoutSuggestion = [
+          { "description": "This is a mock layout suggestion." },
+        ];
+        return {
+          response: { text: () => `\`\`\`json\n${JSON.stringify(mockLayoutSuggestion, null, 2)}\n\`\`\`` },
+        };
+      }
+
+      if (prompt.includes('generate 3 distinct and detailed prompts for a hero image')) {
+        const mockPrompts = [
+          { "prompt": "A mock photorealistic hero image prompt.", "style": "photorealistic" },
+          { "prompt": "A mock abstract hero image prompt.", "style": "abstract" },
+          { "prompt": "A mock illustrated hero image prompt.", "style": "illustration" }
+        ];
+        return {
+          response: { text: () => `\`\`\`json\n${JSON.stringify(mockPrompts, null, 2)}\n\`\`\`` },
+        };
+      }
+
+      if (prompt.includes('suggest a set of 5 common and relevant icons')) {
+        const mockIcons = [
+          { "name": "user", "description": "A simple line-art icon of a person's silhouette." },
+          { "name": "settings", "description": "A minimalist gear icon." },
+          { "name": "services", "description": "An icon of a wrench and a screwdriver crossed." },
+          { "name": "contact", "description": "A clean line-art icon of an envelope." },
+          { "name": "home", "description": "A simple house outline." }
+        ];
+        return {
+          response: { text: () => `\`\`\`json\n${JSON.stringify(mockIcons, null, 2)}\n\`\`\`` },
+        };
+      }
+
+      if (prompt.includes('generate 3 prompts for subtle, seamless background textures')) {
+        const mockTextures = [
+          { "prompt": "A mock organic texture prompt for a seamless background.", "style": "organic" },
+          { "prompt": "A mock geometric texture prompt for a seamless background.", "style": "geometric" },
+          { "prompt": "A mock abstract texture prompt for a seamless background.", "style": "abstract" }
+        ];
+        return {
+          response: { text: () => `\`\`\`json\n${JSON.stringify(mockTextures, null, 2)}\n\`\`\`` },
+        };
+      }
+
+      if (prompt.includes('recommend a font pairing for a website')) {
+        const mockFontPairing = [
+          { "heading": "Lato", "body": "Merriweather" },
+        ];
+
+        return {
+          response: {
+            text: () => `\`\`\`json\n${JSON.stringify(mockFontPairing, null, 2)}\n\`\`\``,
+          },
+        };
+
+      }
+
       // Fallback for unknown prompts
       return { response: { text: () => '```json\n{}\n```' } };
     },

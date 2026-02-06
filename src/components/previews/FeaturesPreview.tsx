@@ -1,6 +1,8 @@
 import React from 'react';
 
 const FeaturesPreview = ({ content, onContentChange }: { content: any; onContentChange?: (c: any) => void }) => {
+	/* eslint-disable @typescript-eslint/no-explicit-any */
+	// TODO: replace `any` usages with proper types
 	const items = content?.items || [];
 	return (
 		<section className="p-4 bg-white rounded-md shadow-sm">

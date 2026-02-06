@@ -216,8 +216,8 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
           body: JSON.stringify({ sectionIds }),
         });
         if (!response.ok) throw new Error('Failed to save new section order.');
-      } catch (error) {
-        console.error(error);
+      } catch (err: unknown) {
+        console.error(err);
         setSections(sections); // Revert on failure
       } finally {
         setIsSavingOrder(false);
@@ -244,13 +244,13 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
     }
   };
 
-  const debouncedSaveSection = useDebouncedSave(saveSection, 1500);
+  const debouncedSaveSection = useDebouncedSave((...args: unknown[]) => { void saveSection(args[0] as SectionWithOrder); }, 1500);
 
   const handleSectionDataChange = (sectionId: string, newSectionData: SectionData) => {
     setSections(currentSections => currentSections.map(s => {
       if (s.id === sectionId) {
         const updatedSection = { ...s, data: newSectionData as unknown as SectionWithOrder['data'] };
-        debouncedSaveSection(updatedSection as any); // Trigger debounced save
+        debouncedSaveSection(updatedSection); // Trigger debounced save
         return updatedSection;
       }
       return s;
@@ -374,9 +374,9 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
                       key={section.id}
                       section={section}
                       onDataChange={handleSectionDataChange}
-                      projectId={project.id}
                       onDuplicate={handleDuplicateSection}
                       onDelete={handleDeleteSection}
+                      projectId={project.id}
                     />
                   ))
                 ) : (

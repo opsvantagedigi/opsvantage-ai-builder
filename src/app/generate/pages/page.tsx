@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -22,8 +23,9 @@ export default function GeneratePagesPage() {
       const data = await res.json()
       setSitemap(data.sitemap || [])
       if (Array.isArray(data.sitemap) && data.sitemap.length > 0) setSelectedNodeId(data.sitemap[0].id)
-    } catch (err: any) {
-      setError(err.message || "Could not load sitemap")
+    } catch (err: unknown) {
+      const e = err as Error
+      setError(e.message || "Could not load sitemap")
     }
   }
 
@@ -44,8 +46,9 @@ export default function GeneratePagesPage() {
       }
       const data = await res.json()
       setPageJson(data.page)
-    } catch (err: any) {
-      setError(err.message || "Something went wrong")
+    } catch (err: unknown) {
+      const e = err as Error
+      setError(e.message || "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -119,8 +122,9 @@ export default function GeneratePagesPage() {
                           const body = await res.json()
                           if (!res.ok) throw new Error(body.error || 'Save failed')
                           alert('Page saved: ' + body.pageId)
-                        } catch (e: any) {
-                          alert('Save failed: ' + (e.message || String(e)))
+                        } catch (e: unknown) {
+                          const ex = e as Error
+                          alert('Save failed: ' + (ex.message || String(ex)))
                         }
                       }} className="bg-green-600 text-white px-4 py-2 rounded">Save page</button>
                       <button onClick={() => navigator.clipboard.writeText(JSON.stringify(pageJson, null, 2))} className="bg-gray-100 px-4 py-2 rounded">Copy JSON</button>

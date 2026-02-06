@@ -67,7 +67,7 @@ For each page:
 ### 8. AI Copywriting Engine
 - [ ] Add Gemini prompts for:
   - [x] Brand voice adaptation
-  - [x] SEO optimization
+  - [x] SEO optimization (NEEDS REVIEW)
   - [x] Tone transformation (professional, friendly, bold, luxury)
   - [x] CTA optimization
 
@@ -85,20 +85,19 @@ Implement:
 
 ### 10. AI Design Assistant
 Add tools that generate:
-- [ ] Color palettes
 - [x] Color palettes
-- [ ] Font pairings
-- [ ] Layout suggestions
-- [ ] Hero image prompts
-- [ ] Icon sets
+- [x] Font pairings
+- [x] Layout suggestions
+- [x] Hero image prompts
+- [x] Icon sets
 
 ### 11. AI Image Generation Integration
 Add support for:
-- [ ] Hero images
-- [ ] Background textures
-- [ ] Illustrations
-- [ ] Icons
-- [ ] Product mockups
+- [x] Generating hero images from AI prompts
+- [x] Generating background textures
+- [ ] Generating illustrations for features
+- [ ] Generating icons
+- [ ] Generating product mockups
 
 ---
 

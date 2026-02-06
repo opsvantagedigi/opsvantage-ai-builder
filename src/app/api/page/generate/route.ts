@@ -16,6 +16,10 @@ export const POST = withErrorHandling(async (req) => {
   // Defensive top-level guard for unexpected runtime errors
   const requestId = req.headers.get("x-request-id") || randomUUID()
 
+  let projectIdRef: string | null = null;
+  let sitemapNodeRef: any = null;
+  let userPromptRef: string | null = null;
+
   try {
   const session = await getServerSession(authOptions)
   if (!session || !session.user?.email) {
@@ -34,6 +38,10 @@ export const POST = withErrorHandling(async (req) => {
   if (!member) return NextResponse.json({ error: "No workspace found" }, { status: 404 })
   const project = await prisma.project.findFirst({ where: { workspaceId: member.workspaceId }, orderBy: { createdAt: "desc" } })
   if (!project) return NextResponse.json({ error: "No project found" }, { status: 404 })
+  // capture refs for use in outer error handlers
+  projectIdRef = project.id;
+  sitemapNodeRef = sitemapNode ?? null;
+  userPromptRef = userPrompt ?? null;
 
   // Build prompt
   let prompt = "Generate a website page JSON."
@@ -53,44 +61,60 @@ export const POST = withErrorHandling(async (req) => {
     // Persist AiTask
     const aiTask = await prisma.aiTask.create({
       data: {
-        projectId: project.id,
+        projectId: projectIdRef!,
         type: "SITEMAP_TO_PAGES",
         provider: "GEMINI",
-        payload: { sitemapNode: sitemapNode ?? null, prompt: userPrompt ?? null },
+        payload: { sitemapNode: sitemapNodeRef, prompt: userPromptRef },
         result: validated,
         status: "COMPLETED",
       }
     })
 
     return NextResponse.json({ ok: true, page: validated, aiTaskId: aiTask.id })
-  } catch (err: any) {
-    logger.error({ msg: "Page generation failed", err: String(err) })
+  } catch (err: unknown) {
+    const e = err as Error
+    logger.error({ msg: "Page generation failed", err: String(e) })
     // Persist failed AiTask
     try {
-      await prisma.aiTask.create({
-        data: {
-          projectId: project.id,
-          type: "SITEMAP_TO_PAGES",
-          provider: "GEMINI",
-          payload: { sitemapNode: sitemapNode ?? null, prompt: userPrompt ?? null },
-          error: String(err),
-          status: "FAILED",
-        }
-      })
-    } catch (e) {
-      logger.warn({ msg: "Failed to persist failed AiTask", err: String(e) })
+      if (projectIdRef) {
+        await prisma.aiTask.create({
+          data: {
+            projectId: projectIdRef,
+            type: "SITEMAP_TO_PAGES",
+            provider: "GEMINI",
+            payload: { sitemapNode: sitemapNodeRef, prompt: userPromptRef },
+            error: String(err),
+            status: "FAILED",
+          }
+        })
+      }
+    } catch (e: unknown) {
+      const ee = e as Error
+      logger.warn({ msg: "Failed to persist failed AiTask", err: String(ee) })
     }
 
     return NextResponse.json({ error: "AI failed to generate page" }, { status: 500 })
   }
   } catch (err: unknown) {
-    const headersToLog = {
-      host: req.headers.get('host'),
-      ua: req.headers.get('user-agent'),
-      xVercelId: req.headers.get('x-vercel-id'),
-      xForwardedFor: req.headers.get('x-forwarded-for')
+    const ex = err as Error
+    logger.error({ msg: "Page generation failed", err: String(ex) })
+    // Persist failed AiTask
+    try {
+      if (projectIdRef) {
+        await prisma.aiTask.create({
+          data: {
+            projectId: projectIdRef,
+            type: "SITEMAP_TO_PAGES",
+            provider: "GEMINI",
+            payload: { sitemapNode: sitemapNodeRef, prompt: userPromptRef },
+            error: String(ex),
+            status: "FAILED",
+          }
+        })
+      }
+    } catch (e: unknown) {
+      // swallow persistence error
     }
-    logger.error({ msg: "Page POST failed (unexpected)", err: String(err), requestId, headers: headersToLog })
-    return NextResponse.json({ error: "Internal Server Error", message: String(err), requestId }, { status: 500 })
+    return NextResponse.json({ error: "Page generation failed" }, { status: 500 })
   }
-})
+  })

@@ -3,42 +3,34 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
 
-const providers: any[] = [
-  CredentialsProvider({
-    name: "Credentials",
-    credentials: {
-      email: { label: "Email", type: "email" },
-      password: { label: "Password", type: "password" }
-    },
-    async authorize(credentials) {
-      if (credentials?.email) {
-        return { id: credentials.email, email: credentials.email }
-      }
-      return null
+const credentialProvider = CredentialsProvider({
+  name: "Credentials",
+  credentials: {
+    email: { label: "Email", type: "email" },
+    password: { label: "Password", type: "password" }
+  },
+  async authorize(credentials) {
+    if (credentials?.email) {
+      return { id: credentials.email, email: credentials.email }
     }
-  })
-]
+    return null
+  }
+})
 
-if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
-  providers.push(
-    GithubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    })
-  )
-}
+const githubProvider = (process.env.GITHUB_ID && process.env.GITHUB_SECRET)
+  ? GithubProvider({ clientId: process.env.GITHUB_ID, clientSecret: process.env.GITHUB_SECRET })
+  : null
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  providers.push(
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    })
-  )
-}
+const googleProvider = (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+  ? GoogleProvider({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET })
+  : null
 
 export const authOptions: NextAuthOptions = {
-  providers,
+  providers: ([
+    credentialProvider,
+    ...(githubProvider ? [githubProvider] : []),
+    ...(googleProvider ? [googleProvider] : []),
+  ].filter(Boolean)) as NextAuthOptions['providers'],
   session: { strategy: "jwt" },
   // Ensure a secret is always present to avoid runtime errors in production
   secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
@@ -78,12 +70,15 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.user = user as any
+      if (user) {
+        ;(token as unknown as Record<string, unknown>)['user'] = user as unknown
+      }
       return token
     },
     async session({ session, token }) {
-      if (token && (token as any).user) {
-        session.user = (token as any).user
+      const tokenUser = (token as unknown as { user?: unknown }).user
+      if (tokenUser) {
+        ;(session as unknown as Record<string, unknown>)['user'] = tokenUser
       }
       return session
     }

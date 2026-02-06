@@ -45,29 +45,30 @@ export async function withRetry<T>(
   maxRetries = 3, 
   delay = 100
 ): Promise<T> {
-  let lastError: any;
+  let lastError: unknown;
   
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await operation();
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
-      
+
       // Check for transient errors (connection closed, timeout, etc.)
-      const isTransient = 
-        error?.code === 'P1001' || // Can't reach DB
-        error?.code === 'P1002' || // Timeout
-        error?.code === 'P1008' || // Operation timeout
-        error?.code === 'P1017' || // Server closed connection
-        error?.message?.includes('connection closed') ||
-        error?.message?.includes('Client has already been released');
+      const errAny = error as { code?: string; message?: string } | undefined;
+      const isTransient =
+        errAny?.code === 'P1001' || // Can't reach DB
+        errAny?.code === 'P1002' || // Timeout
+        errAny?.code === 'P1008' || // Operation timeout
+        errAny?.code === 'P1017' || // Server closed connection
+        errAny?.message?.includes('connection closed') ||
+        errAny?.message?.includes('Client has already been released');
 
       if (!isTransient || i === maxRetries - 1) {
         throw error;
       }
-      
+
       const retryDelay = delay * Math.pow(2, i); // Exponential backoff
-      logger.warn({ msg: `Database operation failed, retrying (${i + 1}/${maxRetries})`, error: error.message, retryDelay });
+      logger.warn({ msg: `Database operation failed, retrying (${i + 1}/${maxRetries})`, error: String(errAny?.message ?? errAny), retryDelay });
       await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }

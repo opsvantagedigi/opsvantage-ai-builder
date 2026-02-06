@@ -42,7 +42,7 @@ export const POST = withErrorHandling(async (req) => {
     const validated = await generateValidatedJSON(genAI, prompt, suggestionResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
     logger.info({ msg: "Gemini suggestion result", field, suggestion: validated.suggestion })
     return NextResponse.json({ suggestion: validated.suggestion })
-  } catch (err: any) {
+  } catch (err: unknown) {
     logger.error({ msg: "Gemini suggestion failed", field, err: String(err) })
     return NextResponse.json({ error: "AI suggestion failed" }, { status: 500 })
   }

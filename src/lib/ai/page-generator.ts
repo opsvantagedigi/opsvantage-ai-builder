@@ -16,6 +16,13 @@ export interface SectionData {
     fontFamily: string;
     fontWeight: number;
   }[];
+  layoutRecommendations?: {
+    description: string;
+  }[];
+  fontPairingRecommendations?: {
+    heading: string;
+    body: string;
+  }[];
   cta?: {
     text: string;
     link: string;

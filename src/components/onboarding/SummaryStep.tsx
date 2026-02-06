@@ -1,5 +1,8 @@
 import React from 'react'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// TODO: replace `any` usages with proper types
+
 export default function SummaryStep({ onBack, onGenerate, formData, isSaving }: any) {
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow">

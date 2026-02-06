@@ -1,5 +1,8 @@
 import React from 'react';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// TODO: replace `any` usages with proper types
+
 const DefaultPreview = ({ type, content }: { type: string; content: any }) => {
 	return (
 		<section className="p-4 bg-white rounded-md shadow-sm">
