@@ -1,0 +1,76 @@
+
+> opsvantage-ai-builder@0.1.0 lint
+> eslint --fix
+
+
+C:\Users\AjaySidal\opsvantage-ai-builder\scripts\check-prod-auth.js
+  36:57  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  60:55  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\health\db\route.ts
+  6:24  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\onboarding\route.ts
+    4:18   warning  'withRetry' is defined but never used              @typescript-eslint/no-unused-vars
+    5:33   warning  'onboardingStep2Schema' is defined but never used  @typescript-eslint/no-unused-vars
+    5:56   warning  'onboardingStep3Schema' is defined but never used  @typescript-eslint/no-unused-vars
+    5:79   warning  'onboardingStep4Schema' is defined but never used  @typescript-eslint/no-unused-vars
+    5:125  warning  'onboardingFullSchema' is defined but never used   @typescript-eslint/no-unused-vars
+   10:45   warning  'req' is defined but never used                    @typescript-eslint/no-unused-vars
+  128:9    warning  'updated' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\page\generate\route.ts
+   18:9   warning  'requestId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   68:51  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   86:55  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  110:55  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  116:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\register\route.ts
+  20:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\sanity\webhook\route.ts
+  19:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\sitemap\generate\route.ts
+  64:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\global-error.tsx
+  4:3  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\app\login\page.tsx
+  27:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\components\onboarding\BrandIdentityStep.tsx
+  12:43  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\components\onboarding\BusinessDetailsStep.tsx
+  11:45  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\components\previews\FooterPreview.tsx
+  5:35  warning  'onContentChange' is defined but never used  @typescript-eslint/no-unused-vars
+  8:25  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\ai.ts
+  33:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\ai\section-generator.ts
+  65:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\ai\sitemap-generator.ts
+  67:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\auth.ts
+  58:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\prisma.ts
+  3:10  warning  'Pool' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\rate-limit.ts
+  2:10  warning  'NextResponse' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\save-page.ts
+  32:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Ô£û 31 problems (6 errors, 25 warnings)
+
