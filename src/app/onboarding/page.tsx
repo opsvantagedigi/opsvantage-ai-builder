@@ -49,7 +49,8 @@ const OnboardingPage = () => {
           const errorData = await response.json();
           setError(errorData.error || 'Failed to load your onboarding progress.');
         }
-      } catch (err) {
+      } catch (error) {
+        console.error('Failed to fetch onboarding initial data:', error);
         setError('An unexpected error occurred while loading your data.');
       } finally {
         setIsLoading(false);
@@ -80,9 +81,10 @@ const OnboardingPage = () => {
         const result = await response.json();
         setProjectId(result.projectId);
       }
-    } catch (err: any) {
-      setError(err.message);
-      throw err; // Re-throw to prevent advancing to the next step
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setError(message);
+      throw error; // Re-throw to prevent advancing to the next step
     } finally {
       setIsSaving(false);
     }
@@ -94,8 +96,8 @@ const OnboardingPage = () => {
     try {
       await saveData(data);
       setStep((prev) => prev + 1);
-    } catch (err) {
-      console.error("Save failed, not moving to next step.");
+    } catch (error) {
+      console.error("Save failed, not moving to next step.", error);
     }
   };
 
@@ -108,9 +110,9 @@ const OnboardingPage = () => {
     try {
       await saveData(formData);
       router.push('/dashboard');
-    } catch (err) {
+    } catch (error) {
       // Error is already set by saveData, user can see it and decide to navigate away anyway.
-      console.error("Failed to save before exiting:", err);
+      console.error("Failed to save before exiting:", error);
     }
   };
 
@@ -124,8 +126,8 @@ const OnboardingPage = () => {
       } else {
         setError("Could not find a project ID to start generation.");
       }
-    } catch (err) {
-      console.error("Failed to finalize onboarding:", err);
+    } catch (error) {
+      console.error("Failed to finalize onboarding:", error);
     }
   };
 

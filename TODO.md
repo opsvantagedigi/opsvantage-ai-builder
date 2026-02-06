@@ -34,7 +34,6 @@ Implement a multi‑step onboarding flow:
 - [x] Store results in `Onboarding` table (Prisma Schema updated).
 - [x] Build Onboarding UI (Multi-step form).
 - [x] Connect to `/api/onboarding` endpoints.
-- [x] Create a status page for website generation.
 
 ### 5. AI Sitemap Generator
 - [ ] Convert onboarding data → sitemap structure.

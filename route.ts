@@ -56,8 +56,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ revalidated: false, message: `No path found for type "${body._type}"` });
 
-  } catch (err: any) {
-    console.error('Error in /api/revalidate:', err.message);
-    return new Response(err.message, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Error in /api/revalidate:', message);
+    return new Response(message, { status: 500 });
   }
 }
