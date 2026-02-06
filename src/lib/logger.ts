@@ -2,17 +2,21 @@ import pino from 'pino';
 
 const logLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'development' ? 'debug' : 'info');
 
-export const logger = pino({
+// Only enable the `pino-pretty` transport in development where it's available.
+const pinoOptions: any = {
   level: logLevel,
-  transport: {
+  base: { env: process.env.NODE_ENV },
+};
+
+if (process.env.NODE_ENV === 'development') {
+  pinoOptions.transport = {
     target: 'pino-pretty',
     options: {
       colorize: true,
       ignore: 'pid,hostname',
       translateTime: 'SYS:standard',
     },
-  },
-  base: {
-    env: process.env.NODE_ENV,
-  },
-});
+  };
+}
+
+export const logger = pino(pinoOptions);
