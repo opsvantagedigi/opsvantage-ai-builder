@@ -1,11 +1,21 @@
 import { Onboarding, Page, PageType, SectionType } from '@prisma/client';
-import { getGenerativeModel } from '@/gemini';
+import { getGenerativeModel } from './gemini';
 
 // This defines the structure of the `data` field in a Section
 export interface SectionData {
   headline: string;
   subheadline?: string;
   body?: string;
+  imageSuggestions?: string[];
+  colorRecommendations?: {
+    name: string; // e.g., "Primary", "Accent"
+    hex: string;
+  }[];
+  typographyRecommendations?: {
+    element: string; // e.g., "Headline", "Body"
+    fontFamily: string;
+    fontWeight: number;
+  }[];
   cta?: {
     text: string;
     link: string;
@@ -14,6 +24,7 @@ export interface SectionData {
     title: string;
     description: string;
     icon?: string;
+    imageSuggestions?: string[];
   }[];
 }
 
@@ -69,7 +80,7 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
     Each "GeneratedSection" object must have:
     - "type": string (one of "HERO", "FEATURES", "TESTIMONIALS", "FAQ", "CUSTOM")
     - "variant": string (e.g., "default", "image_right")
-    - "data": object (A "SectionData" object with "headline", optional "subheadline", "body", "cta", and "items" array for features/faq)
+    - "data": object (A "SectionData" object. This object should also include optional "imageSuggestions", "colorRecommendations", and "typographyRecommendations" properties. The "imageSuggestions" should be an array of 1-2 strings, each a detailed prompt for an image generation AI. The "colorRecommendations" should be an array of color objects with a name and hex code. The "typographyRecommendations" should be an array of typography objects with element, fontFamily, and fontWeight.)
 
     Example output format:
     \`\`\`json
@@ -83,7 +94,16 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
           "data": {
             "headline": "Welcome to ${businessName}",
             "subheadline": "Your one-stop solution for amazing things.",
-            "cta": { "text": "Get Started", "link": "/contact" }
+            "cta": { "text": "Get Started", "link": "/contact" },
+            "imageSuggestions": ["A wide-angle shot of a modern, bright office with a diverse team collaborating, sun flare from the window."],
+            "colorRecommendations": [
+              { "name": "Primary", "hex": "#3B82F6" },
+              { "name": "Background", "hex": "#F9FAFB" }
+            ],
+            "typographyRecommendations": [
+              { "element": "Headline", "fontFamily": "Inter", "fontWeight": 700 },
+              { "element": "Body", "fontFamily": "Inter", "fontWeight": 400 }
+            ]
           }
         }
       ]

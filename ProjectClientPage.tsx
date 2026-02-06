@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Page, Project, Section } from '@prisma/client';
+import { Page, Project, Section, SectionType } from '@prisma/client';
 import Link from 'next/link';
 import HeroPreview from '@/components/previews/HeroPreview';
 import FeaturesPreview from '@/components/previews/FeaturesPreview';
+import FooterPreview from '@/components/previews/FooterPreview';
 import DefaultPreview from '@/components/previews/DefaultPreview';
 import { SectionData } from '@/lib/ai/page-generator';
 import {
@@ -25,6 +26,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 
 // Add `order` to the Section type for sorting
 type SectionWithOrder = Section & { order: number | null };
@@ -39,14 +41,70 @@ interface ProjectClientPageProps {
   project: ProjectWithPagesAndSections;
 }
 
-const SectionPreview = ({ section }: { section: Section }) => {
+const AddSection = ({ onAdd, isAdding }: { onAdd: (type: SectionType) => void; isAdding: boolean; }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  // Don't allow adding another footer or a generic custom section from this menu
+  const sectionTypes = Object.values(SectionType).filter(t => !['FOOTER', 'CUSTOM'].includes(t));
+
+  return (
+    <div className="relative text-center my-8">
+      <div className="absolute inset-0 flex items-center" aria-hidden="true">
+        <div className="w-full border-t border-gray-300 border-dashed" />
+      </div>
+      <div className="relative flex justify-center">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+          className="inline-flex items-center gap-x-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          disabled={isAdding}
+        >
+          <svg className="-ml-1 -mr-0.5 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+          </svg>
+          Add Section
+        </button>
+        {isOpen && (
+          <div className="absolute bottom-12 mb-2 w-56 origin-bottom rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
+            <div className="py-1">
+              {sectionTypes.map(type => (
+                <button
+                  key={type}
+                  onClick={() => onAdd(type)}
+                  className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const SectionPreview = ({
+  section,
+  onDataChange,
+  projectId,
+}: {
+  section: Section;
+  onDataChange: (id: string, data: SectionData) => void;
+  projectId: string;
+}) => {
   const content = section.data as unknown as SectionData;
 
+  const handleDataChange = (newContent: SectionData) => {
+    onDataChange(section.id, newContent);
+  };
   switch (section.type) {
     case 'HERO':
-      return <HeroPreview content={content} />;
+      return <HeroPreview content={content} onContentChange={handleDataChange} projectId={projectId} />;
     case 'FEATURES':
-      return <FeaturesPreview content={content} />;
+      return <FeaturesPreview content={content} onContentChange={handleDataChange} />;
+    case 'FOOTER':
+      return <FooterPreview content={content} onContentChange={handleDataChange} />;
     default:
       return <DefaultPreview type={section.type} content={content} />;
   }
@@ -56,10 +114,14 @@ const SortableSection = ({
   section,
   onDuplicate,
   onDelete,
+  onDataChange,
+  projectId,
 }: {
   section: Section;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  onDataChange: (id: string, data: SectionData) => void;
+  projectId: string;
 }) => {
   const {
     attributes,
@@ -102,7 +164,7 @@ const SortableSection = ({
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 4.5C5.5 4.77614 5.27614 5 5 5C4.72386 5 4.5 4.77614 4.5 4.5C4.5 4.22386 4.72386 4 5 4C5.27614 4 5.5 4.22386 5.5 4.5ZM10.5 4.5C10.5 4.77614 10.2761 5 10 5C9.72386 5 9.5 4.77614 9.5 4.5C9.5 4.22386 9.72386 4 10 4C10.2761 4 10.5 4.22386 10.5 4.5ZM5.5 7.5C5.5 7.77614 5.27614 8 5 8C4.72386 8 4.5 7.77614 4.5 7.5C4.5 7.22386 4.72386 7 5 7C5.27614 7 5.5 7.22386 5.5 7.5ZM10.5 7.5C10.5 7.77614 10.2761 8 10 8C9.72386 8 9.5 7.77614 9.5 7.5C9.5 7.22386 9.72386 7 10 7C10.2761 7 10.5 7.22386 10.5 7.5ZM5.5 10.5C5.5 10.7761 5.27614 11 5 11C4.72386 11 4.5 10.7761 4.5 10.5C4.5 10.2239 4.72386 10 5 10C5.27614 10 5.5 10.2239 5.5 10.5ZM10.5 10.5C10.5 10.7761 10.2761 11 10 11C9.72386 11 9.5 10.7761 9.5 10.5C9.5 10.2239 9.72386 10 10 10C10.2761 10 10.5 10.2239 10.5 10.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
           </div>
         </div>
-        <SectionPreview section={section} />
+        <SectionPreview section={section} onDataChange={onDataChange} projectId={projectId} />
       </div>
     </div>
   );
@@ -114,6 +176,8 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
   );
   const [sections, setSections] = useState<SectionWithOrder[]>([]);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [isAddingSection, setIsAddingSection] = useState(false);
+  const [isSavingContent, setIsSavingContent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selectedPage = project.pages.find((p) => p.id === selectedPageId);
@@ -160,6 +224,63 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
       }
     }
   }
+
+  const saveSection = async (section: SectionWithOrder) => {
+    setIsSavingContent(true);
+    try {
+      const response = await fetch(`/api/sections/${section.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: section.data }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save section content.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Could not save changes. Please try again.');
+    } finally {
+      setIsSavingContent(false);
+    }
+  };
+
+  const debouncedSaveSection = useDebouncedSave(saveSection, 1500);
+
+  const handleSectionDataChange = (sectionId: string, newSectionData: SectionData) => {
+    setSections(currentSections => currentSections.map(s => {
+      if (s.id === sectionId) {
+        const updatedSection = { ...s, data: newSectionData };
+        debouncedSaveSection(updatedSection); // Trigger debounced save
+        return updatedSection;
+      }
+      return s;
+    }));
+  };
+
+  const handleAddSection = async (type: SectionType) => {
+    if (!selectedPageId) return;
+    setIsAddingSection(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/pages/${selectedPageId}/sections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add new section.');
+      }
+
+      const newSection = await response.json();
+      setSections(currentSections => [...currentSections, newSection]);
+    } catch (err) {
+      console.error(err);
+      setError('Could not add new section. Please try again.');
+    } finally {
+      setIsAddingSection(false);
+    }
+  };
 
   const handleDeleteSection = async (sectionId: string) => {
     const originalSections = [...sections];
@@ -246,12 +367,14 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
                   </Link>
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                {isSavingOrder && <p className="text-sm text-gray-500 animate-pulse">Saving new order...</p>}
+                {(isSavingOrder || isSavingContent) && <p className="text-sm text-gray-500 animate-pulse text-center">Saving...</p>}
                 {sections.length > 0 ? (
                   sections.map((section) => (
                     <SortableSection
                       key={section.id}
                       section={section}
+                      onDataChange={handleSectionDataChange}
+                      projectId={project.id}
                       onDuplicate={handleDuplicateSection}
                       onDelete={handleDeleteSection}
                     />
@@ -259,6 +382,8 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
                 ) : (
                   <p className="text-gray-500">No sections generated for this page yet.</p>
                 )}
+                <AddSection onAdd={handleAddSection} isAdding={isAddingSection} />
+                {isAddingSection && <p className="text-sm text-center text-gray-500 animate-pulse">Generating new section...</p>}
               </div>
             </SortableContext>
           </DndContext>

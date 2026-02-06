@@ -54,23 +54,22 @@ For each page:
 - [x] Generate testimonials
 - [x] Generate CTA blocks
 - [x] Generate FAQ
-- [ ] Generate footer
 - [x] Generate footer
 
 ### 7. AI Section Generator
-- [ ] Build a library of reusable AI‑generated sections.
-- [ ] Each section should include:
-  - Layout variant
-  - Copy
-  - Imagery suggestions
-  - Color + typography recommendations
+- [x] Build a library of reusable AI‑generated sections.
+- [x] Each section should include:
+  - [x] Layout variant
+  - [x] Copy
+  - [x] Imagery suggestions
+  - [x] Color + typography recommendations
 
 ### 8. AI Copywriting Engine
 - [ ] Add Gemini prompts for:
-  - Brand voice adaptation
-  - SEO optimization
-  - Tone transformation (professional, friendly, bold, luxury)
-  - CTA optimization
+  - [x] Brand voice adaptation
+  - [x] SEO optimization
+  - [x] Tone transformation (professional, friendly, bold, luxury)
+  - [x] CTA optimization
 
 ---
 
@@ -81,7 +80,6 @@ Implement:
 - [x] Section reordering
 - [x] Section duplication
 - [x] Section deletion
-- [ ] Inline text editing
 - [x] Inline text editing
 - [x] Live preview
 
