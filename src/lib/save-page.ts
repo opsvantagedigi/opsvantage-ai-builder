@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { pageGenerationResponseSchema, PageGenerationResponse } from "@/lib/page-generation-schema"
 import { logger } from "@/lib/logger"
+import type { Prisma, SectionType } from '@prisma/client'
 
 export async function saveGeneratedPage(userEmail: string, pagePayload: PageGenerationResponse) {
   // validate
@@ -26,9 +27,9 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
       await prisma.section.create({
         data: {
           pageId: created.id,
-          type: sec.type as any,
+          type: sec.type as SectionType,
           variant: null,
-          data: sec as any,
+          data: sec as unknown as Prisma.InputJsonValue,
         }
       })
     } catch (e) {
