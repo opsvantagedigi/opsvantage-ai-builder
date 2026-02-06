@@ -86,6 +86,7 @@ Implement:
 ### 10. AI Design Assistant
 Add tools that generate:
 - [ ] Color palettes
+- [x] Color palettes
 - [ ] Font pairings
 - [ ] Layout suggestions
 - [ ] Hero image prompts
