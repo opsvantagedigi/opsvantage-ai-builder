@@ -98,7 +98,7 @@ const SectionPreview = ({
   const handleDataChange = (newContent: SectionData) => {
     onDataChange(section.id, newContent);
   };
-  switch (section.type) {
+  switch (section.type as unknown as string) {
     case 'HERO':
       return <HeroPreview content={content} onContentChange={handleDataChange} projectId={projectId} />;
     case 'FEATURES':
@@ -249,8 +249,8 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
   const handleSectionDataChange = (sectionId: string, newSectionData: SectionData) => {
     setSections(currentSections => currentSections.map(s => {
       if (s.id === sectionId) {
-        const updatedSection = { ...s, data: newSectionData };
-        debouncedSaveSection(updatedSection); // Trigger debounced save
+        const updatedSection = { ...s, data: newSectionData as unknown as SectionWithOrder['data'] };
+        debouncedSaveSection(updatedSection as any); // Trigger debounced save
         return updatedSection;
       }
       return s;
