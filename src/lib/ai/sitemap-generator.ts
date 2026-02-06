@@ -1,10 +1,10 @@
-import { Onboarding, PageType } from '@prisma/client';
+import type { OnboardingData as Onboarding } from '@/types/onboarding';
 import { getGenerativeModel } from './gemini';
 
 export interface SitemapPage {
   title: string;
   slug: string;
-  type: PageType;
+  type: 'HOME' | 'LANDING' | 'CUSTOM';
   isHome: boolean;
 }
 

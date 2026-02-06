@@ -1,4 +1,5 @@
-import { Onboarding, Page, SectionType } from '@prisma/client';
+import type { OnboardingData as Onboarding } from '@/types/onboarding';
+import type { Page, SectionType } from '@/types/db';
 import { getGenerativeModel } from './gemini';
 import { GeneratedSection } from './page-generator';
 

@@ -1,4 +1,4 @@
-import { Onboarding } from '@prisma/client';
+import type { OnboardingData as Onboarding } from '@/types/onboarding';
 import { getGenerativeModel } from './gemini';
 
 export interface ColorRecommendation {

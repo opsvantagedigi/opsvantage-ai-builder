@@ -1,6 +1,24 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { generateBackgroundTextures } from '@/lib/ai/design-assistant';
+import type { OnboardingData } from '@/types/onboarding';
+
+function normalizeOnboarding(raw: any): OnboardingData {
+  return {
+    businessName: raw.businessName ?? undefined,
+    businessType: raw.businessType ?? undefined,
+    industry: raw.industry ?? undefined,
+    description: raw.description ?? undefined,
+    brandVoice: raw.brandVoice ?? undefined,
+    targetAudience: raw.targetAudience ?? undefined,
+    goals: raw.goals ?? undefined,
+    competitors: Array.isArray(raw.competitors) ? raw.competitors : undefined,
+    colorPalette: Array.isArray(raw.colorPalette) ? raw.colorPalette : undefined,
+    designStyle: raw.designStyle ?? undefined,
+    fonts: Array.isArray(raw.fonts) ? raw.fonts : undefined,
+    logoUrl: raw.logoUrl ?? undefined,
+  };
+}
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project or onboarding data not found.' }, { status: 404 });
     }
 
-    const backgroundTexturePrompts = await generateBackgroundTextures(project.onboarding);
+    const backgroundTexturePrompts = await generateBackgroundTextures(normalizeOnboarding(project.onboarding));
 
     // Use `any` cast here because generated Prisma types may not have the
     // newly-added `backgroundTexturePrompts` field in some environments.

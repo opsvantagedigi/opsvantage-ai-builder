@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Page, Project, Section, SectionType } from '@prisma/client';
+import type { Page, Project, Section, SectionType, SectionWithOrder as _SectionWithOrder } from '@/types/db';
 import Link from 'next/link';
 import HeroPreview from '@/components/previews/HeroPreview';
 import FeaturesPreview from '@/components/previews/FeaturesPreview';
@@ -28,8 +28,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 
-// Add `order` to the Section type for sorting
-type SectionWithOrder = Section & { order: number | null };
+// Use local SectionWithOrder type
+type SectionWithOrder = _SectionWithOrder;
 
 type ProjectWithPagesAndSections = Omit<Project, 'pages'> & {
   pages: (Page & {
@@ -43,8 +43,10 @@ interface ProjectClientPageProps {
 
 const AddSection = ({ onAdd, isAdding }: { onAdd: (type: SectionType) => void; isAdding: boolean; }) => {
   const [isOpen, setIsOpen] = useState(false);
-  // Don't allow adding another footer or a generic custom section from this menu
-  const sectionTypes = Object.values(SectionType).filter(t => !['FOOTER', 'CUSTOM'].includes(t));
+  // Runtime list of section types (mirrors Prisma enum values)
+  const ALL_SECTION_TYPES = ['HERO', 'FEATURES', 'TESTIMONIALS', 'FAQ', 'CUSTOM'] as const;
+  type AllSectionType = typeof ALL_SECTION_TYPES[number];
+  const sectionTypes = ALL_SECTION_TYPES.filter((t) => t !== 'CUSTOM') as AllSectionType[];
 
   return (
     <div className="relative text-center my-8">
@@ -67,13 +69,13 @@ const AddSection = ({ onAdd, isAdding }: { onAdd: (type: SectionType) => void; i
         {isOpen && (
           <div className="absolute bottom-12 mb-2 w-56 origin-bottom rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
             <div className="py-1">
-              {sectionTypes.map(type => (
+              {sectionTypes.map((stype) => (
                 <button
-                  key={type}
-                  onClick={() => onAdd(type)}
+                  key={stype}
+                  onClick={() => onAdd(stype as SectionType)}
                   className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
+                  {stype.charAt(0) + stype.slice(1).toLowerCase().replace('_', ' ')}
                 </button>
               ))}
             </div>

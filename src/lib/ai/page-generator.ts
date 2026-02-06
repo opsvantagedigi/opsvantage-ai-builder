@@ -1,4 +1,5 @@
-import { Onboarding, Page, PageType, SectionType } from '@prisma/client';
+import type { OnboardingData as Onboarding } from '@/types/onboarding';
+import type { Page, SectionType, PageType } from '@/types/db';
 import { getGenerativeModel } from './gemini';
 
 // This defines the structure of the `data` field in a Section
@@ -58,7 +59,7 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
     CUSTOM: ['HERO', 'CUSTOM', 'FAQ'],
   };
 
-  const requestedSections = sectionTypes[page.type] || sectionTypes.CUSTOM;
+  const requestedSections = sectionTypes[(page.type ?? 'CUSTOM') as PageType] || sectionTypes.CUSTOM;
 
   return `
     You are an expert web designer, copywriter, and SEO specialist. Based on the business information and the specific page details, generate the content for a webpage.

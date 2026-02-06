@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sitemapResponseSchema, SitemapResponse } from "@/lib/sitemap-schema"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import type { Prisma } from "@prisma/client"
+// Avoid importing Prisma types in server code used by the editor; use `any` for json casts
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 import generateValidatedJSON from "@/lib/ai"
@@ -61,7 +61,7 @@ export const POST = withErrorHandling(async (req) => {
       type: "ONBOARDING_TO_SITEMAP",
       provider: "GEMINI",
       payload: { onboardingId: onboarding.id },
-      result: validated as unknown as Prisma.InputJsonValue,
+      result: validated as unknown as any,
       status: "COMPLETED",
     }
   })

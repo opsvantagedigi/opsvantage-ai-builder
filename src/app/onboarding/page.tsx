@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { OnboardingStatus } from '@prisma/client';
+// Use local string union for onboarding status
 
 import BusinessDetailsStep from '../../components/onboarding/BusinessDetailsStep';
 import BrandIdentityStep from '../../components/onboarding/BrandIdentityStep';
@@ -21,7 +21,7 @@ export interface OnboardingData {
   competitors?: string[];
   colorPalette?: string[];
   designStyle?: string;
-  status?: OnboardingStatus;
+  status?: 'DRAFT' | 'COMPLETED';
 }
 
 const OnboardingPage = () => {

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { pageGenerationResponseSchema, PageGenerationResponse } from "@/lib/page-generation-schema"
 import { logger } from "@/lib/logger"
-import type { Prisma, SectionType } from '@prisma/client'
+import type { SectionType } from '@/types/db'
 
 export async function saveGeneratedPage(userEmail: string, pagePayload: PageGenerationResponse) {
   // validate
@@ -29,7 +29,7 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
           pageId: created.id,
           type: sec.type as SectionType,
           variant: null,
-          data: sec as unknown as Prisma.InputJsonValue,
+          data: sec as unknown as any,
         }
       })
     } catch (e) {
