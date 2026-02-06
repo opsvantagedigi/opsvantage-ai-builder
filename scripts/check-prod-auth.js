@@ -33,7 +33,7 @@ async function main(){
   const registerPayload = process.env.REGISTER_PAYLOAD
   if (registerPayload) {
     let payload
-    try { payload = JSON.parse(registerPayload) } catch(e){ console.error('Invalid REGISTER_PAYLOAD JSON'); process.exit(3) }
+    try { payload = JSON.parse(registerPayload) } catch(e){ console.error('Invalid REGISTER_PAYLOAD JSON', e); process.exit(3) }
     console.log('Posting /api/register with payload keys:', Object.keys(payload))
       // Try multiple register endpoints in case routing differs (API vs app route)
       const registerPaths = ['/api/register', '/api/register/', '/register', '/register/']
@@ -57,7 +57,7 @@ async function main(){
   const loginPayloadEnv = process.env.LOGIN_PAYLOAD
   if (loginPayloadEnv) {
     let login
-    try { login = JSON.parse(loginPayloadEnv) } catch(e){ console.error('Invalid LOGIN_PAYLOAD JSON'); process.exit(4) }
+    try { login = JSON.parse(loginPayloadEnv) } catch(e){ console.error('Invalid LOGIN_PAYLOAD JSON', e); process.exit(4) }
 
     console.log('Attempting credentials login flow (CSRF -> callback)')
     // get csrf
