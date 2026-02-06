@@ -20,20 +20,14 @@ C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\onboarding\route.ts
   128:9    warning  'updated' is assigned a value but never used       @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\page\generate\route.ts
-   18:9   warning  'requestId' is assigned a value but never used  @typescript-eslint/no-unused-vars
-   68:51  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-   86:55  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  110:55  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  116:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+   19:9   warning  'requestId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  117:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\register\route.ts
   20:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\sanity\webhook\route.ts
   19:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
-
-C:\Users\AjaySidal\opsvantage-ai-builder\src\app\api\sitemap\generate\route.ts
-  64:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\app\global-error.tsx
   4:3  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
@@ -46,10 +40,6 @@ C:\Users\AjaySidal\opsvantage-ai-builder\src\components\onboarding\BrandIdentity
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\components\onboarding\BusinessDetailsStep.tsx
   11:45  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
-
-C:\Users\AjaySidal\opsvantage-ai-builder\src\components\previews\FooterPreview.tsx
-  5:35  warning  'onContentChange' is defined but never used  @typescript-eslint/no-unused-vars
-  8:25  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
 
 C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\ai.ts
   33:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
@@ -69,8 +59,5 @@ C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\prisma.ts
 C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\rate-limit.ts
   2:10  warning  'NextResponse' is defined but never used  @typescript-eslint/no-unused-vars
 
-C:\Users\AjaySidal\opsvantage-ai-builder\src\lib\save-page.ts
-  32:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
-Ô£û 31 problems (6 errors, 25 warnings)
+Ô£û 24 problems (0 errors, 24 warnings)
 

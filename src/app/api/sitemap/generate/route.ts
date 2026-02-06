@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sitemapResponseSchema, SitemapResponse } from "@/lib/sitemap-schema"
+import type { Prisma } from '@prisma/client'
 import { GoogleGenerativeAI } from "@google/generative-ai"
 // Avoid importing Prisma types in server code used by the editor; use `any` for json casts
 import { withErrorHandling } from "@/lib/api-error"
@@ -61,7 +62,7 @@ export const POST = withErrorHandling(async (req) => {
       type: "ONBOARDING_TO_SITEMAP",
       provider: "GEMINI",
       payload: { onboardingId: onboarding.id },
-      result: validated as unknown as any,
+      result: validated as unknown as Prisma.InputJsonValue,
       status: "COMPLETED",
     }
   })

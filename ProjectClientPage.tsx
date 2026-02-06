@@ -106,7 +106,7 @@ const SectionPreview = ({
     case 'FEATURES':
       return <FeaturesPreview content={content as unknown as import('@/types/preview').FeaturesContent} />;
     case 'FOOTER':
-      return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
+      return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} />;
     default:
       return <DefaultPreview type={section.type} content={content} />;
   }

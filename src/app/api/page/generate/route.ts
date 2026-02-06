@@ -3,6 +3,7 @@ import { randomUUID } from "crypto"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from '@prisma/client'
 // Avoid importing Prisma types in this file; use `any` for runtime JSON casts
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { withErrorHandling } from "@/lib/api-error"
@@ -65,7 +66,7 @@ export const POST = withErrorHandling(async (req) => {
         projectId: projectIdRef!,
         type: "SITEMAP_TO_PAGES",
         provider: "GEMINI",
-        payload: { sitemapNode: sitemapNodeRef as any, prompt: userPromptRef },
+        payload: { sitemapNode: sitemapNodeRef as unknown as Prisma.InputJsonValue | null, prompt: userPromptRef },
         result: validated,
         status: "COMPLETED",
       }
@@ -83,7 +84,7 @@ export const POST = withErrorHandling(async (req) => {
             projectId: projectIdRef,
             type: "SITEMAP_TO_PAGES",
             provider: "GEMINI",
-            payload: { sitemapNode: sitemapNodeRef as any, prompt: userPromptRef },
+            payload: { sitemapNode: sitemapNodeRef as unknown as Prisma.InputJsonValue | null, prompt: userPromptRef },
             error: String(err),
             status: "FAILED",
           }
@@ -107,7 +108,7 @@ export const POST = withErrorHandling(async (req) => {
             projectId: projectIdRef,
             type: "SITEMAP_TO_PAGES",
             provider: "GEMINI",
-            payload: { sitemapNode: sitemapNodeRef as any, prompt: userPromptRef },
+            payload: { sitemapNode: sitemapNodeRef as unknown as Prisma.InputJsonValue | null, prompt: userPromptRef },
             error: String(ex),
             status: "FAILED",
           }
