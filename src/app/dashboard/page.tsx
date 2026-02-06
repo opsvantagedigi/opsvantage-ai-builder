@@ -1,40 +1,28 @@
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import Link from "next/link"
-import { authOptions } from "@/lib/auth"
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth';
+import { CreateWorkspaceForm } from '../../../prisma/CreateWorkspaceForm';
+import { WorkspaceList } from '../../../WorkspaceList';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  let session = null
+  let session = null;
   try {
-    session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions);
   } catch (err) {
     // If session retrieval fails, redirect to login to recover gracefully
-    console.error('getServerSession error:', err)
-    redirect('/login')
+    console.error('getServerSession error:', err);
+    redirect('/login');
   }
 
-  if (!session) redirect('/login')
+  if (!session) redirect('/login');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-lg text-center">
-        <h1 className="text-2xl font-semibold mb-4">
-          Welcome to your Dashboard
-        </h1>
-
-        <p className="text-gray-600 mb-6">
-          You are now logged in. This is where your onboarding wizard will begin.
-        </p>
-
-        <Link
-          href="/onboarding"
-          className="inline-block bg-blue-600 text-white px-6 py-2 rounded"
-        >
-          Start Onboarding
-        </Link>
-      </div>
-    </div>
-  )
+    <main className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-8 text-center">Dashboard</h1>
+      <WorkspaceList />
+      <CreateWorkspaceForm />
+    </main>
+  );
 }
