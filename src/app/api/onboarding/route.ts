@@ -7,6 +7,7 @@ import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 
 // GET: Fetch onboarding state for current user (latest project)
+export const GET = withErrorHandling(async (req) => {
   try {
     const session = await getServerSession(authOptions)
     if (!session || !session.user?.email) {
