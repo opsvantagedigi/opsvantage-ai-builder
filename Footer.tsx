@@ -13,8 +13,8 @@ export function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-8">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)] group-hover:rotate-6 transition-all">
-                <Zap className="w-6 h-6 text-white fill-white" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)] group-hover:rotate-6 transition-all overflow-hidden bg-white/5">
+                <img src="/logo.png" alt="OpsVantage Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-2xl font-black font-display tracking-tight text-white">
                 Ops<span className="text-blue-400">Vantage</span>

@@ -209,7 +209,7 @@ function MarqueeItem({ index }: { index: number }) {
     <div className="flex items-center gap-6 text-slate-400 group cursor-pointer hover:text-white transition-premium">
       <div className="w-14 h-14 glass rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-premium border border-white/5 group-hover:border-blue-400/50 shadow-xl overflow-hidden">
         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/0 group-hover:from-blue-400/20 group-hover:to-blue-600/40">
-          <Layers className="w-7 h-7 group-hover:text-white transition-colors" />
+          <img src="/logo.png" alt="Project Logo" className="w-full h-full object-cover" />
         </div>
       </div>
       <div className="flex flex-col">
