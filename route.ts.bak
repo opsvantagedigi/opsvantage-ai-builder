@@ -29,7 +29,7 @@ function verifyNowPaymentsSignature(payload: string, signature: string | null): 
  */
 export async function POST(request: Request) {
   const bodyText = await request.text();
-  const signature = headers().get('x-nowpayments-sig');
+  const signature = (await headers()).get('x-nowpayments-sig');
 
   if (!verifyNowPaymentsSignature(bodyText, signature)) {
     logger.error({ msg: 'Invalid NowPayments domain signature.' });

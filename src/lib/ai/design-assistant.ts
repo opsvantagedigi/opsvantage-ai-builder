@@ -150,7 +150,7 @@ function buildLayoutSuggestionsPrompt(onboardingData: Onboarding): string {
   `;
 }
 
-export async function generateLayoutSuggestions(onboardingData: Onboarding): Promise<{description: string}[]> {
+export async function generateLayoutSuggestions(onboardingData: Onboarding): Promise<{ description: string }[]> {
   const prompt = buildLayoutSuggestionsPrompt(onboardingData);
   const model = await getGenerativeModel();
   const result = await model.generateContent(prompt);
@@ -312,8 +312,39 @@ export async function generateBackgroundTextures(onboardingData: Onboarding): Pr
   return parseBackgroundTextureResponse(text);
 }
 
-// Minimal image generator placeholder for route.ts
+
+// Real image generator using OpenAI DALL-E 3
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 export async function generateImage(prompt: string): Promise<{ url: string }> {
-  // Placeholder implementation — replace with real image provider integration
-  return { url: 'https://via.placeholder.com/512?text=' + encodeURIComponent(prompt.substring(0, 40)) };
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('OPENAI_API_KEY is missing. Returning placeholder.');
+      return { url: 'https://via.placeholder.com/1024x1024?text=' + encodeURIComponent(prompt.substring(0, 40)) };
+    }
+
+    console.time("OpenAI Image Gen");
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+    });
+    console.timeEnd("OpenAI Image Gen");
+
+    if (!response.data || !response.data[0]) throw new Error("No data returned from OpenAI");
+
+    const url = response.data[0].url;
+    if (!url) throw new Error("No image URL returned from OpenAI");
+
+    return { url };
+  } catch (error) {
+    console.error("Image Generation Failed:", error);
+    // Fallback to placeholder on error to prevent app crash
+    return { url: 'https://via.placeholder.com/1024x1024?text=Generation+Failed' };
+  }
 }

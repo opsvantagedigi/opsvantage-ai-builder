@@ -15,4 +15,11 @@ export const nowPayments = {
       id: 'mock-invoice-id',
     };
   },
+  async createSubscription(payload: unknown) {
+    return {
+      invoice_url: 'https://nowpayments.io/invoice/sub-mock',
+      subscription_id: 'mock-sub-id',
+      status: 'waiting',
+    };
+  },
 };

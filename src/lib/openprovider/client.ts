@@ -1,13 +1,3 @@
-  async createDomain(payload: unknown) {
-    // Simulate a successful domain registration
-    return {
-      code: 0,
-      data: {
-        id: 'mock-domain-id',
-      },
-      desc: 'Domain registered',
-    };
-  },
 // Stub for OpenProvider client API
 export const openProvider = {
   async checkDomain(name: string, ext: string) {
@@ -29,6 +19,7 @@ export const openProvider = {
           },
         ],
       },
+      desc: 'Success',
     };
   },
   async createCustomer(data: unknown) {
@@ -39,6 +30,25 @@ export const openProvider = {
         handle: 'mock-handle',
       },
       desc: 'Success',
+    };
+  },
+  async createDomain(payload: unknown) {
+    // Simulate a successful domain registration
+    return {
+      code: 0,
+      data: {
+        id: 'mock-domain-id',
+      },
+      desc: 'Domain registered',
+    };
+  },
+  async getSSLProducts() {
+    return {
+      code: 0,
+      data: {
+        results: []
+      },
+      desc: 'Success'
     };
   },
 };
