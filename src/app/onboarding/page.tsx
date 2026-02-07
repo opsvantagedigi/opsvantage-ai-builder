@@ -64,7 +64,6 @@ const OnboardingPage = () => {
     setError(null);
     setIsSaving(true);
     try {
-      // Use POST for the very first save, PATCH for all subsequent saves.
       const method = !projectId ? 'POST' : 'PATCH';
       const response = await fetch('/api/onboarding', {
         method,
@@ -84,7 +83,7 @@ const OnboardingPage = () => {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       setError(message);
-      throw error; // Re-throw to prevent advancing to the next step
+      throw error;
     } finally {
       setIsSaving(false);
     }
@@ -111,16 +110,13 @@ const OnboardingPage = () => {
       await saveData(formData);
       router.push('/dashboard');
     } catch (error) {
-      // Error is already set by saveData, user can see it and decide to navigate away anyway.
       console.error("Failed to save before exiting:", error);
     }
   };
 
   const handleGenerateSite = async () => {
-    console.log('Final data, starting site generation:', formData);
     try {
       await saveData({ ...formData, status: 'COMPLETED' });
-      // Redirect to a generation status page using the project ID
       if (projectId) {
         router.push(`/generate/${projectId}`);
       } else {
@@ -132,7 +128,14 @@ const OnboardingPage = () => {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading Onboarding...</div>;
+    return (
+      <div className="min-h-screen mesh-gradient flex items-center justify-center selection:bg-blue-500/30">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-6" />
+          <p className="text-slate-400 font-display font-bold animate-pulse">OPTIMIZING AI CONTEXT...</p>
+        </div>
+      </div>
+    );
   }
 
   const renderStep = () => {
@@ -148,14 +151,33 @@ const OnboardingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full">
-        {error && (
-          <div className="max-w-2xl mx-auto p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
-            <span className="font-medium">Error:</span> {error}
+    <div className="min-h-screen mesh-gradient flex flex-col selection:bg-blue-500/30">
+      <div className="py-12 px-4 sm:px-6 lg:px-8 grow flex items-center justify-center">
+        <div className="w-full relative">
+          {error && (
+            <div className="max-w-2xl mx-auto glass p-4 mb-8 text-sm text-red-400 rounded-2xl border border-red-500/20 bg-red-500/5 shadow-xl" role="alert">
+              <span className="font-bold uppercase tracking-widest text-[10px] bg-red-500/20 px-2 py-0.5 rounded-full mr-3">Error</span>
+              {error}
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          <div className="max-w-2xl mx-auto mb-12 flex items-center justify-between px-2">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div key={s} className="flex items-center">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 ${step >= s ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-white/5 text-slate-500 border border-white/5'}`}>
+                  {s}
+                </div>
+                {s < 5 && <div className={`w-8 md:w-16 h-0.5 mx-2 rounded-full transition-all duration-1000 ${step > s ? 'bg-blue-600' : 'bg-white/5'}`} />}
+              </div>
+            ))}
           </div>
-        )}
-        {renderStep()}
+
+          {renderStep()}
+        </div>
+      </div>
+      <div className="py-6 text-center text-slate-600 text-[10px] font-bold tracking-widest uppercase">
+        OpsVantage AI Onboarding v2.0
       </div>
     </div>
   );
