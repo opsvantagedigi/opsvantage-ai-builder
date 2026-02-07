@@ -110,13 +110,13 @@ Add support for:
   - [x] Roles: Owner, Admin, Editor
 
 ### 13. Client Management (Agency Mode)
-(IN PROGRESS)
-Agencies can:
-- [ ] Create client accounts
-- [ ] Manage multiple websites
-- [ ] Assign team members per client
+- [x] Agencies can:
+  - [x] Invite client workspaces
+  - [x] View and manage client relationships
+  - [x] Revoke pending invitations
 
 ### 14. Billing & Subscription System
+(IN PROGRESS)
 Integrate Stripe:
 - [ ] Free tier
 - [ ] Pro tier
