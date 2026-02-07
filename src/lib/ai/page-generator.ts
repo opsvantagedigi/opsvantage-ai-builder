@@ -1,5 +1,6 @@
 import type { OnboardingData as Onboarding } from '@/types/onboarding';
 import type { Page, SectionType, PageType } from '@/types/db';
+export type { PageType };
 import { getGenerativeModel } from './gemini';
 import { unstable_cache as cache } from 'next/cache';
 

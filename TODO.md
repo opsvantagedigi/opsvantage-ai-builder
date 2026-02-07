@@ -203,17 +203,18 @@ Granular permissions:
 
 ### 24. AI Website Refactoring
 Let users ask:
-- [ ] “Make my website more modern”
-- [ ] “Improve my SEO”
-- [ ] “Rewrite my homepage in a luxury tone”
-- [ ] “Add a new section for testimonials”
+- [x] “Make my website more modern”
+- [x] “Improve my SEO”
+- [x] “Rewrite my homepage in a luxury tone”
+- [x] “Add a new section for testimonials”
 
 ### 25. AI Competitor Analysis
-- [ ] Crawl competitor sites
-- [ ] Extract structure + tone
-- [ ] Suggest improvements
+- [x] Crawl competitor sites
+- [x] Extract structure + tone
+- [x] Suggest improvements
 
 ### 26. AI Analytics Insights
-- [ ] Analyze traffic
-- [ ] Suggest improvements
-- [ ] Auto‑optimize CTAs
+- [x] Analyze traffic
+- [x] Identify drops
+- [x] Suggest improvements
+- [x] Integration with Builder Refactor

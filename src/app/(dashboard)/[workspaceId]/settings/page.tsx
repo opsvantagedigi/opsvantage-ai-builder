@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BrandingSettings } from '@/components/dashboard/BrandingSettings';
 import { AuditLogList } from '@/components/dashboard/AuditLogList';
+import { CompetitorAnalysis } from '@/components/dashboard/CompetitorAnalysis';
+import { AnalyticsInsights } from '@/components/dashboard/AnalyticsInsights';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,18 +67,28 @@ export default async function SettingsPage({
                         <BrandingSettings
                             workspaceId={workspaceId}
                             initialData={{
-                                brandingLogo: workspace.brandingLogo,
-                                brandingColors: workspace.brandingColors,
-                                customDashboardDomain: workspace.customDashboardDomain,
+                                brandingLogo: (workspace as any).brandingLogo,
+                                brandingColors: (workspace as any).brandingColors,
+                                customDashboardDomain: (workspace as any).customDashboardDomain,
                             }}
                         />
+                    </section>
+
+                    {/* Competitor Analysis Section */}
+                    <section id="competitor-analysis">
+                        <CompetitorAnalysis workspaceId={workspaceId} />
+                    </section>
+
+                    {/* Analytics Insights Section */}
+                    <section id="analytics-insights">
+                        <AnalyticsInsights workspaceId={workspaceId} />
                     </section>
 
                     {/* Audit Logs Section */}
                     <section id="audit-logs">
                         <h2 className="text-xl font-semibold mb-4">Audit Logs</h2>
                         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                            <AuditLogList logs={workspace.auditLogs} />
+                            <AuditLogList logs={(workspace as any).auditLogs} />
                         </div>
                     </section>
                 </div>
@@ -84,7 +96,9 @@ export default async function SettingsPage({
                 {/* Sidebar Nav */}
                 <div className="hidden md:block">
                     <nav className="sticky top-8 space-y-1">
-                        <a href="#branding" className="block px-3 py-2 text-sm font-medium text-slate-700 bg-slate-50 rounded-md">Branding</a>
+                        <a href="#branding" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Branding</a>
+                        <a href="#competitor-analysis" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Competitor Analysis</a>
+                        <a href="#analytics-insights" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">AI Optimization</a>
                         <a href="#audit-logs" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Audit Logs</a>
                     </nav>
                 </div>
