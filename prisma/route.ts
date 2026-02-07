@@ -1,94 +1,45 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const acceptInviteSchema = z.object({
-  token: z.string().min(1, 'Invitation token is required.'),
-});
-
 /**
- * POST /api/invitations/accept
- * Accepts a workspace invitation for the authenticated user.
+ * DELETE /api/workspaces/{workspaceId}/clients/{agencyClientId}
+ * An agency revokes a pending invitation to manage a client.
  */
-export async function POST(request: Request) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { workspaceId: string; agencyClientId: string } }
+) {
   try {
-    // 1. Authenticate the user
+    const { workspaceId, agencyClientId } = params;
+
+    // 1. Authenticate and authorize the user (must be OWNER or ADMIN of the agency)
     const session = await getServerSession(authOptions);
-    const user = session?.user as { id?: string | null; email?: string | null } | undefined;
-    if (!user?.id || !user.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please log in to accept the invitation.' },
-        { status: 401 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const userId = user.id;
-    const userEmail = user.email;
+    const currentUserId = session.user.id;
 
-    // 2. Validate the request body
-    const body = await request.json();
-    const validation = acceptInviteSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validation.error.flatten().fieldErrors },
-        { status: 400 }
-      );
-    }
-    const { token } = validation.data;
-
-    // 3. Find the pending invitation
-    const invitation = await prisma.invitation.findUnique({
-      where: { token },
+    const currentUserMember = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId: currentUserId } },
     });
 
-    if (!invitation || invitation.expiresAt < new Date()) {
-      return NextResponse.json({ error: 'Invitation is invalid or has expired.' }, { status: 404 });
+    if (!currentUserMember || !['OWNER', 'ADMIN'].includes(currentUserMember.role)) {
+      return NextResponse.json(
+        { error: 'You do not have permission to manage client invitations.' },
+        { status: 403 }
+      );
     }
 
-    // Security check: ensure the logged-in user's email matches the invitation email
-    if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
-      return NextResponse.json({ error: 'This invitation is for a different user.' }, { status: 403 });
-    }
-
-    // 4. Add user to workspace and delete invitation in a transaction
-    const [workspaceMember] = await prisma.$transaction([
-      // Create the new workspace member
-      prisma.workspaceMember.create({
-        data: {
-          workspaceId: invitation.workspaceId,
-          userId: userId,
-          role: invitation.role,
-        },
-      }),
-      // Delete the used invitation
-      prisma.invitation.delete({
-        where: { id: invitation.id },
-      }),
-    ]);
-
-    return NextResponse.json({
-      message: 'Invitation accepted successfully!',
-      workspaceId: workspaceMember.workspaceId,
+    // 2. Delete the invitation, ensuring it belongs to the correct agency workspace
+    await prisma.agencyClient.delete({
+      where: { id: agencyClientId, agencyId: workspaceId },
     });
+
+    return NextResponse.json({ message: 'Invitation revoked successfully.' }, { status: 200 });
   } catch (error) {
-    // Handle potential unique constraint violation if user is already a member
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      typeof (error as { code?: unknown }).code === 'string' &&
-      (error as { code: string }).code === 'P2002'
-    ) {
-      return NextResponse.json(
-        { error: 'You are already a member of this workspace.' },
-        { status: 409 }
-      );
-    }
-    console.error('Error accepting invitation:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred while accepting the invitation.' },
-      { status: 500 }
-    );
+    console.error('Error revoking client invitation:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }

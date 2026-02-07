@@ -66,6 +66,17 @@ enum Plan {
   AGENCY
 }
 
+enum WorkspaceType {
+  STANDARD
+  AGENCY
+}
+
+enum AgencyClientStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 // =========================
 // Auth Models (NextAuth)
 // =========================
@@ -75,6 +86,7 @@ model User {
   email     String   @unique
   name      String?
   image     String?
+  openProviderHandle String? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -241,12 +253,18 @@ model Workspace {
   name        String
   slug        String   @unique
   ownerId     String
+  type        WorkspaceType @default(STANDARD)
   owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   
   // Relations
   members     WorkspaceMember[]
   invitations Invitation[]
   projects    Project[]
+
+  // Agency relations
+  managedClients    AgencyClient[] @relation("AgencyRelation")
+  managedByAgencies AgencyClient[] @relation("ClientRelation")
+
   // billing     Billing?
   auditLogs   AuditLog[]
   usage       Usage?
@@ -280,6 +298,20 @@ model Invitation {
   updatedAt   DateTime @updatedAt
 
   @@unique([email, workspaceId]) // A user can only have one pending invite per workspace
+}
+
+model AgencyClient {
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Workspace @relation("AgencyRelation", fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    Workspace @relation("ClientRelation", fields: [clientId], references: [id], onDelete: Cascade)
+  status    AgencyClientStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyId, clientId])
 }
 
 model AuditLog {
