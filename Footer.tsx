@@ -24,9 +24,9 @@ export function Footer() {
               The neural operating system for modern digital agencies. Automate strategy, design, and growth with AI precision.
             </p>
             <div className="flex items-center gap-6">
-              <SocialLink icon={<Twitter className="w-5 h-5" />} href="#" />
-              <SocialLink icon={<Github className="w-5 h-5" />} href="#" />
-              <SocialLink icon={<Linkedin className="w-5 h-5" />} href="#" />
+              <SocialLink icon={<Twitter className="w-5 h-5" />} href="https://twitter.com/opsvantage" />
+              <SocialLink icon={<Github className="w-5 h-5" />} href="https://github.com/opsvantagedigi" />
+              <SocialLink icon={<Linkedin className="w-5 h-5" />} href="https://linkedin.com/company/opsvantage" />
             </div>
           </div>
 
@@ -34,18 +34,18 @@ export function Footer() {
           <div>
             <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Platform</h4>
             <ul className="space-y-4">
-              <FooterLink href="/onboarding" text="AI Builder" />
-              <FooterLink href="/onboarding" text="Domain Portal" />
-              <FooterLink href="/onboarding" text="Enterprise" />
-              <FooterLink href="/onboarding" text="Pricing" />
+              <FooterLink href="/#features" text="AI Builder" />
+              <FooterLink href="/#features" text="Domain Portal" />
+              <FooterLink href="/#features" text="Enterprise" />
+              <FooterLink href="/#pricing" text="Pricing" />
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Resources</h4>
             <ul className="space-y-4">
-              <FooterLink href="/onboarding" text="Documentation" />
-              <FooterLink href="/onboarding" text="API Reference" />
+              <FooterLink href="/docs" text="Documentation" />
+              <FooterLink href="/docs" text="API Reference" />
               <FooterLink href="/onboarding" text="Case Studies" />
               <FooterLink href="/onboarding" text="Changelog" />
             </ul>
