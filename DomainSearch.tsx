@@ -1,180 +1,183 @@
-'use client'
+'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { checkDomainAvailabilityAction } from './domain-actions';
-import { getOrCreateCustomerHandleAction, CustomerData } from './prisma/customer-actions';
-import { Loader2, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { checkDomainAvailabilityAction, registerDomainAction } from './domain-actions';
+import { createCustomerHandleAction, CustomerData } from './prisma/customer-actions';
+import { Search, Check, X, Loader2, ShoppingCart } from 'lucide-react';
 import { CustomerHandleForm } from './prisma/CustomerHandleForm';
+import { motion, AnimatePresence } from 'framer-motion';
+
+type SearchResult = {
+  status?: string;
+  domain?: string;
+  price?: { currency: string; amount: string };
+  isPremium?: boolean;
+  error?: string;
+};
+
+type UserInfo = {
+  email?: string | null;
+  name?: string | null;
+};
 
 export function DomainSearch() {
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState<
-    | {
-        domain: string;
-        status: 'free' | 'taken';
-        price?: { currency: string; amount: number };
-      }
-    | null
-  >(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = searchParams.get('query') || '';
+  const [domain, setDomain] = useState(initialQuery);
+  const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [isRegistering, setIsRegistering] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
-  const [isCreatingHandle, setIsCreatingHandle] = useState(false);
-  const { data: session } = useSession();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
-  const handleSearch = async () => {
-    if (!query) return;
+  const handleSearch = async (searchDomain: string) => {
+    if (!searchDomain.includes('.')) {
+      setResult({ error: 'Please enter a full domain name, including the extension (e.g., example.com).' });
+      return;
+    }
     setLoading(true);
     setResult(null);
-    setError(null);
-    
-    const data = await checkDomainAvailabilityAction(query);
-    if (data.error || !data.domain || !data.status) {
-      setError(data.error || 'Unknown error');
-      setResult(null);
-    } else {
-      setResult({
-        domain: String(data.domain),
-        status: data.status === 'free' ? 'free' : 'taken',
-        price:
-          data.price && typeof data.price === 'object' && 'currency' in data.price && 'amount' in data.price
-            ? { currency: String(data.price.currency), amount: Number(data.price.amount) }
-            : undefined,
-      });
-    }
+    const response = await checkDomainAvailabilityAction(searchDomain);
+    setResult(response);
     setLoading(false);
   };
 
-  const handleBuyNow = async () => {
-    // First, check if a handle exists or needs to be created.
-    if (!session?.user) {
-      setError('User session required to buy domain.');
-      return;
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (domain) {
+      handleSearch(domain);
     }
-    setIsCreatingHandle(true);
-    setError(null);
-    // Collect customer data from session (or show form if missing)
-    const customerData = {
-      name: {
-        firstName: session.user.name?.split(' ')[0] || '',
-        lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
-      },
-      address: {
-        street: '',
-        number: '',
-        zipcode: '',
-        city: '',
-        country: '',
-      },
-      phone: {
-        countryCode: '',
-        areaCode: '',
-        subscriberNumber: '',
-      },
-      email: session.user.email || '',
-    };
-    // If required fields are missing, show form
-    if (!customerData.name.firstName || !customerData.name.lastName || !customerData.email) {
+  };
+
+  const handleRegister = async () => {
+    if (!result?.domain || !result.price) return;
+
+    setIsRegistering(true);
+    const response = await registerDomainAction(result.domain, result.price);
+
+    if (response.error) {
+    if (response.needsCustomerData) {
+      setUserInfo(response.user);
       setShowCustomerForm(true);
-      setIsCreatingHandle(false);
-      return;
+    } else if (response.error) {
+      // In a real app, you'd use a toast notification here
+      alert(`Error: ${response.error}`);
+    } else if (response.paymentUrl) {
+      router.push(response.paymentUrl);
     }
-    const handleResult = await getOrCreateCustomerHandleAction(customerData);
-    setIsCreatingHandle(false);
-    if (handleResult && typeof handleResult === 'object') {
-      if ('error' in handleResult && handleResult.error) {
-        setError(handleResult.error);
-        return;
-      }
-      if ('handle' in handleResult && handleResult.handle && result) {
-        // Proceed to payment integration here
-        console.log('Proceeding to payment for domain:', result.domain, 'with handle:', handleResult.handle);
-        alert(`Handle found: ${handleResult.handle}. Ready for payment integration.`);
-      }
-    }
+
+    setIsRegistering(false);
   };
 
   const handleCustomerFormSubmit = async (data: CustomerData) => {
-    setIsCreatingHandle(true);
-    const handleResult = await getOrCreateCustomerHandleAction(data);
-    setIsCreatingHandle(false);
-    setShowCustomerForm(false);
-    if (handleResult && typeof handleResult === 'object' && 'handle' in handleResult && handleResult.handle) {
-      // Re-run buy logic now that we have a handle
-      handleBuyNow();
-    } else if (handleResult && typeof handleResult === 'object' && 'error' in handleResult && handleResult.error) {
-      setError(handleResult.error);
+    setIsRegistering(true);
+    const handleResult = await createCustomerHandleAction(data);
+    if (handleResult.error) {
+      alert(`Error: ${handleResult.error}`);
+      setIsRegistering(false);
+    } else if (handleResult.success) {
+      // Handle created, now re-attempt registration
+      setShowCustomerForm(false);
+      await handleRegister();
     }
   };
 
-  return (
-    <div className="w-full max-w-2xl mx-auto p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-xl">
-      <h2 className="text-2xl font-bold text-white mb-2">Find your perfect domain</h2>
-      <p className="text-slate-400 mb-6">Secure your brand identity with our enterprise registrar service.</p>
-      
-      <div className="flex gap-2">
-        <input 
-          placeholder="opsvantage.com" 
-          value={query}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-950 text-white h-12"
-        />
-        <button 
-          onClick={handleSearch} 
-          disabled={loading}
-          className="h-12 px-8 bg-blue-600 hover:bg-blue-500 text-white rounded-md disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
-        >
-          {loading ? <Loader2 className="animate-spin" /> : "Search"}
-        </button>
-      </div>
+  // Check for payment status from query params to show feedback
+  // In a real app, use toast notifications.
+  useEffect(() => {
+    if (searchParams.get('payment') === 'cancelled') {
+      alert('Payment was cancelled.');
+      router.replace(pathname); // Clear query params
+    }
+  }, [searchParams, router, pathname]);
 
-      {showCustomerForm && session?.user && (
+  useEffect(() => {
+    if (initialQuery) {
+      handleSearch(initialQuery);
+    }
+  }, [initialQuery]);
+
+  return (
+    <div className="w-full max-w-3xl mx-auto p-8 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl shadow-black/20">
+      {showCustomerForm && userInfo && (
         <CustomerHandleForm
-          userEmail={session.user.email || ''}
-          userName={session.user.name || ''}
+          userEmail={userInfo.email || ''}
+          userName={userInfo.name || ''}
           onSubmit={handleCustomerFormSubmit}
           onCancel={() => setShowCustomerForm(false)}
-          isLoading={isCreatingHandle}
+          isLoading={isRegistering}
         />
       )}
 
-      {error && <p className="mt-4 text-red-400">{error}</p>}
-
-      {result && (
-        <div className="mt-6 p-4 rounded-lg border border-slate-700 bg-slate-950 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white">{result.domain}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              {result.status === 'free' ? (
-                <span className="text-green-400 flex items-center text-sm">
-                  <CheckCircle className="w-4 h-4 mr-1" /> Available
-                </span>
-              ) : (
-                <span className="text-red-400 flex items-center text-sm">
-                  <XCircle className="w-4 h-4 mr-1" /> Unavailable
-                </span>
-              )}
-            </div>
-          </div>
-
-          {result && result.status === 'free' && result.price && typeof result.price === 'object' && 'currency' in result.price && 'amount' in result.price && (
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-2xl font-bold text-white">
-                  {String(result.price.currency)} {String(result.price.amount)}
-                </p>
-                <p className="text-xs text-slate-500">per year</p>
-              </div>
-              <button onClick={handleBuyNow} className="h-12 px-4 bg-green-600 hover:bg-green-500 text-white rounded-md flex items-center">
-                <ShoppingCart className="w-4 h-4 mr-2" /> Buy Now
-              </button>
-            </div>
-          )}
+      <form onSubmit={handleSubmit} className="flex items-center gap-3">
+        <div className="relative grow">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+          <input
+            type="text"
+            value={domain}
+            onChange={(e) => setDomain(e.target.value)}
+            placeholder="your-dream-domain.com"
+            className="w-full h-14 pl-12 pr-4 bg-slate-950 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          />
         </div>
-      )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="h-14 px-8 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+        >
+          {loading ? <Loader2 className="animate-spin" /> : 'Search'}
+        </button>
+      </form>
+
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="mt-6 p-5 bg-slate-950/70 border border-slate-800 rounded-lg"
+          >
+            {result.error && (
+              <div className="flex items-center gap-3 text-red-400">
+                <X size={24} />
+                <p className="font-medium">{result.error}</p>
+              </div>
+            )}
+            {result.status === 'available' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Check size={24} className="text-green-400" />
+                  <p className="font-bold text-lg text-white">{result.domain} is available!</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xl font-bold text-cyan-400">
+                    ${result.price?.amount} <span className="text-sm text-slate-400">/ year</span>
+                  </span>
+                  <button
+                    onClick={handleRegister}
+                    disabled={isRegistering}
+                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-500 transition-colors flex items-center gap-2 disabled:bg-slate-600 disabled:cursor-wait"
+                  >
+                    {isRegistering ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
+                    {isRegistering ? 'Redirecting...' : 'Register'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {result.status === 'unavailable' && (
+              <div className="flex items-center gap-3 text-amber-400">
+                <X size={24} />
+                <p className="font-medium text-lg">{result.domain} is already taken.</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
+}
 }

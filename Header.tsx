@@ -14,6 +14,9 @@ export function Header() {
           <Link href="/pricing" className="text-slate-300 hover:text-white transition-colors">
             Pricing
           </Link>
+          <Link href="/services/domains" className="text-slate-300 hover:text-white transition-colors">
+            Domains
+          </Link>
         </div>
         <div className="flex items-center space-x-4">
           <Link href="/login" className="text-slate-300 hover:text-white transition-colors">

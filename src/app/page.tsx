@@ -1,24 +1,10 @@
-import { Header } from '../../Header';
-import { Footer } from '../../Footer';
-import { CheckCircle2 } from 'lucide-react';
 'use client';
 
-import { Header } from '@/components/marketing/Header';
-import { Footer } from '@/components/marketing/Footer';
+import { Header } from '../../Header';
+import { Footer } from '../../Footer';
+import { SSLProductList } from '../../prisma/SSLProductList';
 import { CheckCircle2, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-function MiniDomainSearch() {
-  const [query, setQuery] = useState('');
-  const router = useRouter();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query) router.push(`/services/domains?query=${encodeURIComponent(query)}`);
-  };
-}
 
 const features = [
   'AI-Powered Content Generation',
@@ -31,17 +17,15 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="bg-slate-950 text-white min-h-screen flex flex-col">
     <div className="bg-slate-950 text-white min-h-screen flex flex-col overflow-x-hidden">
       <Header />
 
-      <main className="grow">
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="relative pt-48 pb-32 text-center">
           <div className="absolute inset-0 bg-grid-slate-800/40 mask-[linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
           <div className="relative max-w-4xl mx-auto px-4">
-            <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-b from-white to-slate-400 bg-clip-text text-transparent mb-6">
+            <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent mb-6">
               Build Your Website with the Power of AI
             </h1>
             <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
@@ -62,7 +46,7 @@ export default function LandingPage() {
             <div className="p-6 bg-slate-900/60 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-lg">
               <h3 className="text-xl font-semibold text-center mb-4">Claim Your Digital Identity</h3>
               <form onSubmit={handleSearch} className="flex items-center gap-2">
-                <div className="relative flex-grow">
+                <div className="relative grow">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                   <input
                     type="text"
