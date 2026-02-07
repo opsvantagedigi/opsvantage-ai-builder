@@ -29,14 +29,14 @@ export function Header() {
       {/* Main Navigation */}
       <nav
         className={`w-full max-w-[1400px] mx-auto transition-all duration-500 rounded-b-2xl md:rounded-2xl mt-0 md:mt-4 ${isScrolled
-            ? 'md:max-w-7xl glass-heavy shadow-2xl py-3 px-8 mx-4'
-            : 'glass py-5 px-8 mx-4'
+          ? 'md:max-w-7xl glass-heavy shadow-2xl py-3 px-8 mx-4'
+          : 'glass py-5 px-8 mx-4'
           }`}
       >
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)] group-hover:rotate-12 transition-all">
-              <Zap className="w-5 h-5 text-white fill-white" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)] group-hover:rotate-12 transition-all overflow-hidden bg-white/5">
+              <img src="/logo.png" alt="OpsVantage Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-bold font-display tracking-tight text-white">
               Ops<span className="text-blue-400">Vantage</span>
