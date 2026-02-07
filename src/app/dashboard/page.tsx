@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { CreateWorkspaceForm } from '../../../prisma/CreateWorkspaceForm';
 import { WorkspaceList } from '../../../WorkspaceList';
+import { MyDomainsList } from '../../../MyDomainsList';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
       <h1 className="text-3xl font-bold mb-8 text-center">Dashboard</h1>
       <WorkspaceList />
       <CreateWorkspaceForm />
+      <MyDomainsList />
     </main>
   );
 }

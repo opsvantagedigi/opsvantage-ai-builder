@@ -3,7 +3,8 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { openProvider } from '@/lib/openprovider/client';
-import { nowPayments } from '@/lib/nowpayments/client';
+import { prisma } from '@/lib/prisma';
+import { nowPayments } from '../lib/nowpayments/client';
 
 const MARKUP = parseFloat(process.env.NEXT_PUBLIC_PRICING_MARKUP || "1.2");
 
@@ -13,14 +14,6 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
   const name = parts.join('.');
   if (!name || !ext) return { error: "Invalid format. Please include the extension (e.g., .com)." };
 
-    // Provide a stub for openProvider.checkDomain if not implemented
-    if (typeof openProvider.checkDomain !== 'function') {
-      openProvider.checkDomain = async (name: string, ext: string) => ({
-        code: 0,
-        desc: '',
-        data: { results: [{ status: 'available', domain: `${name}.${ext}`, price: { reseller: { price: 10, currency: 'USD' } }, is_premium: false }] }
-      });
-    }
   try {
     const res = await openProvider.checkDomain(name, ext);
     if (res.code !== 0) throw new Error(res.desc);
@@ -38,8 +31,9 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
     }
     return { status: result.status, domain: result.domain };
   } catch (error) {
-    console.error("checkDomainAvailabilityAction Error:", error);
-    return { error: error.message || "Availability check failed" };
+    const err = error as Error;
+    console.error("checkDomainAvailabilityAction Error:", err);
+    return { error: err.message || "Availability check failed" };
   }
 }
 
@@ -49,27 +43,28 @@ export async function registerDomainAction(domain: string, price: { amount: stri
     return { error: 'You must be logged in to register a domain.' };
   }
 
-  // For this flow, we assume the user has an OpenProvider handle.
-  // A complete implementation would check for the handle and prompt for
-  // customer data if it's missing, using a component like CustomerHandleForm.
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, openProviderHandle: true, email: true, name: true },
+  });
+
   if (!user?.openProviderHandle) {
-    return { error: 'Customer contact information is missing. Please complete your profile.' };
+    // Signal to the client that we need to collect customer data.
+    return { needsCustomerData: true, user: { email: user?.email, name: user?.name } };
   }
 
   try {
-    // 1. Create an order record in our local database
-    const order = await prisma.order.create({
-      data: {
-        userId: user.id,
-        productId: domain,
-        productType: 'DOMAIN_REGISTRATION',
-        status: 'PENDING',
-        priceAmount: parseFloat(price.amount),
-        priceCurrency: price.currency,
-      },
-    });
-    const invoice = await nowPayments.createInvoice({
+      const order = await prisma.order.create({
+        data: {
+          userId: user.id,
+          productId: domain,
+          productType: 'DOMAIN_REGISTRATION',
+          status: 'PENDING',
+          priceAmount: parseFloat(price.amount),
+          priceCurrency: price.currency,
+        },
+      });
+
     // 2. Create an invoice with NowPayments
     const invoice = await nowPayments.createInvoice({
       price_amount: parseFloat(price.amount),
@@ -95,7 +90,8 @@ export async function registerDomainAction(domain: string, price: { amount: stri
     return { paymentUrl: invoice.invoice_url };
 
   } catch (error) {
-    console.error("registerDomainAction Error:", error);
-    return { error: error.message || 'Failed to initiate domain registration.' };
+      const err = error as Error;
+      console.error("registerDomainAction Error:", err);
+      return { error: err.message || 'Failed to initiate domain registration.' };
   }
 }

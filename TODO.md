@@ -122,11 +122,11 @@ Add support for:
   - [x] Agency tier
   - [x] Feature gating based on plan limits
 - [ ] Usage‑based billing for AI tokens
-- [x] Integrate NowPayments for one-off purchases:
-  - [x] Create Order model
-  - [x] Create payment invoice via NowPayments API
-  - [x] Create webhook to handle successful payment
-  - [x] Fulfill order (register domain) after payment
+- [x] Integrate NowPayments for One-Off Purchases:
+  - [x] Create `Order` model
+  - [x] Create payment invoice via NowPayments API for domains
+  - [x] Create webhook to handle successful domain payment
+  - [x] Fulfill order (register domain with OpenProvider) after payment
 
 ### 15. Custom Domains
 - [x] Add domain to Vercel project (automated and manual)
@@ -150,7 +150,7 @@ Add support for:
 
 ### 18. Marketing Website for Your SaaS
 Create:
-- [ ] Landing page (IN PROGRESS)
+- [x] Landing page
 - [x] Pricing page
 - [x] Features page
 - [x] Blog

@@ -56,7 +56,7 @@ export function SSLProductList() {
           <p className="text-4xl font-bold mb-6">
             ${product.prices?.[0]?.price.reseller.price}<span className="text-base font-normal text-slate-400">/ year</span>
           </p>
-          <div className="flex-grow mb-8" />
+          <div className="grow mb-8" />
           <button className="w-full py-3 bg-slate-700 text-white font-semibold rounded-lg hover:bg-slate-600 transition-colors">
             Add to Cart
           </button>

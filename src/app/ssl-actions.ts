@@ -13,8 +13,8 @@ export async function getSSLProductsAction() {
 
     // Apply markup to prices
     const productsWithMarkup = res.data.results.map((product: Record<string, unknown>) => {
-      if (product.prices && Array.isArray(product.prices) && (product.prices[0] as any)?.price?.reseller?.price) {
-        const reseller = (product.prices[0] as any).price.reseller;
+      if (product.prices && Array.isArray(product.prices) && (product.prices[0] as { price?: { reseller?: { price?: string; currency?: string } } })?.price?.reseller?.price) {
+        const reseller = (product.prices[0] as { price: { reseller: { price: string; currency: string } } }).price.reseller;
         const retailPrice = (parseFloat(reseller.price) * MARKUP).toFixed(2);
         reseller.price = retailPrice;
       }
@@ -22,8 +22,9 @@ export async function getSSLProductsAction() {
     });
 
     return { products: productsWithMarkup };
-  } catch (error: any) {
-    console.error('getSSLProductsAction Error:', error);
-    return { error: error.message || 'An unexpected error occurred.' };
+  } catch (error) {
+    const err = error as Error;
+    console.error('getSSLProductsAction Error:', err);
+    return { error: err.message || 'An unexpected error occurred.' };
   }
 }
