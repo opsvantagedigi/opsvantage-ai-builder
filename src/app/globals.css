@@ -7,28 +7,77 @@
   --font-mono: var(--font-geist-mono);
   --font-display: "Outfit", var(--font-geist-sans);
 
-  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-glow: glow 4s ease-in-out infinite;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-marquee-reverse: marquee-reverse 40s linear infinite;
+  --animate-text-reveal: text-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   @keyframes glow {
-    from {
-      box-shadow: 0 0 10px -5px rgba(59, 130, 246, 0.5);
+
+    0%,
+    100% {
+      opacity: 0.5;
+      filter: blur(20px);
     }
-    to {
-      box-shadow: 0 0 20px 2px rgba(59, 130, 246, 0.3);
+
+    50% {
+      opacity: 0.8;
+      filter: blur(40px);
     }
   }
 
   @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes marquee-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes text-reveal {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 }
 
 :root {
-  --background: #020617; /* Slate 950 */
-  --foreground: #f8fafc; /* Slate 50 */
+  --background: #000000;
+  --foreground: #f8fafc;
+  --glass: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-heavy: rgba(255, 255, 255, 0.05);
 }
 
 body {
@@ -40,19 +89,28 @@ body {
 
 /* Custom Utilities for "Oomph" */
 .mesh-gradient {
-  background-color: hsla(222,47%,11%,1);
+  background-color: #000;
   background-image:
-    radial-gradient(at 0% 0%, hsla(217,100%,39%,0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(188,100%,50%,0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(250,100%,48%,0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, hsla(200,100%,39%,0.1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, hsla(220, 100%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(280, 100%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(200, 100%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(250, 100%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, hsla(220, 100%, 10%, 0.5) 0px, transparent 25%);
+  background-attachment: fixed;
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-heavy {
+  background: var(--glass-heavy);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
 }
 
 .text-gradient {
@@ -65,4 +123,26 @@ body {
   background: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.transition-premium {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
