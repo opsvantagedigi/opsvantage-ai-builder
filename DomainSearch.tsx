@@ -2,14 +2,21 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { checkDomainAvailabilityAction } from '@/app/actions/domain-actions';
-import { getOrCreateCustomerHandleAction, CustomerData } from '@/app/actions/customer-actions';
+import { checkDomainAvailabilityAction } from './domain-actions';
+import { getOrCreateCustomerHandleAction, CustomerData } from './prisma/customer-actions';
 import { Loader2, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
-import { CustomerHandleForm } from './CustomerHandleForm';
+import { CustomerHandleForm } from './prisma/CustomerHandleForm';
 
 export function DomainSearch() {
   const [query, setQuery] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<
+    | {
+        domain: string;
+        status: 'free' | 'taken';
+        price?: { currency: string; amount: number };
+      }
+    | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,29 +31,68 @@ export function DomainSearch() {
     setError(null);
     
     const data = await checkDomainAvailabilityAction(query);
-    if (data.error) {
-      setError(data.error);
+    if (data.error || !data.domain || !data.status) {
+      setError(data.error || 'Unknown error');
+      setResult(null);
     } else {
-      setResult(data);
+      setResult({
+        domain: String(data.domain),
+        status: data.status === 'free' ? 'free' : 'taken',
+        price:
+          data.price && typeof data.price === 'object' && 'currency' in data.price && 'amount' in data.price
+            ? { currency: String(data.price.currency), amount: Number(data.price.amount) }
+            : undefined,
+      });
     }
     setLoading(false);
   };
 
   const handleBuyNow = async () => {
     // First, check if a handle exists or needs to be created.
-    const handleResult = await getOrCreateCustomerHandleAction();
-    if (handleResult.error) {
-      setError(handleResult.error);
+    if (!session?.user) {
+      setError('User session required to buy domain.');
       return;
     }
-
-    if (handleResult.needsData) {
-      // If no handle, show the form to collect customer data.
+    setIsCreatingHandle(true);
+    setError(null);
+    // Collect customer data from session (or show form if missing)
+    const customerData = {
+      name: {
+        firstName: session.user.name?.split(' ')[0] || '',
+        lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
+      },
+      address: {
+        street: '',
+        number: '',
+        zipcode: '',
+        city: '',
+        country: '',
+      },
+      phone: {
+        countryCode: '',
+        areaCode: '',
+        subscriberNumber: '',
+      },
+      email: session.user.email || '',
+    };
+    // If required fields are missing, show form
+    if (!customerData.name.firstName || !customerData.name.lastName || !customerData.email) {
       setShowCustomerForm(true);
-    } else if (handleResult.handle) {
-      // If handle exists, proceed to payment (NowPayments integration would go here).
-      console.log('Proceeding to payment for domain:', result.domain, 'with handle:', handleResult.handle);
-      alert(`Handle found: ${handleResult.handle}. Ready for payment integration.`);
+      setIsCreatingHandle(false);
+      return;
+    }
+    const handleResult = await getOrCreateCustomerHandleAction(customerData);
+    setIsCreatingHandle(false);
+    if (handleResult && typeof handleResult === 'object') {
+      if ('error' in handleResult && handleResult.error) {
+        setError(handleResult.error);
+        return;
+      }
+      if ('handle' in handleResult && handleResult.handle && result) {
+        // Proceed to payment integration here
+        console.log('Proceeding to payment for domain:', result.domain, 'with handle:', handleResult.handle);
+        alert(`Handle found: ${handleResult.handle}. Ready for payment integration.`);
+      }
     }
   };
 
@@ -55,8 +101,12 @@ export function DomainSearch() {
     const handleResult = await getOrCreateCustomerHandleAction(data);
     setIsCreatingHandle(false);
     setShowCustomerForm(false);
-    if (handleResult.handle) handleBuyNow(); // Re-run buy logic now that we have a handle
-    else if (handleResult.error) setError(handleResult.error);
+    if (handleResult && typeof handleResult === 'object' && 'handle' in handleResult && handleResult.handle) {
+      // Re-run buy logic now that we have a handle
+      handleBuyNow();
+    } else if (handleResult && typeof handleResult === 'object' && 'error' in handleResult && handleResult.error) {
+      setError(handleResult.error);
+    }
   };
 
   return (
@@ -110,11 +160,11 @@ export function DomainSearch() {
             </div>
           </div>
 
-          {result.status === 'free' && result.price && (
+          {result && result.status === 'free' && result.price && typeof result.price === 'object' && 'currency' in result.price && 'amount' in result.price && (
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">
-                  {result.price.currency} {result.price.amount}
+                  {String(result.price.currency)} {String(result.price.amount)}
                 </p>
                 <p className="text-xs text-slate-500">per year</p>
               </div>

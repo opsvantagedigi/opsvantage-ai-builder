@@ -1,6 +1,7 @@
 import type { OnboardingData as Onboarding } from '@/types/onboarding';
 import type { Page, SectionType, PageType } from '@/types/db';
 import { getGenerativeModel } from './gemini';
+import { unstable_cache as cache } from 'next/cache';
 
 // This defines the structure of the `data` field in a Section
 export interface SectionData {
@@ -145,9 +146,18 @@ function parsePageGenerationResponse(responseText: string): GeneratedPageData {
 }
 
 export async function generatePageData(onboardingData: Onboarding, page: Page): Promise<GeneratedPageData> {
-  const prompt = buildPagePrompt(onboardingData, page);
-  const model = await getGenerativeModel();
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  return parsePageGenerationResponse(text);
+  // Cache the AI generation for 1 hour.
+  // The cache is tagged with the project ID so we can revalidate it if needed.
+  const cachedGenerator = cache(
+    async (onboarding: Onboarding, pageToGen: Page) => {
+      const prompt = buildPagePrompt(onboarding, pageToGen);
+      const model = await getGenerativeModel();
+      const result = await model.generateContent(prompt);
+      return parsePageGenerationResponse(result.response.text());
+    },
+    ['ai-page-generation'],
+    { revalidate: 3600 }
+  );
+
+  return cachedGenerator(onboardingData, page);
 }
