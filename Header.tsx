@@ -55,29 +55,29 @@ export function Header() {
                     icon={<Layout className="w-4 h-4" />}
                     title="Website Builder"
                     desc="AI-powered custom websites"
-                    href="/onboarding"
+                    href="/#features"
                   />
                   <DropdownLink
                     icon={<Globe className="w-4 h-4" />}
                     title="Domain Portal"
                     desc="Search and manage domains"
-                    href="/onboarding"
+                    href="/#features"
                   />
                   <DropdownLink
                     icon={<Shield className="w-4 h-4" />}
                     title="AI Security"
                     desc="Protected hosting & analytics"
-                    href="/onboarding"
+                    href="/#features"
                   />
                 </div>
               </div>
             </div>
 
-            <Link href="/onboarding" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            <Link href="/#pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
               Pricing
             </Link>
 
-            <Link href="/onboarding" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            <Link href="/docs" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
               Docs
             </Link>
           </div>
