@@ -317,9 +317,18 @@ export async function generateBackgroundTextures(onboardingData: Onboarding): Pr
 // Real image generator using OpenAI DALL-E 3
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient() {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 export async function generateImage(prompt: string): Promise<{ url: string }> {
   try {
@@ -329,7 +338,8 @@ export async function generateImage(prompt: string): Promise<{ url: string }> {
     }
 
     console.time("OpenAI Image Gen");
-    const response = await openai.images.generate({
+    const client = getOpenAIClient();
+    const response = await client.images.generate({
       model: "dall-e-3",
       prompt: prompt,
       n: 1,
