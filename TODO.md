@@ -194,8 +194,8 @@ Track:
 Granular permissions:
 - [x] Edit content
 - [x] Publish content
-- [ ] Manage billing
-- [ ] Manage team
+- [x] Manage billing
+- [x] Manage team
 
 ---
 

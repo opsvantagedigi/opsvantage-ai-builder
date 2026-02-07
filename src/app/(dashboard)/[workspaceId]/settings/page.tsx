@@ -6,6 +6,8 @@ import { BrandingSettings } from '@/components/dashboard/BrandingSettings';
 import { AuditLogList } from '@/components/dashboard/AuditLogList';
 import { CompetitorAnalysis } from '@/components/dashboard/CompetitorAnalysis';
 import { AnalyticsInsights } from '@/components/dashboard/AnalyticsInsights';
+import { TeamManager } from '@/components/dashboard/TeamManager';
+import { BillingManager } from '@/components/dashboard/BillingManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +86,18 @@ export default async function SettingsPage({
                         <AnalyticsInsights workspaceId={workspaceId} />
                     </section>
 
+                    {/* Team Section */}
+                    <section id="team">
+                        <TeamManager workspaceId={workspaceId} currentUserId={user.email!} />
+                    </section>
+
+                    {/* Billing Section - OWNER only */}
+                    {member.role === 'OWNER' && (
+                        <section id="billing-mgmt">
+                            <BillingManager workspaceId={workspaceId} />
+                        </section>
+                    )}
+
                     {/* Audit Logs Section */}
                     <section id="audit-logs">
                         <h2 className="text-xl font-semibold mb-4">Audit Logs</h2>
@@ -99,6 +113,10 @@ export default async function SettingsPage({
                         <a href="#branding" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Branding</a>
                         <a href="#competitor-analysis" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Competitor Analysis</a>
                         <a href="#analytics-insights" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">AI Optimization</a>
+                        <a href="#team" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Team</a>
+                        {member.role === 'OWNER' && (
+                            <a href="#billing-mgmt" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Billing</a>
+                        )}
                         <a href="#audit-logs" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Audit Logs</a>
                     </nav>
                 </div>
