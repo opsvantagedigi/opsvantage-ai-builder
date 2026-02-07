@@ -40,7 +40,7 @@ export default function LandingPage() {
             <span className="block overflow-hidden pb-2">
               <span className="animate-text-reveal block">Launch your brand</span>
             </span>
-            <span className="text-gradient-vibrant block overflow-hidden pb-4">
+            <span className="text-gradient-deep block overflow-hidden pb-4">
               <span className="animate-text-reveal block [animation-delay:0.2s]">with Digital Precision</span>
             </span>
           </h1>
@@ -172,7 +172,7 @@ export default function LandingPage() {
             </div>
 
             <h2 className="text-6xl md:text-9xl font-display font-bold text-white mb-16 tracking-tighter leading-none">
-              Ready to transcend the <span className="text-gradient">ordinary?</span>
+              Ready to transcend the <span className="text-gradient-deep">ordinary?</span>
             </h2>
 
             <div className="flex flex-col sm:flex-row gap-8 justify-center items-center scale-110">
