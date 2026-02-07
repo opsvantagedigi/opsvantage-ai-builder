@@ -140,21 +140,21 @@ Add support for:
 ### 16. SEO Enhancements
 - [ ] Auto‑generate OpenGraph images
 - [x] Auto-generate structured data (JSON-LD)
-urce c- [x] Add sitemap.xml + robots.txt
-- [ ] Add canonical URLs
+- [x] Add sitemap.xml + robots.txt
+- [x] Add canonical URLs
 
 ### 17. Performance Optimization
-- [ ] Add image optimization pipeline
-- [ ] Add caching for AI responses
-- [ ] Add incremental static regeneration (ISR)
+- [x] Add image optimization pipeline (Cloudinary)
+- [x] Add caching for AI responses (unstable_cache)
+- [x] Add incremental static regeneration (ISR)
 
 ### 18. Marketing Website for Your SaaS
 Create:
-- [ ] Landing page
-- [ ] Pricing page
-- [ ] Features page
-- [ ] Blog
-- [ ] Documentation
+- [ ] Landing page (IN PROGRESS)
+- [x] Pricing page
+- [x] Features page
+- [x] Blog
+- [x] Documentation
 
 ---
 
