@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CustomerData } from '@/app/actions/customer-actions';
+import type { CustomerData } from './customer-actions';
 
 interface CustomerHandleFormProps {
   userEmail: string;
@@ -18,8 +18,8 @@ export function CustomerHandleForm({ userEmail, userName, onSubmit, onCancel, is
       firstName: userName.split(' ')[0] || '',
       lastName: userName.split(' ').slice(1).join(' ') || '',
     },
-    address: {},
-    phone: {},
+    address: { street: '', number: '', zipcode: '', city: '', country: '' },
+    phone: { countryCode: '', areaCode: '', subscriberNumber: '' },
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,7 +29,7 @@ export function CustomerHandleForm({ userEmail, userName, onSubmit, onCancel, is
     if (field) {
       setFormData(prev => ({
         ...prev,
-        [section]: { ...(prev as any)[section], [field]: value },
+        [section as keyof typeof prev]: { ...((prev as any)[section] || {}), [field]: value },
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -38,7 +38,12 @@ export function CustomerHandleForm({ userEmail, userName, onSubmit, onCancel, is
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData as CustomerData);
+    // Only submit if all required fields are present
+    if (
+      formData.name && formData.address && formData.phone && formData.email
+    ) {
+      onSubmit(formData as CustomerData);
+    }
   };
 
   return (

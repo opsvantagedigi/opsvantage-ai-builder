@@ -2,25 +2,20 @@
 'use client'
 
 import { useState } from 'react';
-// import { useSession } from 'next-auth/react';
 import { checkDomainAvailabilityAction } from '../../domain-actions';
 import { Loader2 } from 'lucide-react';
-// import { CustomerHandleForm } from '../../../prisma/CustomerHandleForm';
 
 export function DomainSearch() {
   const [query, setQuery] = useState('');
   // const [result, setResult] = useState<{ status?: string; domain?: string; price?: { currency: string; amount: string }; isPremium?: boolean; error?: string } | null>(null);
   // const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // const [error, setError] = useState<string | null>(null);
-  // const [showCustomerForm, setShowCustomerForm] = useState(false);
-  // const [isCreatingHandle, setIsCreatingHandle] = useState(false);
-  // const { data: session } = useSession();
+  // Removed unused error, showCustomerForm, isCreatingHandle, session
 
-  const handleSearch = async () => {
+  const handleSearch = async () => { 
     if (!query) return;
     setLoading(true);
-    await checkDomainAvailabilityAction(query);
+    const result = await checkDomainAvailabilityAction(query);
     setLoading(false);
   };
 

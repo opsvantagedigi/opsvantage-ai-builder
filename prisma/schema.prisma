@@ -96,6 +96,7 @@ model User {
   workspaces WorkspaceMember[]
   // Workspaces this user owns
   ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  orders    Order[]
 }
 
 model Account {
@@ -142,6 +143,7 @@ model Project {
   id            String    @id @default(cuid())
   name          String
   subdomain     String?   @unique
+  vercelProjectId String?
   sanityDataset String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -265,6 +267,13 @@ model Workspace {
   managedClients    AgencyClient[] @relation("AgencyRelation")
   managedByAgencies AgencyClient[] @relation("ClientRelation")
 
+  // Subscription details
+  plan                  Plan      @default(FREE)
+  stripeCustomerId      String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId  String?   @unique @map("stripe_subscription_id")
+  stripePriceId         String?   @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
+
   // billing     Billing?
   auditLogs   AuditLog[]
   usage       Usage?
@@ -312,6 +321,22 @@ model AgencyClient {
   updatedAt DateTime @updatedAt
 
   @@unique([agencyId, clientId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  productId String      // e.g., domain name like "example.com"
+  productType String    // "DOMAIN_REGISTRATION", "SSL_CERTIFICATE"
+  status    String      @default("PENDING") // PENDING, PAID, FAILED, COMPLETED
+  priceAmount  Float
+  priceCurrency String
+  nowPaymentsInvoiceId String? @unique
+  openProviderOrderId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AuditLog {

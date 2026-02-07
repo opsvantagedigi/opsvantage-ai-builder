@@ -117,16 +117,25 @@ Add support for:
 
 ### 14. Billing & Subscription System
 (IN PROGRESS)
-Integrate Stripe:
+Integrate NowPayments:
 - [ ] Free tier
 - [ ] Pro tier
 - [ ] Agency tier
+- [x] Integrate NowPayments for Subscriptions & Purchases:
+  - [x] Free tier (default)
+  - [x] Pro tier
+  - [x] Agency tier
 - [ ] Usage‑based billing for AI tokens
+- [x] Integrate NowPayments for one-off purchases:
+  - [x] Create Order model
+  - [x] Create payment invoice via NowPayments API
+  - [x] Create webhook to handle successful payment
+  - [x] Fulfill order (register domain) after payment
 
 ### 15. Custom Domains
-- [ ] Add domain verification
-- [ ] Add SSL provisioning
-- [ ] Add automatic DNS instructions
+- [x] Add domain to Vercel project (automated and manual)
+- [x] Add SSL provisioning (handled by Vercel)
+- [x] Add automatic DNS instructions (via Vercel API response)
 
 ---
 

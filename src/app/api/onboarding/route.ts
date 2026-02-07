@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma, withRetry } from "@/lib/prisma"
-import { onboardingStep1Schema, onboardingStep2Schema, onboardingStep3Schema, onboardingStep4Schema, onboardingPatchSchema, onboardingFullSchema } from "@/lib/onboarding-schema"
+import { prisma } from "@/lib/prisma"
+import { onboardingStep1Schema, onboardingPatchSchema } from "@/lib/onboarding-schema"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
+import { checkSubscription } from "@/lib/subscription"
 
 // GET: Fetch onboarding state for current user (latest project)
-export const GET = withErrorHandling(async (req) => {
+export const GET = withErrorHandling(async () => {
   try {
     const session = await getServerSession(authOptions)
     if (!session || !session.user?.email) {
@@ -71,6 +72,17 @@ export const POST = withErrorHandling(async (req) => {
       }
     })
     workspaceId = newWorkspace.id
+  } else {
+    // If workspace exists, check project limit before creating a new one
+    const subscription = await checkSubscription(workspaceId);
+    if (subscription.usage.projects >= subscription.limits.projects) {
+      return NextResponse.json(
+        {
+          error: `You have reached the project limit for the ${subscription.plan} plan.`,
+        },
+        { status: 403 }
+      );
+    }
   }
   // Create new project for onboarding (one per onboarding flow)
   const project = await prisma.project.create({
@@ -125,7 +137,7 @@ export const PATCH = withErrorHandling(async (req) => {
   const onboarding = await prisma.onboarding.findUnique({ where: { projectId: project.id } })
   if (!onboarding) return NextResponse.json({ error: "No onboarding found" }, { status: 404 })
   // Update onboarding record
-  const updated = await prisma.onboarding.update({
+  await prisma.onboarding.update({
     where: { id: onboarding.id },
     data: { ...patch.data },
   })

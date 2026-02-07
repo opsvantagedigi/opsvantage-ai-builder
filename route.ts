@@ -1,133 +1,89 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { z } from 'zod';
-import { authOptions } from '@/lib/auth';
+import { headers } from 'next/headers';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { logger } from '@/lib/logger';
+import { Plan } from '@prisma/client';
 
 /**
- * Schema for validating the role update request.
+ * Verifies the signature of the NowPayments subscription IPN request.
  */
-const updateRoleSchema = z.object({
-  role: z.nativeEnum(Role),
-});
-
-/**
- * DELETE /api/workspaces/{workspaceId}/members/{memberId}
- * Removes a member from a workspace.
- */
-export async function DELETE(
-  request: Request,
-  { params }: { params: { workspaceId: string; memberId: string } }
-) {
-  try {
-    const { workspaceId, memberId } = params;
-
-    // 1. Authenticate and authorize the user (must be OWNER or ADMIN)
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const currentUserId = session.user.id;
-
-    const currentUserMember = await prisma.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId, userId: currentUserId } },
-    });
-
-    if (!currentUserMember || !['OWNER', 'ADMIN'].includes(currentUserMember.role)) {
-      return NextResponse.json(
-        { error: 'You do not have permission to remove members.' },
-        { status: 403 }
-      );
-    }
-
-    // 2. Find the member to be removed
-    const memberToRemove = await prisma.workspaceMember.findUnique({
-      where: { id: memberId },
-    });
-
-    if (!memberToRemove || memberToRemove.workspaceId !== workspaceId) {
-      return NextResponse.json({ error: 'Member not found in this workspace.' }, { status: 404 });
-    }
-
-    // 3. Business logic: Prevent owner from being removed
-    if (memberToRemove.role === 'OWNER') {
-      return NextResponse.json({ error: 'Cannot remove the workspace owner.' }, { status: 400 });
-    }
-
-    // 4. Delete the member
-    await prisma.workspaceMember.delete({ where: { id: memberId } });
-
-    return NextResponse.json({ message: 'Member removed successfully.' }, { status: 200 });
-  } catch (error) {
-    console.error('Error removing member:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+function verifySignature(payload: string, signature: string | null): boolean {
+  const ipnSecret = process.env.NOWPAYMENTS_SUBSCRIPTION_IPN_SECRET_KEY;
+  if (!ipnSecret || !signature) {
+    logger.warn({ msg: 'Subscription IPN secret or signature missing, skipping verification.' });
+    return !ipnSecret;
   }
+
+  const hmac = crypto.createHmac('sha512', ipnSecret);
+  hmac.update(payload, 'utf-8');
+  const expectedSignature = hmac.digest('hex');
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 }
 
 /**
- * PATCH /api/workspaces/{workspaceId}/members/{memberId}
- * Updates the role of a workspace member.
+ * Webhook to handle recurring subscription payment notifications from NowPayments.
  */
-export async function PATCH(
-  request: Request,
-  { params }: { params: { workspaceId: string; memberId: string } }
-) {
+export async function POST(request: Request) {
+  const bodyText = await request.text();
+  const signature = headers().get('x-nowpayments-sig');
+
+  if (!verifySignature(bodyText, signature)) {
+    logger.error({ msg: 'Invalid NowPayments subscription signature.' });
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
   try {
-    const { workspaceId, memberId } = params;
+    const payload = JSON.parse(bodyText);
+    const { subscription_id: subscriptionId, status, plan_id: planId, next_payment_date: nextPaymentDate } = payload;
 
-    // 1. Authenticate and authorize the user (must be OWNER or ADMIN)
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const currentUserId = session.user.id;
+    logger.info({ msg: 'Received NowPayments Subscription IPN', subscriptionId, status });
 
-    const currentUserMember = await prisma.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId, userId: currentUserId } },
+    // Find the workspace associated with this subscription
+    const workspace = await prisma.workspace.findUnique({
+      where: { stripeSubscriptionId: subscriptionId },
     });
 
-    if (!currentUserMember || !['OWNER', 'ADMIN'].includes(currentUserMember.role)) {
-      return NextResponse.json(
-        { error: 'You do not have permission to change roles.' },
-        { status: 403 }
-      );
+    if (!workspace) {
+      logger.error({ msg: 'Webhook received for non-existent workspace subscription', subscriptionId });
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
-    // 2. Validate request body
-    const body = await request.json();
-    const validation = updateRoleSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid role provided.' }, { status: 400 });
-    }
-    const { role: newRole } = validation.data;
+    let newPlan: Plan = workspace.plan;
+    let newPeriodEnd: Date | null = workspace.stripeCurrentPeriodEnd;
 
-    // 3. Find the member to be updated
-    const memberToUpdate = await prisma.workspaceMember.findUnique({
-      where: { id: memberId },
-    });
-
-    if (!memberToUpdate || memberToUpdate.workspaceId !== workspaceId) {
-      return NextResponse.json({ error: 'Member not found in this workspace.' }, { status: 404 });
-    }
-
-    // 4. Business logic
-    if (memberToUpdate.role === 'OWNER' || newRole === 'OWNER') {
-      return NextResponse.json({ error: 'Cannot change the owner role.' }, { status: 400 });
-    }
-    if (memberToUpdate.userId === currentUserId) {
-      return NextResponse.json({ error: 'You cannot change your own role.' }, { status: 400 });
+    if (status === 'active') {
+      // Determine the plan based on the plan_id from NowPayments
+      if (String(planId) === process.env.NOWPAYMENTS_PRO_PLAN_ID) {
+        newPlan = Plan.PRO;
+      } else if (String(planId) === process.env.NOWPAYMENTS_AGENCY_PLAN_ID) {
+        newPlan = Plan.AGENCY;
+      }
+      newPeriodEnd = new Date(nextPaymentDate);
+      logger.info({ msg: 'Activating/Renewing subscription', workspaceId: workspace.id, newPlan, newPeriodEnd });
+    } else if (['expired', 'cancelled'].includes(status)) {
+      // Downgrade the plan if the subscription is no longer active
+      newPlan = Plan.FREE;
+      newPeriodEnd = null;
+      logger.info({ msg: 'Deactivating subscription', workspaceId: workspace.id });
     }
 
-    // 5. Update the member's role
-    const updatedMember = await prisma.workspaceMember.update({
-      where: { id: memberId },
-      data: { role: newRole },
-    });
+    // Update the workspace record if there's a change
+    if (newPlan !== workspace.plan) {
+      await prisma.workspace.update({
+        where: { id: workspace.id },
+        data: {
+          plan: newPlan,
+          stripeCurrentPeriodEnd: newPeriodEnd,
+        },
+      });
+    }
 
-    return NextResponse.json(updatedMember);
-  } catch (error) {
-    console.error('Error updating member role:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+    return NextResponse.json({ ok: true });
+
+  } catch (error: any) {
+    logger.error({ msg: 'Error processing NowPayments subscription webhook', error: error.message });
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }

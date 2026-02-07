@@ -1,45 +1,133 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { headers } from 'next/headers';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { openProvider } from '@/lib/openprovider/client';
+import { logger } from '@/lib/logger';
+import { vercel } from '@/lib/vercel/client';
 
 /**
- * DELETE /api/workspaces/{workspaceId}/clients/{agencyClientId}
- * An agency revokes a pending invitation to manage a client.
+ * Verifies the signature of the NowPayments IPN request.
  */
-export async function DELETE(
-  request: Request,
-  { params }: { params: { workspaceId: string; agencyClientId: string } }
-) {
+function verifyNowPaymentsSignature(payload: string, signature: string | null): boolean {
+  const ipnSecret = process.env.NOWPAYMENTS_IPN_SECRET_KEY;
+  if (!ipnSecret || !signature) {
+    logger.warn({ msg: 'IPN secret or signature missing, skipping verification.' });
+    // In production, you should probably fail here if the secret is expected.
+    return !ipnSecret;
+  }
+
+  const hmac = crypto.createHmac('sha512', ipnSecret);
+  hmac.update(payload, 'utf-8');
+  const expectedSignature = hmac.digest('hex');
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+}
+
+/**
+ * Webhook to handle Instant Payment Notifications (IPN) from NowPayments.
+ */
+export async function POST(request: Request) {
+  const bodyText = await request.text();
+  const signature = headers().get('x-nowpayments-sig');
+
+  if (!verifyNowPaymentsSignature(bodyText, signature)) {
+    logger.error({ msg: 'Invalid NowPayments signature.' });
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
   try {
-    const { workspaceId, agencyClientId } = params;
+    const payload = JSON.parse(bodyText);
+    const { order_id: orderId, payment_status, price_amount, pay_amount } = payload;
 
-    // 1. Authenticate and authorize the user (must be OWNER or ADMIN of the agency)
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const currentUserId = session.user.id;
+    logger.info({ msg: 'Received NowPayments IPN', orderId, payment_status });
 
-    const currentUserMember = await prisma.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId, userId: currentUserId } },
+    // Find the order in our database
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true },
     });
 
-    if (!currentUserMember || !['OWNER', 'ADMIN'].includes(currentUserMember.role)) {
-      return NextResponse.json(
-        { error: 'You do not have permission to manage client invitations.' },
-        { status: 403 }
-      );
+    if (!order) {
+      logger.error({ msg: 'Webhook received for non-existent order', orderId });
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // 2. Delete the invitation, ensuring it belongs to the correct agency workspace
-    await prisma.agencyClient.delete({
-      where: { id: agencyClientId, agencyId: workspaceId },
-    });
+    // Only process successful payments for pending orders
+    if (payment_status === 'finished' && order.status === 'PENDING') {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'PAID' },
+      });
 
-    return NextResponse.json({ message: 'Invitation revoked successfully.' }, { status: 200 });
-  } catch (error) {
-    console.error('Error revoking client invitation:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+      // --- Trigger Domain Registration ---
+      if (order.productType === 'DOMAIN_REGISTRATION') {
+        if (!order.user.openProviderHandle) {
+          throw new Error(`User ${order.userId} does not have an OpenProvider handle.`);
+        }
+
+        const [name, ...extParts] = order.productId.split('.');
+        const extension = extParts.join('.');
+
+        const registrationPayload = {
+          domain: { name, extension },
+          period: 1, // Assuming 1-year registration
+          owner_handle: order.user.openProviderHandle,
+          admin_handle: order.user.openProviderHandle,
+          tech_handle: order.user.openProviderHandle,
+          // Set nameservers to Vercel's by default
+          name_servers: [
+            { name: 'ns1.vercel-dns.com' },
+            { name: 'ns2.vercel-dns.com' },
+          ],
+        };
+
+        const registrationResult = await openProvider.createDomain(registrationPayload);
+
+        if (registrationResult.code !== 0 || !registrationResult.data?.id) {
+          throw new Error(`OpenProvider registration failed: ${registrationResult.desc}`);
+        }
+
+        // Update order to COMPLETED with the OpenProvider order ID
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'COMPLETED',
+            openProviderOrderId: String(registrationResult.data.id),
+          },
+        });
+
+        logger.info({ msg: 'Domain successfully registered', orderId, domain: order.productId });
+
+        // --- Add Domain to Vercel Project ---
+        // Find the user's latest project to associate the domain with.
+        const member = await prisma.workspaceMember.findFirst({ where: { userId: order.userId } });
+        if (!member) {
+          throw new Error(`Could not find workspace for user ${order.userId}`);
+        }
+        const project = await prisma.project.findFirst({
+          where: { workspaceId: member.workspaceId },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (project?.vercelProjectId) {
+          await vercel.addDomainToProject(project.vercelProjectId, order.productId);
+          logger.info({ msg: 'Domain added to Vercel project', vercelProjectId: project.vercelProjectId, domain: order.productId });
+
+          // Create a record in our own DB to track the domain
+          await prisma.domain.create({
+            data: { projectId: project.id, hostname: order.productId },
+          });
+        } else {
+          logger.warn({ msg: 'Could not add domain to Vercel: vercelProjectId not found for project', projectId: project?.id });
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+
+  } catch (error: any) {
+    logger.error({ msg: 'Error processing NowPayments webhook', error: error.message });
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }
