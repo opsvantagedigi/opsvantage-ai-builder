@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { checkDomainAvailabilityAction, registerDomainAction } from '@/app/actions/domain-actions';
-import { createCustomerHandleAction, CustomerData } from '@/app/actions/customer-actions';
+import { checkDomainAvailabilityAction, registerDomainAction } from './domain-actions';
+import { createCustomerHandleAction, CustomerData } from './customer-actions';
 import { Search, Check, X, Loader2, ShoppingCart } from 'lucide-react';
-import { CustomerHandleForm } from '@/components/domains/CustomerHandleForm';
+import { CustomerHandleForm } from './CustomerHandleForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type SearchResult = {
@@ -111,7 +111,7 @@ export function DomainSearch() {
       )}
 
       <form onSubmit={handleSubmit} className="flex items-center gap-3">
-        <div className="relative flex-grow">
+        <div className="relative grow">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
           <input
             type="text"
