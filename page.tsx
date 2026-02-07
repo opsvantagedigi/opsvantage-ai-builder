@@ -1,4 +1,9 @@
 import { DomainSearch } from '@/components/domains/DomainSearch';
+import { notFound } from 'next/navigation';
+import { getPageData } from '@/lib/sanity/queries';
+import { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 
 export default function DomainsPage() {
   return (
@@ -12,10 +17,15 @@ export default function DomainsPage() {
             Manage your digital assets. Whitelabel domains and enterprise-grade SSL protection.
           </p>
         </header>
+// Assuming a generic Section component that can render different section types
+import { Section } from '@/components/builder/Section';
 
         <section className="mb-16">
           <DomainSearch />
         </section>
+interface PageProps {
+  params: { slug: string[] };
+}
 
         <section>
           <h2 className="text-2xl font-bold mb-6">Enterprise SSL Certificates</h2>
@@ -32,5 +42,60 @@ export default function DomainsPage() {
         </section>
       </div>
     </div>
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const slug = params.slug?.join('/') || 'home';
+  const page = await getPageData(slug);
+
+  if (!page) {
+    return {};
+  }
+
+  const headersList = headers();
+  const host = headersList.get('host') || '';
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const canonicalUrl = `${protocol}://${host}/${slug === 'home' ? '' : slug}`;
+
+  const ogTitle = page.ogTitle || page.title;
+  const ogDescription = page.ogDescription || page.seoDescription || '';
+  const ogUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/og`);
+  ogUrl.searchParams.set('title', ogTitle);
+  ogUrl.searchParams.set('description', ogDescription);
+
+  const metadata: Metadata = {
+    title: page.seoTitle || page.title,
+    description: page.seoDescription,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: ogTitle,
+      description: ogDescription,
+      images: [{ url: ogUrl.toString(), width: 1200, height: 630 }],
+    },
+  };
+
+  if (page.structuredData) {
+    metadata.other = {
+      'application/ld+json': JSON.stringify(page.structuredData),
+    };
+  }
+
+  return metadata;
+}
+
+export default async function Page({ params }: PageProps) {
+  const slug = params.slug?.join('/') || 'home';
+  const page = await getPageData(slug);
+
+  if (!page) {
+    return notFound();
+  }
+
+  return (
+    <>
+      {page.sections?.map((section: any) => (
+        <Section key={section._key} section={section} />
+      ))}
+    </>
   );
 }

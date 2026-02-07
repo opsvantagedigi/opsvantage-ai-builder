@@ -45,6 +45,7 @@ export interface GeneratedSection {
 export interface GeneratedPageData {
   seoTitle: string;
   seoDescription: string;
+  structuredData?: Record<string, unknown>;
   sections: GeneratedSection[];
 }
 
@@ -84,6 +85,7 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
     - "seoTitle": string
     - "seoDescription": string
     - "sections": array of "GeneratedSection" objects.
+    - "structuredData": A valid JSON-LD object for the page (e.g., for a 'HOME' page, use 'WebSite' schema; for 'ABOUT', use 'Organization' schema).
 
     Each "GeneratedSection" object must have:
     - "type": string (one of "HERO", "FEATURES", "TESTIMONIALS", "FAQ", "CUSTOM")
@@ -95,6 +97,13 @@ function buildPagePrompt(onboardingData: Onboarding, page: Page): string {
     {
       "seoTitle": "Expert Web Design Services | ${businessName}",
       "seoDescription": "Get a stunning, high-performance website tailored to your business. ${businessName} offers professional web design and development services to help you grow.",
+      "structuredData": {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "${businessName}",
+        "url": "https://example.com",
+        "description": "${description}"
+      },
       "sections": [
         {
           "type": "HERO",

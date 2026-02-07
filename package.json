@@ -18,6 +18,7 @@
     "@sanity/client": "^7.14.1",
     "@sanity/image-url": "^1.2.0",
     "@sanity/vision": "^4.22.0",
+    "@vercel/og": "^0.8.6",
     "ai": "^6.0.72",
     "clsx": "^1.2.1",
     "lru-cache": "^11.2.5",

@@ -116,15 +116,11 @@ Add support for:
   - [x] Revoke pending invitations
 
 ### 14. Billing & Subscription System
-(IN PROGRESS)
-Integrate NowPayments:
-- [ ] Free tier
-- [ ] Pro tier
-- [ ] Agency tier
 - [x] Integrate NowPayments for Subscriptions & Purchases:
   - [x] Free tier (default)
   - [x] Pro tier
   - [x] Agency tier
+  - [x] Feature gating based on plan limits
 - [ ] Usage‑based billing for AI tokens
 - [x] Integrate NowPayments for one-off purchases:
   - [x] Create Order model
@@ -143,8 +139,8 @@ Integrate NowPayments:
 
 ### 16. SEO Enhancements
 - [ ] Auto‑generate OpenGraph images
-- [ ] Auto‑generate structured data (JSON‑LD)
-- [ ] Add sitemap.xml + robots.txt
+- [x] Auto-generate structured data (JSON-LD)
+urce c- [x] Add sitemap.xml + robots.txt
 - [ ] Add canonical URLs
 
 ### 17. Performance Optimization
