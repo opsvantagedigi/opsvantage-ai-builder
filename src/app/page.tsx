@@ -20,7 +20,7 @@ export default function LandingPage() {
     <div className="bg-slate-950 text-white min-h-screen flex flex-col overflow-x-hidden">
       <Header />
 
-      <main className="flex-grow">
+      <main className="grow">
         {/* Hero Section */}
         <section className="relative pt-48 pb-32 text-center">
           <div className="absolute inset-0 bg-grid-slate-800/40 mask-[linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
