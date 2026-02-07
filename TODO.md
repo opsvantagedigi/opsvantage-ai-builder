@@ -138,7 +138,7 @@ Add support for:
 ## PHASE 5 — PERFORMANCE, SEO & MARKETING
 
 ### 16. SEO Enhancements
-- [ ] Auto‑generate OpenGraph images
+- [x] Auto‑generate OpenGraph images
 - [x] Auto-generate structured data (JSON-LD)
 - [x] Add sitemap.xml + robots.txt
 - [x] Add canonical URLs
@@ -162,14 +162,14 @@ Create:
 
 ### 19. Automated Testing
 Add:
-- [ ] Unit tests for AI pipelines
-- [ ] Integration tests for Prisma
+- [x] Unit tests for AI pipelines
+- [x] Integration tests for Prisma
 - [ ] E2E tests for onboarding → publish flow
 
 ### 20. Observability
 Add:
-- [ ] Request tracing
-- [ ] Error monitoring
+- [x] Request tracing
+- [x] Error monitoring
 - [ ] Performance metrics
 - [ ] AI usage analytics
 
@@ -179,21 +179,21 @@ Add:
 
 ### 21. White‑Label Mode
 Agencies can:
-- [ ] Add their logo
-- [ ] Use custom domain for dashboard
+- [x] Add their logo
+- [x] Use custom domain for dashboard
 - [ ] Customize email templates
 
 ### 22. Audit Logs
 Track:
-- [ ] Page edits
-- [ ] AI generations
-- [ ] User logins
-- [ ] Domain changes
+- [x] Page edits
+- [x] AI generations
+- [x] User logins
+- [x] Domain changes
 
 ### 23. Role‑Based Access Control
 Granular permissions:
-- [ ] Edit content
-- [ ] Publish content
+- [x] Edit content
+- [x] Publish content
 - [ ] Manage billing
 - [ ] Manage team
 

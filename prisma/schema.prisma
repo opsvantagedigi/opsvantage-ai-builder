@@ -97,6 +97,7 @@ model User {
   // Workspaces this user owns
   ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
   orders    Order[]
+  auditLogs AuditLog[]
 }
 
 model Account {
@@ -267,6 +268,11 @@ model Workspace {
   managedClients    AgencyClient[] @relation("AgencyRelation")
   managedByAgencies AgencyClient[] @relation("ClientRelation")
 
+  // Branding
+  brandingLogo           String?
+  brandingColors         Json?
+  customDashboardDomain  String?   @unique
+
   // Subscription details
   plan                  Plan      @default(FREE)
   stripeCustomerId      String?   @unique @map("stripe_customer_id")
@@ -274,7 +280,7 @@ model Workspace {
   stripePriceId         String?   @map("stripe_price_id")
   stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
 
-  // billing     Billing?
+  // relations
   auditLogs   AuditLog[]
   usage       Usage?
   
@@ -342,11 +348,16 @@ model Order {
 model AuditLog {
   id          String   @id @default(cuid())
   workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
-  actorId     String   // User who performed the action
-  action      String   // e.g. "PUBLISHED_SITE", "DELETED_PAGE"
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actorId     String
+  actor       User      @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action      String    // e.g. "PUBLISHED_SITE", "DELETED_PAGE"
+  entityType  String    // e.g. "PAGE", "PROJECT", "MEMBER"
+  entityId    String
   metadata    Json?
-  createdAt   DateTime @default(now())
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
 }
 
 model Usage {
