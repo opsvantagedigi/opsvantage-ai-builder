@@ -89,7 +89,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
         const result = await loadProjectContentAction(params.projectId);
 
         if (result.success && result.content) {
-          setSiteData(result.content);
+          setSiteData(result.content as typeof DEFAULT_SITE_DATA);
           console.log('[MARZ] Engram loaded from long-term memory');
         } else if (result.error) {
           // If no saved data, use default
@@ -140,7 +140,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
             }
           : page
       ),
-    }));
+    }) as any);
   };
 
   const handleUpdateSiteConfig = (field: string, value: string) => {
@@ -150,7 +150,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
         ...prev.siteConfig,
         [field]: value,
       },
-    }));
+    }) as any);
   };
 
   const currentPage = siteData.pages.find((p) => p.id === selectedPage);
@@ -313,7 +313,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
                       Hero Image
                     </label>
                     <EditableImage
-                      src={section.content.image}
+                      src={section.content.image || 'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1600&auto=format&fit=crop'}
                       alt="Hero image"
                       className="h-64 w-full rounded-lg"
                       onUpdate={(newSrc) =>
@@ -334,7 +334,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
                       Headline
                     </label>
                     <EditableText
-                      value={section.content.headline}
+                      value={section.content.headline || ''}
                       onSave={(val) =>
                         handleUpdateSection(
                           currentPage!.id,
@@ -352,7 +352,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
                       Subheadline
                     </label>
                     <EditableText
-                      value={section.content.subheadline}
+                      value={section.content.subheadline || ''}
                       onSave={(val) =>
                         handleUpdateSection(
                           currentPage!.id,
@@ -371,7 +371,7 @@ export default function BuilderPage({ params }: BuilderPageProps) {
               {section.type === 'features' && (
                 <div className="space-y-4">
                   <EditableText
-                    value={section.content.headline}
+                    value={section.content.headline || ''}
                     onSave={(val) =>
                       handleUpdateSection(
                         currentPage!.id,
@@ -383,13 +383,13 @@ export default function BuilderPage({ params }: BuilderPageProps) {
                     className="text-2xl font-bold text-white"
                   />
                   <div className="grid grid-cols-2 gap-4">
-                    {section.content.items.map(
+                    {(section.content.items || []).map(
                       (item: any, idx: number) => (
                         <div key={idx} className="space-y-2">
                           <EditableText
-                            value={item.title}
+                            value={item.title || ''}
                             onSave={(val) => {
-                              const newItems = [...section.content.items];
+                              const newItems = [...(section.content.items || [])];
                               newItems[idx].title = val;
                               handleUpdateSection(
                                 currentPage!.id,
@@ -401,9 +401,9 @@ export default function BuilderPage({ params }: BuilderPageProps) {
                             className="font-bold text-white"
                           />
                           <EditableText
-                            value={item.description}
+                            value={item.description || ''}
                             onSave={(val) => {
-                              const newItems = [...section.content.items];
+                              const newItems = [...(section.content.items || [])];
                               newItems[idx].description = val;
                               handleUpdateSection(
                                 currentPage!.id,

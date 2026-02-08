@@ -135,13 +135,12 @@ export function EditableImage({
             {isGenerating ? 'Generating...' : 'AI Generate'}
           </Button>
 
-          <label className="cursor-pointer">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={isUploading}
-              className="gap-2"
-              as="span"
+          <label className="cursor-pointer inline-block">
+            <div
+              className={cn(
+                'inline-flex items-center justify-center rounded-xl font-black uppercase tracking-[0.2em] transition-all duration-300 disabled:opacity-50 h-9 px-4 text-[10px] bg-transparent text-white border border-white/20 hover:border-white/40 gap-2',
+                isUploading ? 'opacity-50 pointer-events-none' : ''
+              )}
             >
               {isUploading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -149,7 +148,7 @@ export function EditableImage({
                 <Upload className="w-3 h-3" />
               )}
               {isUploading ? 'Uploading...' : 'Upload'}
-            </Button>
+            </div>
             <input
               type="file"
               accept="image/*"
