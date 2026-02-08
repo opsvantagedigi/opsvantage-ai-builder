@@ -1,1 +1,5 @@
-// ...existing code from page.tsx (builder page) will be moved here...
+
+// Export a dummy component to ensure module
+export default function BuilderPage() {
+	return null;
+}
