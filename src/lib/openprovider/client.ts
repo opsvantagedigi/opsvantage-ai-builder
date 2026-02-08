@@ -9,6 +9,22 @@ interface DomainCreationPayload {
 
 // Stub for OpenProvider client API
 export const openProvider = {
+    async getSSLProducts() {
+      // Simulate a successful SSL products fetch
+      return {
+        code: 0,
+        data: {
+          results: [
+            {
+              prices: [
+                { price: { reseller: { price: 50, currency: 'USD' } } }
+              ]
+            }
+          ]
+        },
+        desc: 'Success',
+      };
+    },
   async checkDomain(name: string, ext: string) {
       // Simulate a successful domain check
       return {
