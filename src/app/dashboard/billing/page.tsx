@@ -192,27 +192,12 @@ export default function BillingPage() {
 
                 {/* Features */}
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{plan.limits.sites} published site(s)</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{plan.limits.aiGenerations} AI credits/month</span>
-                  </li>
-                  <li
-                    className={cn(
-                      'flex items-start gap-3',
-                      plan.limits.customDomains ? '' : 'opacity-50'
-                    )}
-                  >
-                    {plan.limits.customDomains ? (
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <span className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5">✕</span>
-                    )}
-                    <span className="text-sm">Custom domains</span>
-                  </li>
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
                 </ul>
 
                 <Button
