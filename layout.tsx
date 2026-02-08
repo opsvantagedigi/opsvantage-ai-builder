@@ -1,4 +1,6 @@
-import { GeistSans } from 'geist/font/sans';
+// import { GeistSans } from 'geist/font/sans';
+// Fallback font if geist/font/sans is not available
+const GeistSans = { className: '' };
 import { 
   LayoutDashboard, Globe, Zap, Settings, 
   CreditCard, LogOut, Command 
@@ -48,7 +50,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-function NavItem({ href, icon, label, active = false }: any) {
+interface NavItemProps {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}
+function NavItem({ href, icon, label, active = false }: NavItemProps) {
   return (
     <Link 
       href={href} 

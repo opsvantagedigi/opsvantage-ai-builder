@@ -12,14 +12,8 @@ import { clsx } from 'clsx';
 import { createProjectAction } from '../../../generate-project';
 
 // --- TYPES (Locally scoped for speed, or import from @/lib/types/wizard) ---
-type WizardState = {
-  step: number;
-  businessName: string;
-  industry: string;
-  goals: string[];
-  designVibe: string;
-  contactEmail: string;
-};
+import type { WizardState as ImportedWizardState } from './wizard';
+type WizardState = ImportedWizardState;
 
 const INDUSTRIES = [
   "SaaS / Tech", "Real Estate", "Healthcare", "E-Commerce", 
@@ -45,6 +39,7 @@ export default function WizardPage() {
     industry: '',
     goals: [],
     designVibe: 'futuristic',
+    domain: { selected: '', status: 'skip' },
     contactEmail: ''
   });
 
