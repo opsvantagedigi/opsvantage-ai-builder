@@ -210,6 +210,11 @@ model Project {
   pages      Page[]
   aiTasks    AiTask[]
   domains    Domain[]
+
+  // Analytics
+  pageViews PageView[]
+  conversionEvents ConversionEvent[]
+  analyticsSummary AnalyticsSummary?
 }
 
 model Domain {
@@ -432,4 +437,75 @@ model EarlyAccessSignup {
   email     String   @unique
   signedUpAt DateTime @default(now())
   notified  Boolean  @default(false)
+}
+
+// =========================
+// Analytics Models
+// =========================
+
+model PageView {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pageSlug    String   // URL slug of the page
+
+  // Visitor tracking
+  visitorId   String   // Anonymous visitor ID
+  sessionId   String   // Session ID for grouping visits
+
+  // Engagement
+  duration    Int      @default(0)  // Time on page in seconds
+  scrollDepth Int      @default(0)  // % of page scrolled
+
+  // Device/Browser info
+  userAgent   String?
+  referer     String?
+  country     String?  // Geolocation (via IP)
+  city        String?
+  device      String?  // mobile, tablet, desktop
+  browser     String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model ConversionEvent {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Event tracking
+  eventName   String   // e.g., "contact_form_submit", "newsletter_signup"
+  eventValue  String?  // Additional data
+
+  // Visitor info
+  visitorId   String
+  sessionId   String
+
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([eventName])
+}
+
+model AnalyticsSummary {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Summary stats (updated daily)
+  totalViews  Int      @default(0)
+  totalVisitors Int    @default(0)
+  avgDuration Int      @default(0)
+  bounceRate  Float    @default(0)
+
+  // Date range
+  dateFrom    DateTime
+  dateTo      DateTime
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
