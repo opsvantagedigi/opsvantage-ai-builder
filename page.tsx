@@ -9,10 +9,26 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import React from 'react';
-import { RenderEngine } from '../components/builder/render-engine';
+import { RenderEngine } from './render-engine';
+
+interface Section {
+  id: string;
+  type: string;
+  content: {
+    headline?: string;
+    subhead?: string;
+    cta?: string;
+    items?: { title: string; desc: string; icon: string }[];
+  };
+}
+
+interface SiteData {
+  siteConfig: { title: string };
+  sections: Section[];
+}
 
 // MOCK DATA (This replicates the JSON structure MARZ generates)
-const MOCK_AI_DATA = {
+const MOCK_AI_DATA: SiteData = {
   siteConfig: { title: "Nexus Dynamics" },
   sections: [
     {
@@ -42,6 +58,32 @@ const MOCK_AI_DATA = {
 export default function BuilderPage() {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isPublishing, setIsPublishing] = useState(false);
+  
+  // 1. LIFT STATE UP: We now manage the site data locally
+  const [siteData, setSiteData] = useState<SiteData>(MOCK_AI_DATA);
+
+  // 2. CREATE UPDATE HANDLER
+  // This function finds the specific section and updates a specific key
+  const handleUpdateSection = (sectionId: string, field: string, value: string) => {
+    setSiteData(prev => ({
+      ...prev,
+      sections: prev.sections.map(section => {
+        if (section.id === sectionId) {
+          return {
+            ...section,
+            content: {
+              ...section.content,
+              [field]: value
+            }
+          };
+        }
+        return section;
+      })
+    }));
+    
+    // TODO: Trigger "Auto-Save" indicator in header here
+    console.log(`Updated ${sectionId}.${field} to:`, value);
+  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -116,7 +158,10 @@ export default function BuilderPage() {
             </nav>
 
             {/* INJECT THE ENGINE */}
-            <RenderEngine sections={MOCK_AI_DATA.sections} />
+            <RenderEngine 
+              sections={siteData.sections} 
+              onUpdate={handleUpdateSection} // <--- NEW PROP
+            />
 
             {/* Dynamic Footer */}
             <footer className="py-12 bg-slate-900 text-slate-400 text-center text-sm">
@@ -132,7 +177,7 @@ export default function BuilderPage() {
 }
 
 interface DeviceBtnProps {
-  icon: React.ReactElement;
+  icon: React.ReactElement<{ size?: number | string }>;
   active: boolean;
   onClick: () => void;
 }
