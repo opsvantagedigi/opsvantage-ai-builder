@@ -75,12 +75,10 @@ if (!isAuthorized) {
                 <h1 className="text-2xl font-bold">ACCESS DENIED</h1>
                     <p className="text-slate-500 mt-2">Neural Link Rejected. Authorization Protocol Failed.</p>
                         < button
-    onClick = {() => router.push('/')
-}
-className =\"mt-6 px-6 py-2 border border-red-500/30 hover:bg-red-500/10 rounded transition-colors\"
-    >
+    onClick={() => router.push('/')}
+    className="mt-6 px-6 py-2 border border-red-500/30 hover:bg-red-500/10 rounded transition-colors">
     Return to Safety
-                </button >
+    </button>
             </div >
         );
     }
