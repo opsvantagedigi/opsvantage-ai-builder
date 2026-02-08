@@ -153,9 +153,12 @@ model Project {
   id            String    @id @default(cuid())
   name          String
   subdomain     String?   @unique
+  customDomain  String?   @unique  // Custom domain for published sites
   vercelProjectId String?
   sanityDataset String?
   content       Json?     // Full site content structure (pages, sections, styling)
+  published     Boolean   @default(false)
+  publishedAt   DateTime? // When the site was published
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
