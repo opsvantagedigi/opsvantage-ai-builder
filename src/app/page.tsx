@@ -1,8 +1,9 @@
 "use client";
 
 import Link from 'next/link';
-import { Header } from '../../Header';
-import { Footer } from '../../Footer';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { HeroSection } from '../components/marketing/HeroSection';
 import {
   ArrowRight,
   Sparkles,
@@ -27,95 +28,7 @@ export default function LandingPage() {
         {/* Global Cinematic Filter */}
         <div className="fixed inset-0 pointer-events-none z-[1] opacity-40 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-        {/* Hero Section */}
-        <section className="relative pt-64 pb-32 px-6 overflow-hidden">
-          {/* Neural Map Background Overlay */}
-          <div className="absolute inset-0 z-0 opacity-20">
-            <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] bg-blue-600/20 blur-[120px] rounded-full animate-glow" />
-            <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-emerald-500/10 blur-[100px] rounded-full animate-glow [animation-delay:2s]" />
-            <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <defs>
-                <pattern id="neural-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.1" className="text-blue-500/30" />
-                  <circle cx="0" cy="0" r="0.2" className="text-blue-400/50" fill="currentColor" />
-                </pattern>
-              </defs>
-              <rect width="100" height="100" fill="url(#neural-grid)" />
-            </svg>
-          </div>
-
-          <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
-            <div className="inline-flex items-center gap-3 px-6 py-2.5 glass rounded-full mb-12 animate-float border border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.2)]">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(37,99,235,1)]" />
-              <span className="text-[11px] uppercase tracking-[0.3em] font-black text-blue-100">
-                Neural Engine v2.0 <span className="text-blue-400 mx-2">|</span> Hyper-Precision
-              </span>
-            </div>
-
-            <h1 className="text-7xl md:text-[11rem] font-display font-black text-white leading-[0.85] mb-12 tracking-tighter">
-              <span className="block overflow-hidden pb-4">
-                <span className="animate-text-reveal block">Scale your</span>
-              </span>
-              <span className="text-gradient-deep block overflow-hidden pb-6 italic">
-                <span className="animate-text-reveal block [animation-delay:0.2s]">Digital Empire</span>
-              </span>
-            </h1>
-
-            <p className="max-w-3xl text-xl md:text-3xl text-slate-400 font-medium mb-20 animate-text-reveal [animation-delay:0.4s] leading-tight tracking-tight">
-              The world's first AI-native operating system for agencies. <br className="hidden md:block" />
-              Design, deploy, and dominate with zero technical friction.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-10 translate-y-8 opacity-0 animate-[text-reveal_0.8s_0.6s_forwards]">
-              <Link
-                href="/onboarding"
-                className="group relative px-20 py-10 bg-blue-600 text-white rounded-[2.5rem] font-black text-2xl flex items-center justify-center gap-4 hover:bg-blue-500 transition-premium hover:scale-105 hover:shadow-[0_0_80px_rgba(37,99,235,0.6)] active:scale-95 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                Initiate Sequence
-                <ArrowRight className="w-8 h-8 group-hover:translate-x-3 transition-transform duration-500" />
-              </Link>
-              <Link
-                href="/onboarding"
-                className="px-20 py-10 glass hover:bg-white/10 text-white rounded-[2.5rem] font-black text-2xl transition-premium flex items-center justify-center border border-white/10 hover:border-blue-400/50 active:scale-95 shadow-2xl"
-              >
-                Neural Map
-              </Link>
-            </div>
-
-            {/* Floating Dashboard Preview (High-End) */}
-            <div className="mt-40 w-full max-w-6xl relative group animate-[text-reveal_1.2s_1s_forwards] translate-y-20 opacity-0 px-4">
-              <div className="absolute -inset-4 bg-gradient-to-b from-blue-600/20 to-emerald-600/20 rounded-[48px] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-              <div className="relative glass-heavy rounded-[48px] border border-white/10 shadow-[0_100px_100px_-50px_rgba(0,0,0,0.8)] overflow-hidden">
-                <div className="h-12 border-b border-white/10 bg-white/5 flex items-center px-8 gap-3">
-                  <div className="w-3 h-3 rounded-full bg-red-500/40" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/40" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/40" />
-                  <div className="flex-1 flex justify-center">
-                    <div className="px-4 py-1 rounded-lg bg-black text-[10px] font-black text-slate-500 uppercase tracking-widest border border-white/5">
-                      https://neural-v2.opsvantage.ai/dashboard
-                    </div>
-                  </div>
-                </div>
-                <div className="aspect-[16/9] bg-slate-950 flex items-center justify-center p-10">
-                  {/* This could be a screenshot, but for now a visually striking placeholder */}
-                  <div className="w-full h-full rounded-2xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent relative overflow-hidden flex flex-col p-12 gap-8">
-                    <div className="w-1/3 h-8 bg-blue-600/40 rounded-lg animate-pulse" />
-                    <div className="grid grid-cols-4 gap-8 h-full">
-                      <div className="col-span-1 h-full bg-white/5 rounded-2xl border border-white/5" />
-                      <div className="col-span-3 h-full bg-white/5 rounded-2xl border border-white/5 relative">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-6">
-                          <Sparkles className="w-20 h-20 text-blue-400 animate-glow" />
-                          <span className="text-xl font-display font-black text-blue-400 uppercase tracking-[0.5em] animate-pulse">Mapping Intelligence...</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <HeroSection />
 
         {/* Social Proof Marquee (Partner Logos) */}
         <section className="py-24 border-y border-white/5 bg-white/[0.01] relative overflow-hidden">

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { Header } from '../../../Header';
-import { Footer } from '../../../Footer';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { Book, FileText, Activity, ArrowLeft, ChevronRight } from 'lucide-react';
 
 export default function DocsPage() {
