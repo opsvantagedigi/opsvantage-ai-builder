@@ -74,9 +74,9 @@ interface ProjectClientPageProps {
 const AddSection = ({ onAdd, isAdding }: { onAdd: (type: SectionType) => void; isAdding: boolean; }) => {
   const [isOpen, setIsOpen] = useState(false);
   // Runtime list of section types (mirrors Prisma enum values)
-  const ALL_SECTION_TYPES = ['HERO', 'FEATURES', 'TESTIMONIALS', 'FAQ', 'CUSTOM'] as const;
-  type AllSectionType = typeof ALL_SECTION_TYPES[number];
-  const sectionTypes = ALL_SECTION_TYPES.filter((t) => t !== 'CUSTOM') as AllSectionType[];
+  const ALL_SECTION_TYPES: SectionType[] = ['HERO', 'FEATURES', 'TESTIMONIALS', 'FAQ', 'CUSTOM', 'FOOTER'];
+  type AllSectionType = Exclude<SectionType, 'CUSTOM'>;
+  const sectionTypes: AllSectionType[] = ALL_SECTION_TYPES.filter((t): t is AllSectionType => t !== 'CUSTOM');
 
   return (
     <div className="relative text-center my-8">
@@ -102,7 +102,7 @@ const AddSection = ({ onAdd, isAdding }: { onAdd: (type: SectionType) => void; i
               {sectionTypes.map((stype) => (
                 <button
                   key={stype}
-                  onClick={() => onAdd(stype as SectionType)}
+                  onClick={() => onAdd(stype)}
                   className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   {stype.charAt(0) + stype.slice(1).toLowerCase().replace('_', ' ')}
@@ -138,12 +138,14 @@ const SectionPreview = ({
     content = { ...content, headline: '' };
   }
   if (section.type === 'FEATURES') {
-    if (!content.headline) {
-      content = { ...content, headline: '' };
+    const featuresContent = content as { headline: string; items: { title: string; description: string; icon: string; }[] };
+    if (!featuresContent.headline) {
+      featuresContent.headline = '';
     }
-    if (!content.items) {
-      content = { ...content, items: [] };
+    if (!featuresContent.items) {
+      featuresContent.items = [];
     }
+    content = featuresContent;
   }
 
   const handleDataChange = (newContent: Partial<SectionData>) => {
@@ -155,7 +157,7 @@ const SectionPreview = ({
     case 'FEATURES':
       return <FeaturesPreview content={content as import('@/types/preview').FeaturesContent} />;
     case 'FOOTER':
-      return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
+      return <FooterPreview content={content as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
     default:
       return <DefaultPreview type={section.type} content={content} />;
   }
@@ -295,12 +297,12 @@ export default function ProjectClientPage({ project }: ProjectClientPageProps) {
     }
   };
 
-  const debouncedSaveSection = useDebouncedSave((...args: unknown[]) => { void saveSection(args[0] as SectionWithOrder); }, 1500);
+  const debouncedSaveSection = useDebouncedSave(((section: SectionWithOrder) => { void saveSection(section); }) as (...args: unknown[]) => void, 1500);
 
   const handleSectionDataChange = (sectionId: string, newSectionData: Partial<SectionData>) => {
     setSections(currentSections => currentSections.map(s => {
       if (s.id === sectionId) {
-        const updatedSection = { ...s, data: newSectionData as unknown as SectionWithOrder['data'] };
+        const updatedSection = { ...s, data: newSectionData };
         debouncedSaveSection(updatedSection); // Trigger debounced save
         return updatedSection;
       }

@@ -22,6 +22,22 @@ export interface BackgroundTexturePrompt {
   style: string; // e.g., 'subtle', 'geometric', 'organic'
 }
 
+export interface AnalyticsInsight {
+  metric: string;
+  impact: 'HIGH' | 'MEDIUM' | 'LOW';
+  finding: string;
+  recommendation: string;
+}
+
+export interface CompetitorAnalysis {
+  tone: string;
+  targetAudience: string;
+  strengths: string[];
+  weaknesses: string[];
+  structure: Array<{ type: string; description: string }>;
+  suggestions: string[];
+}
+
 function buildColorPalettePrompt(onboardingData: Onboarding): string {
   const { businessName, description, brandVoice, designStyle } = onboardingData;
 
