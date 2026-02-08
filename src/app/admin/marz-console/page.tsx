@@ -88,9 +88,9 @@ return (
 
 {/* BACKGROUND AMBIENCE */ }
     <div className="absolute inset-0 z-0 pointer-events-none">
-    < div className =\"absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50\" />
-        < div className =\"absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-900/10 blur-[100px] rounded-full\" />
-            </div >
+    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-900/10 blur-[100px] rounded-full" />
+    </div>
 
     {/* HEADER: COMMAND STATUS */ }
     < header className =\"relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-md p-6 flex justify-between items-center\">
