@@ -1,4 +1,10 @@
-  async createDomain(payload: unknown) {
+interface DomainCreationPayload {
+  domainName: string;
+  registrationPeriod: number;
+  // Add other required properties as needed
+}
+
+  async createDomain(payload: DomainCreationPayload) {
     // Simulate a successful domain registration
     return {
       code: 0,
