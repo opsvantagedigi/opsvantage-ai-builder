@@ -77,6 +77,15 @@ enum AgencyClientStatus {
   REJECTED
 }
 
+enum AuditEntity {
+  PAGE
+  PROJECT
+  WORKSPACE
+  MEMBER
+  DOMAIN
+  AI_TASK
+}
+
 // =========================
 // Auth Models (NextAuth)
 // =========================
@@ -343,8 +352,10 @@ model AuditLog {
   id          String   @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
-  actorId     String   // User who performed the action
-  action      String   // e.g. "PUBLISHED_SITE", "DELETED_PAGE"
+  actorId     String // User who performed the action
+  action      String // e.g. "PUBLISHED_SITE", "DELETED_PAGE"
+  entityType  AuditEntity
+  entityId    String
   metadata    Json?
   createdAt   DateTime @default(now())
 }

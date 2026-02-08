@@ -1,6 +1,4 @@
-// import { GeistSans } from 'geist/font/sans';
-// Fallback font if geist/font/sans is not available
-const GeistSans = { className: '' };
+import { GeistSans } from 'geist/font/sans';
 import { 
   LayoutDashboard, Globe, Zap, Settings, 
   CreditCard, LogOut, Command 

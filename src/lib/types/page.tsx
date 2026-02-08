@@ -12,7 +12,7 @@ import { clsx } from 'clsx';
 import { createProjectAction } from '../../../generate-project';
 
 // --- TYPES (Locally scoped for speed, or import from @/lib/types/wizard) ---
-import type { WizardState as ImportedWizardState } from './wizard';
+import type { WizardState as ImportedWizardState } from '@/lib/types/wizard';
 type WizardState = ImportedWizardState;
 
 const INDUSTRIES = [

@@ -29,7 +29,6 @@ export async function POST(req: Request) {
             orderBy: { createdAt: 'desc' },
             select: {
                 action: true,
-                entityType: true,
                 createdAt: true,
                 metadata: true
             }
