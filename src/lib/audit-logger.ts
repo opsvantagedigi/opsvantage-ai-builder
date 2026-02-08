@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { JsonValue } from '@prisma/client/runtime/library';
 
 export type AuditEntity = 'PAGE' | 'PROJECT' | 'WORKSPACE' | 'MEMBER' | 'DOMAIN' | 'AI_TASK';
 
@@ -8,7 +9,7 @@ interface LogOptions {
     action: string;
     entityType: AuditEntity;
     entityId: string;
-    metadata?: any;
+    metadata?: JsonValue;
     ipAddress?: string;
     userAgent?: string;
 }

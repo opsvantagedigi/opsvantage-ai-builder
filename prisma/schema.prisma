@@ -50,6 +50,7 @@ enum SectionType {
   FEATURES
   TESTIMONIALS
   FAQ
+  FOOTER
   CUSTOM
 }
 

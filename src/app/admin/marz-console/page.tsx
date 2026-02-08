@@ -33,9 +33,9 @@ export default function MarzCommandConsole() {
 
     // STATE MANAGEMENT
     const [logs, setLogs] = useState<string[]>([]);
-    const [systemHealth] = useState(98);
-    const [activeUsers] = useState(142);
-    const [revenueToday] = useState(1250);
+    const [systemHealth, setSystemHealth] = useState(98);
+    const [activeUsers, setActiveUsers] = useState(142);
+    const [revenueToday, setRevenueToday] = useState(1250);
 
     // SIMULATE MARZ \"THINKING\" STREAM
     useEffect(() => {
@@ -53,6 +53,13 @@ export default function MarzCommandConsole() {
         const randomMsg = messages[Math.floor(Math.random() * messages.length)];
         const timestamp = new Date().toLocaleTimeString();
         setLogs(prev => [`[${timestamp}] ${randomMsg}`, ...prev.slice(0, 15)]);
+
+        // Use setters to make the console feel more alive
+        setSystemHealth(health => Math.min(100, Math.max(95, health + (Math.random() - 0.45))));
+        setActiveUsers(users => users + (Math.random() > 0.9 ? (Math.random() > 0.5 ? 1 : -1) : 0));
+        if (randomMsg.includes("subscription")) {
+            setRevenueToday(rev => rev + 49);
+        }
     }, 2500);
     return () => clearInterval(interval);
 }, [isAuthorized]);

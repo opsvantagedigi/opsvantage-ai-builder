@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { openProvider } from '@/lib/openprovider/client';
 import { prisma } from '@/lib/prisma';
-import { nowPayments } from './src/lib/nowpayments/client';
+import { nowPayments } from '@/lib/nowpayments/client';
 
 const MARKUP = parseFloat(process.env.NEXT_PUBLIC_PRICING_MARKUP || "1.2");
 

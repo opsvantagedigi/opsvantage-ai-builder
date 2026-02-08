@@ -1,6 +1,6 @@
 import React from 'react';
-import { HeroSection } from './src/components/builder/sections/hero';
-import { FeaturesSection } from './src/components/builder/sections/features';
+import { HeroSection } from '@/components/builder/sections/hero';
+import { FeaturesSection } from '@/components/builder/sections/features';
 
 const COMPONENT_REGISTRY: Record<string, React.ElementType> = {
   'HERO': HeroSection,

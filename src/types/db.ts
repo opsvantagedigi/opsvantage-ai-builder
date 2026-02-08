@@ -3,7 +3,8 @@ export type SectionType =
   | 'FEATURES'
   | 'TESTIMONIALS'
   | 'FAQ'
-  | 'CUSTOM';
+  | 'CUSTOM'
+  | 'FOOTER';
 
 export interface Section {
   id: string;

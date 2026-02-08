@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         // Prepare data for AI
         const analysisData = {
             usage,
-            activitySummary: recentLogs.reduce((acc: any, log) => {
+            activitySummary: recentLogs.reduce((acc: Record<string, number>, log) => {
                 acc[log.action] = (acc[log.action] || 0) + 1;
                 return acc;
             }, {}),
@@ -47,8 +47,8 @@ export async function POST(req: Request) {
         const insights = await generateAnalyticsInsights(analysisData);
 
         return NextResponse.json({ insights });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Analytics Insights Failed:', error);
-        return NextResponse.json({ error: 'Failed to generate insights: ' + error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to generate insights: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
     }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import type { Page, Project, Section, SectionType, SectionWithOrder as _SectionWithOrder } from '@/types/db';
 import Link from 'next/link';
 import HeroPreview from '@/components/previews/HeroPreview';
@@ -36,6 +37,35 @@ type ProjectWithPagesAndSections = Omit<Project, 'pages'> & {
     sections: SectionWithOrder[];
   })[];
 };
+
+// Zod schemas for safe parsing of section data
+const HeroContentSchema = z.object({
+  headline: z.string().default(''),
+  subhead: z.string().default(''),
+  cta: z.object({
+    text: z.string().default(''),
+    link: z.string().default(''),
+  }).default({ text: '', link: '' }),
+});
+
+const FeaturesContentSchema = z.object({
+  headline: z.string().default(''),
+  items: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    icon: z.string(),
+  })).default([]),
+});
+
+const FooterContentSchema = z.object({
+  // Define footer content properties here
+}).passthrough(); // Allow other properties
+
+const SectionDataSchema = z.union([
+  HeroContentSchema,
+  FeaturesContentSchema,
+  FooterContentSchema,
+]);
 
 interface ProjectClientPageProps {
   project: ProjectWithPagesAndSections;
@@ -95,16 +125,35 @@ const SectionPreview = ({
   onDataChange: (id: string, data: Partial<SectionData>) => void;
   projectId: string;
 }) => {
-  const content = section.data as unknown as Partial<SectionData>;
+  const parseResult = SectionDataSchema.safeParse(section.data);
+
+  if (!parseResult.success) {
+    console.error("Zod validation failed for section:", section.id, parseResult.error.issues);
+    return <DefaultPreview type={section.type} content={{ error: "Invalid data structure" }} />;
+  }
+
+  // Ensure required properties for SectionData and FeaturesContent
+  let content = parseResult.data;
+  if (section.type === 'HERO' && !content.headline) {
+    content = { ...content, headline: '' };
+  }
+  if (section.type === 'FEATURES') {
+    if (!content.headline) {
+      content = { ...content, headline: '' };
+    }
+    if (!content.items) {
+      content = { ...content, items: [] };
+    }
+  }
 
   const handleDataChange = (newContent: Partial<SectionData>) => {
     onDataChange(section.id, newContent);
   };
-  switch (section.type as unknown as string) {
+  switch (section.type) {
     case 'HERO':
-      return <HeroPreview content={content as SectionData} onContentChange={(nc: SectionData) => handleDataChange(nc)} projectId={projectId} />;
+      return <HeroPreview content={content as import('@/lib/ai/page-generator').SectionData} onContentChange={(nc) => handleDataChange(nc)} projectId={projectId} />;
     case 'FEATURES':
-      return <FeaturesPreview content={content as unknown as import('@/types/preview').FeaturesContent} />;
+      return <FeaturesPreview content={content as import('@/types/preview').FeaturesContent} />;
     case 'FOOTER':
       return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
     default:
