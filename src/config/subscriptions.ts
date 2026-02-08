@@ -20,6 +20,7 @@ export interface SubscriptionPlan {
     aiGenerations: number;
     customDomains: boolean;
   };
+  features: string[];
   isPopular?: boolean;
 }
 
@@ -33,8 +34,14 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     limits: {
       sites: 1,
       aiGenerations: 50,
-      customDomains: false, // Subdomain only
+      customDomains: false,
     },
+    features: [
+      '1 published website',
+      '50 AI generations per month',
+      'Basic support',
+      'Standard templates',
+    ],
   },
   {
     id: 'pro',
@@ -45,8 +52,17 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     limits: {
       sites: 3,
       aiGenerations: 500,
-      customDomains: true, // Can use custom domains
+      customDomains: true,
     },
+    features: [
+      '3 published websites',
+      '500 AI generations per month',
+      'Custom domain support',
+      'Priority email support',
+      'Advanced templates',
+      'Basic analytics',
+      'Auto-save functionality',
+    ],
     isPopular: true,
   },
   {
@@ -60,6 +76,17 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       aiGenerations: 5000,
       customDomains: true,
     },
+    features: [
+      '20 published websites',
+      '5000 AI generations per month',
+      'Unlimited custom domains',
+      'Premium 24/7 support',
+      'Premium templates & themes',
+      'Advanced analytics & reporting',
+      'Team member invitations (up to 5)',
+      'API access',
+      'Priority feature requests',
+    ],
   },
 ];
 
