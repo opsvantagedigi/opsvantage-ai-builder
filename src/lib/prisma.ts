@@ -1,18 +1,5 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaNeon } from "@prisma/adapter-neon"
-import { Pool, neonConfig } from "@neondatabase/serverless"
-import ws from "ws"
 import { logger } from "./logger"
-
-neonConfig.webSocketConstructor = ws
-
-const connectionString = process.env.DATABASE_URL
-if (!connectionString) {
-  logger.fatal("DATABASE_URL is not set");
-  throw new Error("DATABASE_URL is not set")
-}
-
-const adapter = new PrismaNeon({ connectionString })
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -21,7 +8,6 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
