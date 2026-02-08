@@ -46,5 +46,6 @@ next-env.d.ts
 
 .env*.local
 
-# Ignore temporary build directories
+# Ignore temporary build directories and Claude Code temporary files
 tmpclaude-*/
+tmpclaude-*
