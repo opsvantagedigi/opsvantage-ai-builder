@@ -47,14 +47,23 @@ if (fs.existsSync(nftPath)) {
 // Vercel's build system needs to stat this file to understand edge functions
 try {
   if (!fs.existsSync(middlewareJsPath)) {
-    // Create a minimal stub using CommonJS syntax (Vercel loads it as CommonJS)
+    // Create a middleware handler that Vercel's launcher can invoke
     // The actual middleware logic is compiled to edge chunks via Turbopack
     const stub = `// Next.js 16 Turbopack compiled middleware
 // The actual middleware logic is compiled to edge chunks via Turbopack
 // This file is a placeholder for Vercel's build system
-module.exports = {};\n`;
+
+// Export a handler function that Vercel can invoke
+// This allows the middleware to be recognized and executed
+async function middlewareHandler(req, context) {
+  // The actual middleware execution happens through Vercel's edge runtime
+  // and the compiled edge chunks referenced in middleware.js.nft.json
+  return null;
+}
+
+module.exports = middlewareHandler;\n`;
     fs.writeFileSync(middlewareJsPath, stub);
-    console.log('✓ Generated middleware.js stub for Vercel');
+    console.log('✓ Generated middleware.js stub with handler for Vercel');
   }
 } catch (error) {
   console.error('Error creating middleware.js stub:', error.message);
