@@ -34,10 +34,10 @@ export function Footer() {
           <div>
             <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Platform</h4>
             <ul className="space-y-4">
-              <FooterLink href="/#features" text="AI Builder" />
-              <FooterLink href="/#features" text="Domain Portal" />
-              <FooterLink href="/#features" text="Enterprise" />
-              <FooterLink href="/#pricing" text="Pricing" />
+              <FooterLink href="/ai-architect" text="AI Architect" />
+              <FooterLink href="/services/domains" text="Domain Portal" />
+              <FooterLink href="/enterprise" text="Enterprise" />
+              <FooterLink href="/pricing" text="Pricing" />
             </ul>
           </div>
 
@@ -45,19 +45,19 @@ export function Footer() {
             <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Resources</h4>
             <ul className="space-y-4">
               <FooterLink href="/docs" text="Documentation" />
-              <FooterLink href="/docs" text="API Reference" />
+              <FooterLink href="/showcase" text="Live Showcase" />
               <FooterLink href="/onboarding" text="Case Studies" />
               <FooterLink href="/onboarding" text="Changelog" />
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Company</h4>
+            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Autonomous Tools</h4>
             <ul className="space-y-4">
-              <FooterLink href="/onboarding" text="About Us" />
-              <FooterLink href="/onboarding" text="Privacy Policy" />
-              <FooterLink href="/onboarding" text="Terms of Service" />
-              <FooterLink href="/onboarding" text="Global Status" />
+              <FooterLink href="/tools/business-name-generator" text="Name Generator" />
+              <FooterLink href="/tools/logo-maker" text="Logo Synthesis" />
+              <FooterLink href="/tools/slogan-ai" text="Slogan AI" />
+              <FooterLink href="/onboarding/wizard" text="Neural Wizard" />
             </ul>
           </div>
         </div>

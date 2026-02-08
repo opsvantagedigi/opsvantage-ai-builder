@@ -53,27 +53,27 @@ export function Header() {
                 <div className="glass-heavy p-4 rounded-2xl shadow-2xl border border-white/10 flex flex-col gap-2">
                   <DropdownLink
                     icon={<Layout className="w-4 h-4" />}
-                    title="Website Builder"
-                    desc="AI-powered custom websites"
-                    href="/#features"
+                    title="AI Architect"
+                    desc="Visual engine demo"
+                    href="/ai-architect"
                   />
                   <DropdownLink
                     icon={<Globe className="w-4 h-4" />}
                     title="Domain Portal"
                     desc="Search and manage domains"
-                    href="/#features"
+                    href="/services/domains"
                   />
                   <DropdownLink
                     icon={<Shield className="w-4 h-4" />}
-                    title="AI Security"
-                    desc="Protected hosting & analytics"
-                    href="/#features"
+                    title="Neural Security"
+                    desc="SSL & edge protection"
+                    href="/services/ssl-security"
                   />
                 </div>
               </div>
             </div>
 
-            <Link href="/#pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            <Link href="/pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
               Pricing
             </Link>
 
