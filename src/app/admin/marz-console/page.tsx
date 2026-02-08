@@ -43,12 +43,12 @@ export default function MarzCommandConsole() {
 
         const interval = setInterval(() => {
             const messages = [
-        \"[MARZ]: Scanning Vercel Edge Network... Latency 24ms.\",
-        \"[MARZ]: Optimization complete for User #8821 (Dental Clinic).\",
-        \"[MARZ]: OpenProvider API Handshake successful. Token refreshed.\",
-        \"[MARZ]: Detecting slight anomaly in US-East-1. Re-routing...\",
-        \"[MARZ]: New subscription detected: PRO Plan ($49/mo).\",
-        \"[MARZ]: Database backup to Neon.tech encrypted and stored.\",
+                "[MARZ]: Scanning Vercel Edge Network... Latency 24ms.",
+                "[MARZ]: Optimization complete for User #8821 (Dental Clinic).",
+                "[MARZ]: OpenProvider API Handshake successful. Token refreshed.",
+                "[MARZ]: Detecting slight anomaly in US-East-1. Re-routing...",
+                "[MARZ]: New subscription detected: PRO Plan ($49/mo).",
+                "[MARZ]: Database backup to Neon.tech encrypted and stored."
             ];
         const randomMsg = messages[Math.floor(Math.random() * messages.length)];
         const timestamp = new Date().toLocaleTimeString();
