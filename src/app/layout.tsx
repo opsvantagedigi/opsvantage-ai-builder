@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpsVantage AI Builder",
-  description: "Build, deploy, and scale AI-powered websites in minutes with our intelligent streamlined platform.",
+  title: "OpsVantage Digital - AI Website Builder",
+  description: "Build, deploy, and scale AI-powered websites with advanced analytics, team collaboration, and API access. Coming March 13, 2026.",
 };
 
 export default function RootLayout({

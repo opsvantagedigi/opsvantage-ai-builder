@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OpsVantageLogo } from '@/components/logo';
 import {
   Zap,
   Rocket,
@@ -16,7 +17,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-const LAUNCH_DATE = new Date('2026-02-27T00:00:00Z');
+const LAUNCH_DATE = new Date('2026-03-13T00:00:00Z');
 
 interface CountdownTime {
   days: number;
@@ -153,17 +154,14 @@ export default function ComingSoonPage() {
 
       <div className="relative z-10">
         {/* Header */}
-        <header className="border-b border-cyan-500/20 backdrop-blur bg-slate-900/30 sticky top-0">
+        <header className="border-b border-cyan-500/20 backdrop-blur bg-slate-900/30 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Rocket className="w-8 h-8 text-cyan-500" />
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                  OpsVantage AI Builder
-                </h1>
+              <div className="flex items-center gap-4">
+                <OpsVantageLogo />
               </div>
               <div className="text-sm text-slate-400">
-                Coming {LAUNCH_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                Launching {LAUNCH_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             </div>
           </div>
@@ -378,7 +376,7 @@ export default function ComingSoonPage() {
         <footer className="border-t border-slate-700/50 mt-20 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center text-slate-400 text-sm">
-              <div>© 2026 OpsVantage AI Builder. All rights reserved.</div>
+              <div>© 2026 OpsVantage Digital. All rights reserved.</div>
               <div className="flex gap-6 mt-4 md:mt-0">
                 <a href="#" className="hover:text-cyan-400 transition">Privacy</a>
                 <a href="#" className="hover:text-cyan-400 transition">Terms</a>

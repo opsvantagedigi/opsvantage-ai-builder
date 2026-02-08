@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-const LAUNCH_DATE = new Date('2026-02-27T00:00:00Z');
+const LAUNCH_DATE = new Date('2026-03-13T00:00:00Z');
 const IS_COMING_SOON = new Date() < LAUNCH_DATE;
 
 // Routes that should always be accessible
