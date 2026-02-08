@@ -7,4 +7,3 @@ export async function createProjectAction(wizardState: any) {
 		projectId: 'dummy-id',
 	};
 }
-}
