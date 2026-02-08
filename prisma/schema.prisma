@@ -97,6 +97,19 @@ model User {
   name      String?
   image     String?
   openProviderHandle String? @unique
+
+  // ===== STRIPE SUBSCRIPTION DATA =====
+  stripeCustomerId       String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId   String?   @unique @map("stripe_subscription_id")
+  stripePriceId          String?   @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
+  subscriptionStatus     String?   @default("none") // none, active, past_due, canceled, incomplete
+
+  // ===== USAGE TRACKING =====
+  aiGenerationsUsed      Int       @default(0)      // Track AI calls per month
+  sitesPublished         Int       @default(0)      // Count of published sites
+  usageResetDate         DateTime  @default(now())  // When the monthly usage resets
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -107,6 +120,7 @@ model User {
   // Workspaces this user owns
   ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
   orders    Order[]
+  subscriptions Subscription[] // History of subscriptions
 }
 
 model Account {
@@ -146,8 +160,34 @@ model VerificationToken {
 }
 
 // =========================
-// Core App Models
+// Billing & Subscriptions
 // =========================
+
+model Subscription {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Stripe identifiers
+  stripeSubscriptionId   String   @unique
+  stripePriceId          String
+  stripeCustomerId       String
+
+  // Plan info
+  plan                   String   // "starter", "pro", "agency"
+  status                 String   // "active", "past_due", "canceled", "incomplete"
+
+  // Billing period
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  canceledAt             DateTime?
+
+  // Metadata
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+
 
 model Project {
   id            String    @id @default(cuid())
