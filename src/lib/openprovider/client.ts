@@ -36,17 +36,6 @@ export const openProvider = {
       },
       desc: 'Domain registered',
     };
-  }
-              reseller: {
-                price: 10,
-                currency: 'USD',
-              },
-            },
-            is_premium: false,
-          },
-        ],
-      },
-    };
   },
   async createCustomer(data: unknown) {
     // Simulate a successful customer creation
