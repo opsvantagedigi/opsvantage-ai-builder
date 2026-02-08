@@ -29,7 +29,8 @@ function verifyNowPaymentsSignature(payload: string, signature: string | null): 
  */
 export async function POST(request: Request) {
   const bodyText = await request.text();
-  const signature = headers().get('x-nowpayments-sig');
+  const hdrs = await headers();
+  const signature = hdrs.get('x-nowpayments-sig');
 
   if (!verifyNowPaymentsSignature(bodyText, signature)) {
     logger.error({ msg: 'Invalid NowPayments signature.' });
