@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { WizardState } from "./src/lib/types/wizard";
+import { WizardState } from "@/lib/types/wizard";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 

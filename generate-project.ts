@@ -1,7 +1,7 @@
 'use server'
 
-import { generateSiteStructure } from './gemini-generator';
-import { WizardState } from './src/lib/types/wizard';
+import { generateSiteStructure } from '@/lib/ai/gemini-generator';
+import { WizardState } from '@/lib/types/wizard';
 // import { db } from '@/lib/db'; // Assuming Prisma setup later
 
 export async function createProjectAction(wizardState: WizardState) {

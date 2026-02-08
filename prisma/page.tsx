@@ -1,3 +1,6 @@
+// Moved to src/app/pricing/page.tsx
+
+// The original code has been moved to the new location.
 import { CheckCircle2 } from 'lucide-react';
 
 const tiers = [

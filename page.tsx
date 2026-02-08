@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import React from 'react';
-import { RenderEngine } from './render-engine';
+import { RenderEngine } from '@/components/builder/render-engine';
 
 interface Section {
   id: string;

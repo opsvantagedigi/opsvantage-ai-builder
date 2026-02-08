@@ -9,7 +9,7 @@ import {
   Zap, Cpu, Loader2 
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { createProjectAction } from '../../../generate-project';
+import { createProjectAction } from '@/app/actions/generate-project';
 
 // --- TYPES (Locally scoped for speed, or import from @/lib/types/wizard) ---
 import type { WizardState as ImportedWizardState } from '@/lib/types/wizard';
