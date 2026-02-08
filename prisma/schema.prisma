@@ -155,6 +155,7 @@ model Project {
   subdomain     String?   @unique
   vercelProjectId String?
   sanityDataset String?
+  content       Json?     // Full site content structure (pages, sections, styling)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
