@@ -33,7 +33,7 @@ export async function POST(req: Request) {
             onboarding = project?.onboarding || undefined;
         }
 
-        const refactoredSections = await refactorPageData(sections, instruction, onboarding as any);
+        const refactoredSections = await refactorPageData({ sections, instruction });
 
         // Log the activity
         if (workspaceId) {
