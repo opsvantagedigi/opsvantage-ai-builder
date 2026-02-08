@@ -1,7 +1,10 @@
 interface DomainCreationPayload {
-  domainName: string;
-  registrationPeriod: number;
-  // Add other required properties as needed
+  domain: { name: string; extension: string };
+  period: number;
+  owner_handle: string;
+  admin_handle: string;
+  tech_handle: string;
+  name_servers: { name: string }[];
 }
 
 // Stub for OpenProvider client API
