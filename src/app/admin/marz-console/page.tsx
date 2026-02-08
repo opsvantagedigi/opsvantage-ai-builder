@@ -70,10 +70,10 @@ if (isLoading) {
 
 if (!isAuthorized) {
     return (
-        <div className=\"min-h-screen bg-[#020617] flex flex-col items-center justify-center text-red-500 font-mono\">
-            < Lock className =\"w-16 h-16 mb-4\" />
-                < h1 className =\"text-2xl font-bold\">ACCESS DENIED</h1>
-                    < p className =\"text-slate-500 mt-2\">Neural Link Rejected. Authorization Protocol Failed.</p>
+        <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-red-500 font-mono">
+            <Lock className="w-16 h-16 mb-4" />
+                <h1 className="text-2xl font-bold">ACCESS DENIED</h1>
+                    <p className="text-slate-500 mt-2">Neural Link Rejected. Authorization Protocol Failed.</p>
                         < button
     onClick = {() => router.push('/')
 }
