@@ -1,11 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BuilderCanvas } from "@/components/builder/BuilderCanvas"
-import type { GeneratedSection } from "@/lib/ai/page-generator"
+import HeroPreview from "@/components/generator/hero-preview"
 
 type SitemapNode = { id: string; title?: string; slug?: string }
-type GeneratedPage = { title?: string; slug?: string; sections?: GeneratedSection[] }
+type GeneratedPage = { title?: string; slug?: string; sections?: Array<Record<string, unknown>> }
 
 export default function GeneratePagesPage() {
   const [loading, setLoading] = useState(false)
@@ -82,8 +81,8 @@ export default function GeneratePagesPage() {
             <label className="text-sm block mb-1">Sitemap node:</label>
             <select value={selectedNodeId ?? ""} onChange={(e) => setSelectedNodeId(e.target.value)} className="w-full border rounded p-2">
               {sitemap.map((node) => (
-                <option key={node.id} value={node.id}>{node.title} — {node.slug}</option>
-              ))}
+                  <option key={node.id} value={node.id}>{node.title} — {node.slug}</option>
+                ))}
             </select>
           </div>
         )}
@@ -106,47 +105,43 @@ export default function GeneratePagesPage() {
             <p className="text-sm text-gray-600">Slug: {pageJson.slug}</p>
           </div>
 
-          {/* Builder Canvas Integration */}
-          {Array.isArray(pageJson.sections) ? (
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-              <BuilderCanvas
-                initialSections={pageJson.sections.map((s, i) => ({
-                  ...s,
-                  id: (s as any).id || `section-${i}`
-                }))}
-                onReorder={(newSections) => {
-                  setPageJson({ ...pageJson, sections: newSections });
-                }}
-                onUpdateSection={(id, data) => {
-                  setPageJson({
-                    ...pageJson,
-                    sections: pageJson.sections?.map((s, i) => {
-                      const currentId = (s as any).id || `section-${i}`;
-                      if (currentId === id) return { ...s, data };
-                      return s;
-                    })
-                  });
-                }}
-              />
-              <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
-                <button onClick={async () => {
-                  try {
-                    const res = await fetch('/api/page/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: pageJson }) })
-                    const body = await res.json().catch(() => ({} as Record<string, unknown>))
-                    const maybeError = (body as Record<string, unknown>)["error"]
-                    if (!res.ok) throw new Error(typeof maybeError === 'string' ? maybeError : 'Save failed')
-                    alert('Page saved: ' + (body.pageId ?? ''))
-                  } catch (e: unknown) {
-                    const ex = e as Error
-                    alert('Save failed: ' + (ex.message || String(ex)))
-                  }
-                }} className="bg-green-600 text-white px-4 py-2 rounded">
-                  Save Page
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-500">No sections generated.</p>
+          {/* Hero preview: map the first HERO section if present */}
+            {Array.isArray(pageJson.sections) && (
+            (() => {
+              const hero = pageJson.sections.find((s) => (s as Record<string, unknown>)['type'] === "HERO")
+              if (hero) {
+                const heroObj = hero as Record<string, unknown>
+                const rawTheme = (heroObj['theme'] as string) || "minimal"
+                const theme = ["minimal", "futuristic", "corporate"].includes(rawTheme) ? (rawTheme as "minimal" | "futuristic" | "corporate") : "minimal"
+                const content = {
+                  headline: (heroObj['heading'] ?? heroObj['title'] ?? pageJson.title ?? "") as string,
+                  subhead: (heroObj['body'] as string) || "",
+                  ctaLabel: ((heroObj['cta'] as Record<string, unknown> | undefined)?.['label'] as string) || "Get started",
+                  theme,
+                }
+                return (
+                  <div className="space-y-3">
+                    <HeroPreview content={content} />
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={async () => {
+                        try {
+                          const res = await fetch('/api/page/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: pageJson }) })
+                          const body = await res.json().catch(() => ({} as Record<string, unknown>))
+                          const maybeError = (body as Record<string, unknown>)["error"]
+                          if (!res.ok) throw new Error(typeof maybeError === 'string' ? maybeError : 'Save failed')
+                          alert('Page saved: ' + (body.pageId ?? ''))
+                        } catch (e: unknown) {
+                          const ex = e as Error
+                          alert('Save failed: ' + (ex.message || String(ex)))
+                        }
+                      }} className="bg-green-600 text-white px-4 py-2 rounded">Save page</button>
+                      <button onClick={() => navigator.clipboard.writeText(JSON.stringify(pageJson, null, 2))} className="bg-gray-100 px-4 py-2 rounded">Copy JSON</button>
+                    </div>
+                  </div>
+                )
+              }
+              return <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">{JSON.stringify(pageJson, null, 2)}</pre>
+            })()
           )}
         </section>
       )}

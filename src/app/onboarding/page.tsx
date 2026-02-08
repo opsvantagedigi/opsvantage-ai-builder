@@ -1,144 +1,164 @@
-'use client'
+'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DomainSearchInput } from '@/components/features/domain-search';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+// Use local string union for onboarding status
 
-export default function WizardPage() {
+import BusinessDetailsStep from '../../components/onboarding/BusinessDetailsStep';
+import BrandIdentityStep from '../../components/onboarding/BrandIdentityStep';
+import StrategyStep from '../../components/onboarding/StrategyStep';
+import DesignPreferencesStep from '../../components/onboarding/DesignPreferencesStep';
+import SummaryStep from '../../components/onboarding/SummaryStep';
+
+export interface OnboardingData {
+  businessName?: string;
+  businessType?: string;
+  industry?: string;
+  description?: string;
+  brandVoice?: string;
+  targetAudience?: string;
+  goals?: string;
+  competitors?: string[];
+  colorPalette?: string[];
+  designStyle?: string;
+  status?: 'DRAFT' | 'COMPLETED';
+}
+
+const OnboardingPage = () => {
+  const router = useRouter();
   const [step, setStep] = useState(1);
-  const [businessName, setBusinessName] = useState('');
+  const [formData, setFormData] = useState<Partial<OnboardingData>>({});
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setError(null);
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/onboarding');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.onboarding) {
+            setFormData(data.onboarding);
+            setProjectId(data.projectId);
+          }
+        } else if (response.status !== 404) {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to load your onboarding progress.');
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding initial data:', error);
+        setError('An unexpected error occurred while loading your data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+
+  const saveData = async (data: Partial<OnboardingData>) => {
+    setError(null);
+    setIsSaving(true);
+    try {
+      // Use POST for the very first save, PATCH for all subsequent saves.
+      const method = !projectId ? 'POST' : 'PATCH';
+      const response = await fetch('/api/onboarding', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to save your progress.`);
+      }
+
+      if (method === 'POST') {
+        const result = await response.json();
+        setProjectId(result.projectId);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setError(message);
+      throw error; // Re-throw to prevent advancing to the next step
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNext = async (data: unknown) => {
+    const updatedData = { ...formData, ...(data as Partial<OnboardingData>) };
+    setFormData(updatedData);
+    try {
+      await saveData(data as Partial<OnboardingData>);
+      setStep((prev) => prev + 1);
+    } catch (error) {
+      console.error("Save failed, not moving to next step.", error);
+    }
+  };
+
+  const handleBack = () => {
+    setError(null);
+    setStep((prev) => prev - 1);
+  };
+
+  const handleSaveAndExit = async () => {
+    try {
+      await saveData(formData);
+      router.push('/dashboard');
+    } catch (error) {
+      // Error is already set by saveData, user can see it and decide to navigate away anyway.
+      console.error("Failed to save before exiting:", error);
+    }
+  };
+
+  const handleGenerateSite = async () => {
+    console.log('Final data, starting site generation:', formData);
+    try {
+      await saveData({ ...formData, status: 'COMPLETED' });
+      // Redirect to a generation status page using the project ID
+      if (projectId) {
+        router.push(`/generate/${projectId}`);
+      } else {
+        setError("Could not find a project ID to start generation.");
+      }
+    } catch (error) {
+      console.error("Failed to finalize onboarding:", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading Onboarding...</div>;
+  }
+
+  const renderStep = () => {
+    const props = { onSaveAndExit: handleSaveAndExit, initialData: formData, isSaving };
+    switch (step) {
+      case 1: return <BusinessDetailsStep onNext={handleNext} {...props} />;
+      case 2: return <BrandIdentityStep onNext={handleNext} onBack={handleBack} {...props} />;
+      case 3: return <StrategyStep onNext={handleNext} onBack={handleBack} {...props} />;
+      case 4: return <DesignPreferencesStep onNext={handleNext} onBack={handleBack} {...props} />;
+      case 5: return <SummaryStep onBack={handleBack} onGenerate={handleGenerateSite} formData={formData} isSaving={isSaving} />;
+      default: return <BusinessDetailsStep onNext={handleNext} {...props} />;
+    }
+  };
 
   return (
-    <div className=\"w-full max-w-4xl\">
-      < AnimatePresence mode =\"wait\">
-
-  {/* STEP 1: IDENTITY */ }
-  {
-    step === 1 && (
-      <motion.div
-        key=\"step1\"
-    initial = {{ opacity: 0, x: 20 }
-  }
-  animate = {{ opacity: 1, x: 0 }
-}
-exit = {{ opacity: 0, x: -20 }}
-className =\"space-y-8 text-center\"
-  >
-  <div className=\"flex items-center justify-center gap-2 mb-4\">
-    < Sparkles className =\"w-6 h-6 text-cyan-400\" />
-      < span className =\"text-xs font-bold uppercase tracking-[0.3em] text-slate-500\">Step 1 of 8</span>
-            </div >
-  <h1 className=\"text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400\">
-              What are we building today ?
-            </h1 >
-  <p className=\"text-slate-400 text-lg\">
-              Tell MARZ about your business, and we'll architect the perfect digital presence.
-            </p >
-  <input
-    type=\"text\" 
-placeholder =\"e.g. Acme Architecture...\" 
-value = { businessName }
-onChange = {(e) => setBusinessName(e.target.value)}
-className =\"w-full max-w-xl mx-auto text-center bg-transparent border-b-2 border-white/10 text-3xl py-4 focus:border-cyan-500 outline-none transition-colors placeholder:text-slate-700\"
-autoFocus
-  />
-  <div className=\"pt-8\">
-    < Button
-onClick = {() => setStep(2)}
-size =\"lg\" 
-className =\"rounded-full px-8 text-lg\"
-disabled = {!businessName.trim()}
-              >
-  Next < ArrowRight className =\"ml-2 w-5 h-5\" />
-              </Button >
-            </div >
-          </motion.div >
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full">
+        {error && (
+          <div className="max-w-2xl mx-auto p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+            <span className="font-medium">Error:</span> {error}
+          </div>
         )}
-
-{/* STEP 2: DOMAIN (COMMERCIAL INTEGRATION) */ }
-{
-  step === 2 && (
-    <motion.div
-      key=\"step2\"
-  initial = {{ opacity: 0, x: 20 }
-}
-animate = {{ opacity: 1, x: 0 }}
-exit = {{ opacity: 0, x: -20 }}
-className =\"space-y-6\"
-  >
-  <div className=\"text-center mb-8\">
-    < div className =\"flex items-center justify-center gap-2 mb-4\">
-      < Sparkles className =\"w-6 h-6 text-cyan-400\" />
-        < span className =\"text-xs font-bold uppercase tracking-[0.3em] text-slate-500\">Step 2 of 8</span>
-              </div >
-  <h2 className=\"text-3xl md:text-4xl font-bold mb-4\">Claim your digital territory.</h2>
-    < p className =\"text-slate-400 text-lg\">
-                Search for a domain or skip to use a free subdomain for now.
-              </p >
-            </div >
-
-  {/* THE PHASE 2 COMPONENT IN ACTION */ }
-  < div className =\"max-w-3xl mx-auto\">
-    < DomainSearchInput />
-            </div >
-
-  <div className=\"flex justify-between pt-12 max-w-3xl mx-auto\">
-    < Button variant =\"ghost\" onClick={() => setStep(1)}>
-      < ArrowLeft className =\"mr-2\" /> Back
-              </Button >
-  <Button variant=\"outline\" onClick={() => setStep(3)}>
-                Skip for now
-              </Button >
-            </div >
-          </motion.div >
-        )}
-
-{/* STEP 3: INDUSTRY (Coming Soon) */ }
-{
-  step === 3 && (
-    <motion.div
-      key=\"step3\"
-  initial = {{ opacity: 0, x: 20 }
-}
-animate = {{ opacity: 1, x: 0 }}
-exit = {{ opacity: 0, x: -20 }}
-className =\"space-y-8 text-center\"
-  >
-  <div className=\"flex items-center justify-center gap-2 mb-4\">
-    < Sparkles className =\"w-6 h-6 text-cyan-400\" />
-      < span className =\"text-xs font-bold uppercase tracking-[0.3em] text-slate-500\">Step 3 of 8</span>
-            </div >
-  <h2 className=\"text-3xl md:text-4xl font-bold\">What industry are you in?</h2>
-    < p className =\"text-slate-400 text-lg\">
-              MARZ will tailor the design and features to your specific market.
-            </p >
-
-  <div className=\"grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto pt-8\">
-{
-  ['Dental', 'SaaS', 'E-Commerce', 'Consulting', 'Real Estate', 'Other'].map((industry) => (
-    <button
-      key={industry}
-      className=\"p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/50 transition-all group\"
-  >
-  <div className=\"text-lg font-bold text-white group-hover:text-cyan-400 transition-colors\">
-                    { industry }
-                  </div >
-                </button >
-              ))
-}
-            </div >
-
-  <div className=\"flex justify-between pt-12 max-w-3xl mx-auto\">
-    < Button variant =\"ghost\" onClick={() => setStep(2)}>
-      < ArrowLeft className =\"mr-2\" /> Back
-              </Button >
-            </div >
-          </motion.div >
-        )}
-
-      </AnimatePresence >
-    </div >
+        {renderStep()}
+      </div>
+    </div>
   );
-}
+};
+
+export default OnboardingPage;

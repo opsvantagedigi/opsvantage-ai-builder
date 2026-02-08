@@ -1,225 +1,95 @@
-"use client";
+'use client';
 
+import { Header } from '../../Header';
+import { Footer } from '../../Footer';
+import { SSLProductList } from '../app/SSLProductList';
+import { CheckCircle2, Search } from 'lucide-react';
 import Link from 'next/link';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { HeroSection } from '../components/marketing/HeroSection';
-import {
-  ArrowRight,
-  Sparkles,
-  Zap,
-  Shield,
-  Globe,
-  BarChart3,
-  Clock,
-  CheckCircle2,
-  MousePointer2,
-  ChevronRight,
-  Layers,
-  Cpu
-} from 'lucide-react';
+
+const features = [
+  'AI-Powered Content Generation',
+  'Drag-and-Drop Visual Editor',
+  'Automated SEO Optimization',
+  'Custom Domains & SSL',
+  'Blazing-Fast Hosting',
+  'Agency & Client Management',
+];
 
 export default function LandingPage() {
   return (
-    <div className="mesh-gradient min-h-screen flex flex-col selection:bg-blue-500/30 overflow-hidden">
+    <div className="bg-slate-950 text-white min-h-screen flex flex-col overflow-x-hidden">
       <Header />
 
       <main className="grow">
-        {/* Global Cinematic Filter */}
-        <div className="fixed inset-0 pointer-events-none z-[1] opacity-40 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        {/* Hero Section */}
+        <section className="relative pt-48 pb-32 text-center">
+          <div className="absolute inset-0 bg-grid-slate-800/40 mask-[linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
+          <div className="relative max-w-4xl mx-auto px-4">
+            <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent mb-6">
+              Build Your Website with the Power of AI
+            </h1>
+            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
+              Go from a simple idea to a fully functional, SEO-optimized website in minutes. Let our AI do the heavy lifting, so you can focus on your business.
+            </p>
+            <Link
+              href="/onboarding"
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-500 transition-transform hover:scale-105"
+            >
+              Generate Your Website for Free
+            </Link>
+          </div>
+        </section>
 
-        <HeroSection />
-
-        {/* Social Proof Marquee (Partner Logos) */}
-        <section className="py-24 border-y border-white/5 bg-white/[0.01] relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 mb-16 flex flex-col md:flex-row items-center justify-between gap-6">
-            <h2 className="text-sm font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-4">
-              <div className="w-8 h-[1px] bg-slate-800" />
-              Trusted By Global Innovators
-            </h2>
-            <div className="flex items-center gap-8 saturate-0 opacity-50">
-              <span className="text-xl font-display font-black text-white">FORBES</span>
-              <span className="text-xl font-display font-black text-white">NYT</span>
-              <span className="text-xl font-display font-black text-white">WIRED</span>
+        {/* Mini Domain Search Section */}
+        <section className="pb-20 -mt-16 relative z-10">
+          <div className="max-w-2xl mx-auto px-4">
+            <div className="p-6 bg-slate-900/60 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-lg">
+              <h3 className="text-xl font-semibold text-center mb-4">Claim Your Digital Identity</h3>
+              {/* Domain search form logic should be implemented or imported here, or remove if not needed */}
             </div>
           </div>
+        </section>
 
-          <div className="flex overflow-hidden relative group">
-            <div className="flex animate-marquee gap-24 whitespace-nowrap py-4 items-center">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <MarqueeItem key={i} index={i} />
-              ))}
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <MarqueeItem key={`dup-${i}`} index={i} />
-              ))}
+        {/* Features Section */}
+        <section id="features" className="py-20 px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4">Everything You Need to Succeed Online</h2>
+              <p className="text-slate-400 text-lg">
+                From initial design to going live, our platform provides a complete solution.
+              </p>
             </div>
-          </div>
-        </section>
-
-        {/* Feature Showcase ("Opened Cards" Style) */}
-        <section id="features" className="py-40 px-6 max-w-7xl mx-auto relative z-10">
-          <div className="mb-24 space-y-6">
-            <div className="w-12 h-1 bg-blue-600 rounded-full" />
-            <h2 className="text-5xl md:text-8xl font-display font-bold text-white tracking-tighter">Designed for scale.</h2>
-            <p className="text-slate-400 max-w-2xl text-xl leading-relaxed font-medium">Every component of our builder is engineered for conversion, speed, and cinematic visual impact.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <FeatureCard
-              icon={<Zap className="w-7 h-7 text-yellow-400 fill-yellow-400/20" />}
-              title="Instant Generation"
-              desc="Our proprietary AI engine creates high-fidelity landing pages in under 60 seconds."
-              details={["Dynamic Component Injection", "Automated Image Enhancement", "Semantic HTML Structure"]}
-              tag="SPEED"
-            />
-            <FeatureCard
-              icon={<Shield className="w-7 h-7 text-emerald-400 fill-emerald-400/20" />}
-              title="Ironclad Security"
-              desc="Enterprise-grade protection standard on every project we build."
-              details={["Built-in DDoS Shielding", "Automated Edge SSL", "Zero Trust Governance"]}
-              tag="TRUST"
-            />
-            <FeatureCard
-              icon={<Cpu className="w-7 h-7 text-blue-400 fill-blue-400/20" />}
-              title="Neural Analytics"
-              desc="Understand your users with ML-powered behavior analysis and forecasting."
-              details={["Session Replay Engines", "Growth Prediction Models", "Real-time Edge Metrics"]}
-              tag="INSIGHT"
-            />
-          </div>
-        </section>
-
-        {/* Pricing Section (Targeted by Links) */}
-        <section id="pricing" className="py-24 bg-white/[0.02]">
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-            <StatItem value="12M+" label="SITES GENERATED" />
-            <StatItem value="99.9%" label="SYSTEM UPTIME" />
-            <StatItem value="250k+" label="HAPPY AGENCIES" />
-            <StatItem value="2min" label="AVG. DEPLOY TIME" />
-          </div>
-        </section>
-
-        {/* Testimonial Section */}
-        <section className="py-40 px-6">
-          <div className="max-w-5xl mx-auto glass-heavy p-16 md:p-24 rounded-[48px] text-center relative overflow-hidden group border border-white/10">
-            <div className="absolute top-0 left-0 w-full h-full bg-blue-600/5 group-hover:bg-blue-600/10 transition-premium" />
-            <div className="absolute top-10 left-10 text-9xl text-white/5 font-display select-none">"</div>
-            <div className="relative z-10">
-              <h3 className="text-4xl md:text-6xl font-display font-bold text-white mb-10 tracking-tight italic leading-tight">
-                "We scaled from zero to 10k users in 30 days using OpsVantage's AI-generated strategy. The precision is unmatched."
-              </h3>
-              <div className="flex flex-col items-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] mb-6 shadow-2xl rotate-3">
-                  <div className="w-full h-full rounded-2xl bg-slate-900 flex items-center justify-center overflow-hidden">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Testimonial" className="w-full h-full" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {features.map((feature) => (
+                <div key={feature} className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                  <div className="flex items-start">
+                    <CheckCircle2 className="w-6 h-6 text-green-400 mr-4 mt-1 shrink-0" />
+                    <h3 className="text-lg font-semibold text-white">{feature}</h3>
                   </div>
                 </div>
-                <p className="text-white font-black text-xl">Arto Minasyan</p>
-                <p className="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mt-1">Founder, Stealth Studio</p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Final Call to Action */}
-        <section className="py-60 px-6 text-center relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 blur-[160px] rounded-full pointer-events-none animate-glow" />
-
-          <div className="relative z-10 max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full mb-10 border border-blue-500/20">
-              <Zap className="w-4 h-4 text-blue-400" />
-              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-blue-400">Join the waitlist for v3.0</span>
-            </div>
-
-            <h2 className="text-6xl md:text-9xl font-display font-bold text-white mb-16 tracking-tighter leading-none">
-              Ready to transcend the <span className="text-gradient-deep">ordinary?</span>
-            </h2>
-
-            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center scale-110">
-              <Link
-                href="/onboarding"
-                className="group px-16 py-8 bg-white text-black rounded-[2rem] font-black text-2xl flex items-center gap-3 hover:bg-slate-200 transition-premium hover:scale-105 shadow-2xl"
-              >
-                Claim Your Future <ChevronRight className="w-7 h-7 group-hover:translate-x-2 transition-transform" />
-              </Link>
-            </div>
-
-            <div className="mt-16 flex flex-wrap justify-center gap-8 text-slate-500 font-bold uppercase tracking-widest text-[10px]">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3 h-3 text-blue-500" /> Instant Access
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3 h-3 text-blue-500" /> Zero Credit Card
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3 h-3 text-blue-500" /> Enterprise Support
-              </div>
-            </div>
+        {/* CTA Section */}
+        <section className="py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-4xl font-bold mb-4">Ready to Launch Your Dream Website?</h2>
+            <p className="text-slate-400 text-lg mb-8">
+              No credit card required. Start building for free and experience the future of web design.
+            </p>
+            <Link
+              href="/onboarding"
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-500 transition-transform hover:scale-105"
+            >
+              Start Building Now
+            </Link>
           </div>
         </section>
       </main>
 
       <Footer />
-    </div>
-  );
-}
-
-function MarqueeItem({ index }: { index: number }) {
-  return (
-    <div className="flex items-center gap-6 text-slate-400 group cursor-pointer hover:text-white transition-premium">
-      <div className="w-14 h-14 glass rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-premium border border-white/5 group-hover:border-blue-400/50 shadow-xl overflow-hidden">
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/0 group-hover:from-blue-400/20 group-hover:to-blue-600/40">
-          <img src="/logo.png" alt="Project Logo" className="w-full h-full object-cover" />
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <span className="text-3xl font-display font-black tracking-tighter opacity-40 group-hover:opacity-100 group-hover:translate-x-2 transition-premium">
-          PROJECT_{index.toString().padStart(2, '0')}
-        </span>
-        <span className="text-[9px] uppercase tracking-[0.3em] font-black group-hover:text-blue-400 transition-colors">AI-Generated Build</span>
-      </div>
-    </div>
-  );
-}
-
-function FeatureCard({ icon, title, desc, details, tag }: { icon: React.ReactNode, title: string, desc: string, details: string[], tag: string }) {
-  return (
-    <div className="glass p-10 rounded-[40px] group hover:bg-white/5 transition-all duration-700 hover:-translate-y-4 border border-white/5 hover:border-blue-500/30 shadow-2xl relative overflow-hidden">
-      <div className="absolute top-4 right-8 text-[10px] font-black tracking-[0.4em] text-white/10 group-hover:text-blue-500/30 transition-colors select-none italic pt-4">
-        {tag}
-      </div>
-
-      <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-blue-600 group-hover:rotate-6 transition-all duration-500 shadow-xl border border-white/10 group-hover:border-blue-400">
-        {icon}
-      </div>
-
-      <h3 className="text-3xl font-display font-bold text-white mb-6 tracking-tight">{title}</h3>
-      <p className="text-slate-400 mb-10 text-lg font-medium leading-relaxed group-hover:text-slate-200 transition-colors">{desc}</p>
-
-      <div className="space-y-4 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-y-8 group-hover:translate-y-0 pb-6 border-b border-white/5">
-        {details.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-4">
-            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,1)]" />
-            <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">{item}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-8 flex items-center justify-between">
-        <span className="text-xs font-black text-blue-400 uppercase tracking-[0.2em] group-hover:translate-x-2 transition-transform cursor-pointer">Explore Neural Link</span>
-        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-premium">
-          <ArrowRight className="w-5 h-5" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatItem({ value, label }: { value: string, label: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">{value}</span>
-      <span className="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-black">{label}</span>
     </div>
   );
 }

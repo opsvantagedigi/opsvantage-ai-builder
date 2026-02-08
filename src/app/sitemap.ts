@@ -10,7 +10,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [];
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://opsvantage-ai-builder.vercel.app';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    throw new Error('NEXT_PUBLIC_APP_URL is not defined');
+  }
 
   // Find the project associated with the current hostname
   const project = await prisma.project.findFirst({

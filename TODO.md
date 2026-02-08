@@ -138,7 +138,7 @@ Add support for:
 ## PHASE 5 — PERFORMANCE, SEO & MARKETING
 
 ### 16. SEO Enhancements
-- [x] Auto‑generate OpenGraph images
+- [ ] Auto‑generate OpenGraph images
 - [x] Auto-generate structured data (JSON-LD)
 - [x] Add sitemap.xml + robots.txt
 - [x] Add canonical URLs
@@ -162,14 +162,14 @@ Create:
 
 ### 19. Automated Testing
 Add:
-- [x] Unit tests for AI pipelines
-- [x] Integration tests for Prisma
+- [ ] Unit tests for AI pipelines
+- [ ] Integration tests for Prisma
 - [ ] E2E tests for onboarding → publish flow
 
 ### 20. Observability
 Add:
-- [x] Request tracing
-- [x] Error monitoring
+- [ ] Request tracing
+- [ ] Error monitoring
 - [ ] Performance metrics
 - [ ] AI usage analytics
 
@@ -179,23 +179,23 @@ Add:
 
 ### 21. White‑Label Mode
 Agencies can:
-- [x] Add their logo
-- [x] Use custom domain for dashboard
+- [ ] Add their logo
+- [ ] Use custom domain for dashboard
 - [ ] Customize email templates
 
 ### 22. Audit Logs
 Track:
-- [x] Page edits
-- [x] AI generations
-- [x] User logins
-- [x] Domain changes
+- [ ] Page edits
+- [ ] AI generations
+- [ ] User logins
+- [ ] Domain changes
 
 ### 23. Role‑Based Access Control
 Granular permissions:
-- [x] Edit content
-- [x] Publish content
-- [x] Manage billing
-- [x] Manage team
+- [ ] Edit content
+- [ ] Publish content
+- [ ] Manage billing
+- [ ] Manage team
 
 ---
 
@@ -203,18 +203,17 @@ Granular permissions:
 
 ### 24. AI Website Refactoring
 Let users ask:
-- [x] “Make my website more modern”
-- [x] “Improve my SEO”
-- [x] “Rewrite my homepage in a luxury tone”
-- [x] “Add a new section for testimonials”
+- [ ] “Make my website more modern”
+- [ ] “Improve my SEO”
+- [ ] “Rewrite my homepage in a luxury tone”
+- [ ] “Add a new section for testimonials”
 
 ### 25. AI Competitor Analysis
-- [x] Crawl competitor sites
-- [x] Extract structure + tone
-- [x] Suggest improvements
+- [ ] Crawl competitor sites
+- [ ] Extract structure + tone
+- [ ] Suggest improvements
 
 ### 26. AI Analytics Insights
-- [x] Analyze traffic
-- [x] Identify drops
-- [x] Suggest improvements
-- [x] Integration with Builder Refactor
+- [ ] Analyze traffic
+- [ ] Suggest improvements
+- [ ] Auto‑optimize CTAs

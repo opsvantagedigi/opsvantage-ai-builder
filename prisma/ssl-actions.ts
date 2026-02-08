@@ -1,6 +1,6 @@
 'use server';
 
-import { openProvider } from '@/lib/openprovider/client';
+import { openProvider } from '../client';
 
 const MARKUP = parseFloat(process.env.NEXT_PUBLIC_PRICING_MARKUP || "1.2");
 
