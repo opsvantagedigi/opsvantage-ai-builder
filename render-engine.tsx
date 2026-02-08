@@ -14,6 +14,7 @@ interface Section {
   content: Record<string, unknown>;
 }
 
+// Moved to src/components/builder/render-engine.tsx
 export function RenderEngine({ sections, onUpdate }: { sections: Section[], onUpdate: (sectionId: string, field: string, value: string) => void }) {
   if (!sections || sections.length === 0) {
     return <div className="p-20 text-center text-slate-400">MARZ is architecting your site...</div>;
