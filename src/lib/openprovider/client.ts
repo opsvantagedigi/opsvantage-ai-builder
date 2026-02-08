@@ -4,6 +4,29 @@ interface DomainCreationPayload {
   // Add other required properties as needed
 }
 
+// Stub for OpenProvider client API
+export const openProvider = {
+  async checkDomain(name: string, ext: string) {
+    // Simulate a successful domain check
+    return {
+      code: 0,
+      data: {
+        results: [
+          {
+            status: 'available',
+            domain: `${name}.${ext}`,
+            price: {
+              reseller: {
+                price: 10,
+                currency: 'USD',
+              },
+            },
+            is_premium: false,
+          },
+        ],
+      },
+    };
+  },
   async createDomain(payload: DomainCreationPayload) {
     // Simulate a successful domain registration
     return {

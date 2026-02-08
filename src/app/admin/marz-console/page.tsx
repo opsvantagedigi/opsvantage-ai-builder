@@ -59,10 +59,10 @@ export default function MarzCommandConsole() {
 
 if (isLoading) {
     return (
-        <div className=\"min-h-screen bg-[#020617] flex items-center justify-center\">
-            < div className =\"flex flex-col items-center gap-4\">
-                < Loader2 className =\"w-12 h-12 text-cyan-500 animate-spin\" />
-                    < span className =\"text-cyan-400 font-mono text-sm tracking-widest uppercase animate-pulse\">Establishing Secure Uplink...</span>
+        <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
+                    <span className="text-cyan-400 font-mono text-sm tracking-widest uppercase animate-pulse">Establishing Secure Uplink...</span>
                 </div >
             </div >
         );
