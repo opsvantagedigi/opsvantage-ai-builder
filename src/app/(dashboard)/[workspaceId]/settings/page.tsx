@@ -47,11 +47,6 @@ export default async function SettingsPage({
             auditLogs: {
                 take: 50,
                 orderBy: { createdAt: 'desc' },
-                include: {
-                    actor: {
-                        select: { name: true, email: true }
-                    }
-                }
             }
         }
     });
