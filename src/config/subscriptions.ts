@@ -103,3 +103,16 @@ export function getUsageLimit(planId: string | null | undefined, type: 'sites' |
 
   return type === 'sites' ? plan.limits.sites : plan.limits.aiGenerations;
 }
+
+/**
+ * Get plan ID from Stripe price ID
+ */
+export function getPlanIdFromStripePrice(priceId: string): string {
+  const planMap: { [key: string]: string } = {
+    [process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_STARTER || '']: 'starter',
+    [process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO || '']: 'pro',
+    [process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_AGENCY || '']: 'agency',
+  };
+
+  return planMap[priceId] || 'unknown';
+}

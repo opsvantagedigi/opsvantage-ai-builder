@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { addDomain, checkDomainConfig } from '@/lib/vercel';
 import { getServerSession } from 'next-auth/next';
+import { getPlanIdFromStripePrice, getUsageLimit } from '@/config/subscriptions';
 
 interface PublishResult {
   success: boolean;
@@ -21,9 +22,10 @@ interface PublishResult {
  *
  * Steps:
  * 1. Validate user owns the project
- * 2. If custom domain provided: add to Vercel, check DNS config
- * 3. Mark project as published
- * 4. Return live URL
+ * 2. Validate user has active subscription and usage limits allow it
+ * 3. If custom domain provided: add to Vercel, check DNS config
+ * 4. Mark project as published
+ * 5. Return live URL
  */
 export async function publishSiteAction(
   projectId: string,
@@ -77,7 +79,38 @@ export async function publishSiteAction(
       };
     }
 
-    // 4. HANDLE CUSTOM DOMAIN (if provided)
+    // 4. VALIDATE SUBSCRIPTION
+    const user = await db.user.findUnique({
+      where: { id: (session.user as any).id },
+    });
+
+    if (!user || user.subscriptionStatus !== 'active') {
+      return {
+        success: false,
+        error: 'Active subscription required to publish. Upgrade your plan.',
+      };
+    }
+
+    // Check site limits
+    const publishedSiteCount = await db.project.count({
+      where: {
+        workspaceId: project.workspaceId,
+        published: true,
+      },
+    });
+
+    // Get user plan from stripe price ID
+    const planId = user.stripePriceId ? getPlanIdFromStripePrice(user.stripePriceId) : null;
+    const siteLimit = getUsageLimit(planId, 'sites');
+
+    if (publishedSiteCount >= siteLimit) {
+      return {
+        success: false,
+        error: `Site limit reached for your plan. You can publish ${siteLimit} sites. Upgrade to publish more.`,
+      };
+    }
+
+    // 5. HANDLE CUSTOM DOMAIN (if provided)
     let liveUrl: string | null = null;
     let customDomainStatus: { verified: boolean; nameservers: string[]; requiredNameservers: string[]; } | undefined;
 
