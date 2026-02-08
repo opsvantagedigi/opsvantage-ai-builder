@@ -13,14 +13,14 @@ export function MarzOperator() {
     ]);
 
     return (
-        <div className="fixed bottom-8 right-8 z-[100]">
+        <div className="fixed bottom-8 right-8 z-100">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                        className="mb-6 w-96 glass-luminous rounded-[32px] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                        className="mb-6 w-96 glass-luminous rounded-4xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                     >
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-6">
