@@ -44,11 +44,7 @@ next-env.d.ts
 
 /src/generated/prisma
 
-.vercel
 .env*.local
-
-# Ignore demo node_modules accidentally committed
-demo/node_modules/
 
 # Ignore temporary build directories
 tmpclaude-*/
