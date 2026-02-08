@@ -420,3 +420,11 @@ model Usage {
   pagesGenerated   Int    @default(0)
   month            DateTime @default(now()) // Reset logic relies on this
 }
+
+// Early Access Signup for Coming Soon Page
+model EarlyAccessSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  signedUpAt DateTime @default(now())
+  notified  Boolean  @default(false)
+}
