@@ -1,9 +1,8 @@
 'use client';
 
-import { Header } from '../../Header';
-import { Footer } from '../../Footer';
-import { SSLProductList } from '../app/SSLProductList';
-import { CheckCircle2, Search } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 const features = [
