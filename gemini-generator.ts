@@ -1,3 +1,6 @@
+// Moved to src/lib/ai/gemini-generator.ts
+// Original file content has been relocated.
+// Please refer to the new file for the implementation.
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { WizardState } from "@/lib/types/wizard";
 
