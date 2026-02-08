@@ -93,10 +93,10 @@ return (
     </div>
 
     {/* HEADER: COMMAND STATUS */ }
-    < header className =\"relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-md p-6 flex justify-between items-center\">
-        < div className =\"flex items-center gap-4\">
-            < div className =\"relative\">
-                < div className =\"w-3 h-3 bg-green-500 rounded-full animate-ping absolute\" />
+    <header className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-md p-6 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+            <div className="relative">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute" />
                     < div className =\"w-3 h-3 bg-green-500 rounded-full relative\" />
                     </div >
     <h1 className=\"text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400\">
