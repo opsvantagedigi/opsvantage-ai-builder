@@ -28,7 +28,7 @@ export function Header() {
 
       {/* Main Navigation */}
       <nav
-        className={`w-full max-w-[1400px] mx-auto transition-all duration-500 rounded-b-2xl md:rounded-2xl mt-0 md:mt-4 ${isScrolled
+        className={`w-full max-w-350 mx-auto transition-all duration-500 rounded-b-2xl md:rounded-2xl mt-0 md:mt-4 ${isScrolled
           ? 'md:max-w-7xl glass-heavy shadow-2xl py-3 px-8 mx-4'
           : 'glass py-5 px-8 mx-4'
           }`}
