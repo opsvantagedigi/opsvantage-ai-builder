@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { loadProjectContentAction } from '@/app/actions/save-project';
+import { getCurrentSubscriptionAction } from '@/app/actions/billing';
+import { publishSiteAction } from '@/app/actions/publish-site';
 import { EditableImage } from '@/components/builder/editable-image';
 import { EditableText } from '@/components/builder/editable-text';
 import { Button } from '@/components/ui/button';
@@ -13,6 +16,7 @@ import {
   Plus,
   Save,
   Eye,
+  Lock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -75,11 +79,15 @@ interface BuilderPageProps {
 }
 
 export default function BuilderPage({ params }: BuilderPageProps) {
+  const router = useRouter();
   const [siteData, setSiteData] = useState(DEFAULT_SITE_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState('home');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // 1. LOAD EXISTING PROJECT DATA ON MOUNT
   useEffect(() => {
@@ -106,7 +114,23 @@ export default function BuilderPage({ params }: BuilderPageProps) {
     loadProject();
   }, [params.projectId]);
 
-  // 2. ACTIVATE AUTO-SAVE
+  // 2. LOAD SUBSCRIPTION STATUS
+  useEffect(() => {
+    const loadSubscription = async () => {
+      try {
+        const result = await getCurrentSubscriptionAction();
+        if (result.success) {
+          setSubscription(result.subscription);
+        }
+      } catch (error) {
+        console.error('[MARZ] Failed to load subscription:', error);
+      }
+    };
+
+    loadSubscription();
+  }, []);
+
+  // 3. ACTIVATE AUTO-SAVE
   const { status, lastSaved, error: saveError } = useAutoSave(
     params.projectId,
     siteData,
@@ -114,6 +138,42 @@ export default function BuilderPage({ params }: BuilderPageProps) {
   );
 
   // HANDLERS
+  const handlePublish = async () => {
+    try {
+      // Check if user has active subscription
+      if (!subscription || subscription.status !== 'active') {
+        setShowUpgradeModal(true);
+        return;
+      }
+
+      // Check usage limits
+      if (subscription.usage.sites.used >= subscription.usage.sites.limit) {
+        alert(
+          `You've reached your site limit for the ${subscription.plan} plan. Upgrade to publish more sites.`
+        );
+        router.push('/dashboard/billing');
+        return;
+      }
+
+      setIsPublishing(true);
+      const result = await publishSiteAction(params.projectId);
+
+      if (result.success) {
+        alert(
+          `Website published! Visit: ${result.url}`
+        );
+        window.open(result.url, '_blank');
+      } else {
+        alert(`Publish failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('[MARZ] Publish error:', error);
+      alert('Failed to publish website');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const handleUpdateSection = (
     pageId: string,
     sectionId: string,
@@ -274,9 +334,29 @@ export default function BuilderPage({ params }: BuilderPageProps) {
                 <Eye className="w-4 h-4" />
                 Preview
               </Button>
-              <Button size="sm" variant="secondary" className="gap-2">
-                <Save className="w-4 h-4" />
-                Publish
+              <Button
+                size="sm"
+                variant="secondary"
+                className="gap-2"
+                onClick={handlePublish}
+                disabled={isPublishing || !subscription || subscription.status !== 'active'}
+              >
+                {isPublishing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Publishing...
+                  </>
+                ) : !subscription || subscription.status !== 'active' ? (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    Upgrade to Publish
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Publish
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -430,6 +510,46 @@ export default function BuilderPage({ params }: BuilderPageProps) {
           </button>
         </div>
       </main>
+
+      {/* UPGRADE MODAL */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-slate-900 border-2 border-cyan-500/30 rounded-lg p-8 max-w-md mx-4"
+          >
+            <div className="text-center">
+              <Lock className="w-12 h-12 text-cyan-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Upgrade Required
+              </h2>
+              <p className="text-slate-400 mb-6">
+                Publishing is only available with an active subscription. Choose a plan to get started.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    router.push('/dashboard/billing');
+                  }}
+                  className="flex-1"
+                >
+                  Choose Plan
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
