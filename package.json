@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build && npm run postbuild",
+    "postbuild": "node scripts/generate-nft.js",
     "start": "next start",
     "lint": "eslint",
     "test:save-flow": "npx tsx scripts/test-save-flow.ts",
