@@ -47,11 +47,12 @@ if (fs.existsSync(nftPath)) {
 // Vercel's build system needs to stat this file to understand edge functions
 try {
   if (!fs.existsSync(middlewareJsPath)) {
-    // Create a minimal stub that indicates this is a Turbopack-compiled edge function
+    // Create a minimal stub using CommonJS syntax (Vercel loads it as CommonJS)
+    // The actual middleware logic is compiled to edge chunks via Turbopack
     const stub = `// Next.js 16 Turbopack compiled middleware
 // The actual middleware logic is compiled to edge chunks via Turbopack
 // This file is a placeholder for Vercel's build system
-export {};\n`;
+module.exports = {};\n`;
     fs.writeFileSync(middlewareJsPath, stub);
     console.log('✓ Generated middleware.js stub for Vercel');
   }
