@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Ignore demo node_modules accidentally committed
 demo/node_modules/
+
+# Ignore temporary build directories
+tmpclaude-*/
