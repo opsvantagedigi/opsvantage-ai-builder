@@ -23,7 +23,7 @@ export function SSLProductList() {
         setError(result.error);
       } else {
         // Displaying a curated list for a clean UI
-        const filtered = (result.products?.filter((p: any) => ['Sectigo', 'RapidSSL', 'GeoTrust'].includes(p.brand)).slice(0, 3) || []) as SSLProduct[];
+        const filtered = (result.products?.filter((p: any) => ['Sectigo', 'RapidSSL', 'GeoTrust'].includes(p.brand)).slice(0, 3) || []) as unknown as SSLProduct[];
         setProducts(filtered);
       }
       setLoading(false);

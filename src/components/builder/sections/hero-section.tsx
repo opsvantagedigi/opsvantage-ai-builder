@@ -33,16 +33,16 @@ export function HeroSection({ content, onUpdate }: HeroProps) {
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-b from-white to-white/60">
-          <EditableText 
-            value={content.headline} 
-            onChange={(val) => onUpdate('headline', val)} 
+          <EditableText
+            value={content.headline}
+            onSave={(val) => onUpdate('headline', val)}
           />
         </h1>
 
         <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-          <EditableText 
-            value={content.subhead} 
-            onChange={(val) => onUpdate('subhead', val)} 
+          <EditableText
+            value={content.subhead}
+            onSave={(val) => onUpdate('subhead', val)}
           />
         </p>
 
