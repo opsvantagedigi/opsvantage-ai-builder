@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import { Header } from '../../Header';
+import { Footer } from '../../Footer';
 import { getSortedDocsData } from '@/lib/docs';
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
