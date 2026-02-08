@@ -4,21 +4,44 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Smartphone, Monitor, Tablet, Share2,
-  Sparkles, ChevronLeft, Eye 
+  ChevronLeft, Eye 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import React from 'react';
+import { RenderEngine } from '../components/builder/render-engine';
 
-export default function BuilderPage({ params }: { params: { projectId: string } }) {
+// MOCK DATA (This replicates the JSON structure MARZ generates)
+const MOCK_AI_DATA = {
+  siteConfig: { title: "Nexus Dynamics" },
+  sections: [
+    {
+      id: "hero_01",
+      type: "HERO",
+      content: {
+        headline: "Autonomous Intelligence for Enterprise",
+        subhead: "We leverage neural networks to optimize your operational efficiency by 300%.",
+        cta: "Deploy System"
+      }
+    },
+    {
+      id: "feat_01",
+      type: "FEATURES",
+      content: {
+        headline: "Core Capabilities",
+        items: [
+          { title: "Neural Processing", desc: "Real-time data synthesis at the edge.", icon: "Cpu" },
+          { title: "Global Security", desc: "ISO 27001 compliant infrastructure.", icon: "Shield" },
+          { title: "Instant Scale", desc: "Serverless architecture that grows with you.", icon: "Zap" }
+        ]
+      }
+    }
+  ]
+};
+
+export default function BuilderPage() {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isPublishing, setIsPublishing] = useState(false);
-
-  // MOCK: In a real app, you would fetch project data based on params.projectId
-  const siteData = {
-    projectName: "Project: " + params.projectId.replace(/_/g, '-'),
-    headline: "Welcome to " + params.projectId.replace(/_/g, '-'), // Proves dynamic routing
-  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -31,7 +54,7 @@ export default function BuilderPage({ params }: { params: { projectId: string } 
             <ChevronLeft className="w-5 h-5 text-slate-400" />
           </Link>
           <div>
-            <h1 className="text-sm font-bold text-white">{siteData.projectName}</h1>
+            <h1 className="text-sm font-bold text-white">Project: Nexus Dynamics</h1>
             <p className="text-xs text-green-400 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               Auto-saved
@@ -79,48 +102,28 @@ export default function BuilderPage({ params }: { params: { projectId: string } 
             device !== 'desktop' ? 'my-auto' : 'h-full w-full'
           }`}
         >
-          {/* MOCK WEBSITE CONTENT (Placeholder for User's Site) */}
+          {/* THE RENDER ENGINE: Replacing the hardcoded HTML */}
           <div className="w-full h-full bg-slate-50 overflow-y-auto custom-scrollbar">
             
-            {/* Nav */}
-            <nav className="h-16 border-b flex items-center justify-between px-8 bg-white sticky top-0 z-10">
-              <span className="font-bold text-xl">NEXUS</span>
-              <div className="space-x-4 text-sm font-medium">
-                <span>Services</span>
-                <span>About</span>
-                <span className="px-4 py-2 bg-black text-white rounded-full">Contact</span>
+            {/* Dynamic Navbar (Simple for now) */}
+            <nav className="h-16 border-b flex items-center justify-between px-8 bg-white sticky top-0 z-50">
+              <span className="font-bold text-xl tracking-tighter">OPS<span className="text-blue-600">VANTAGE</span></span>
+              <div className="space-x-6 text-sm font-medium text-slate-600">
+                <span>Solutions</span>
+                <span>Platform</span>
+                <span className="px-4 py-2 bg-slate-900 text-white rounded-full">Contact</span>
               </div>
             </nav>
 
-            {/* Hero */}
-            <div className="py-20 px-8 text-center bg-slate-100">
-              <h1 className="text-5xl font-bold mb-6 text-slate-900">
-                {siteData.headline || "Innovation for the Future."}
-              </h1>
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-8">
-                We build autonomous systems for the next generation of enterprise leaders.
-              </p>
-              <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-bold">
-                Start Building
-              </button>
-            </div>
+            {/* INJECT THE ENGINE */}
+            <RenderEngine sections={MOCK_AI_DATA.sections} />
 
-            {/* Grid */}
-            <div className="grid grid-cols-3 gap-8 p-12 max-w-6xl mx-auto">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
-              ))}
-            </div>
+            {/* Dynamic Footer */}
+            <footer className="py-12 bg-slate-900 text-slate-400 text-center text-sm">
+              <p>© 2024 OpsVantage Digital. Powered by MARZ.</p>
+            </footer>
 
           </div>
-
-          {/* AI OVERLAY TOOLS */}
-          <div className="absolute bottom-6 right-6 z-50">
-             <Button className="h-12 w-12 rounded-full bg-black text-white shadow-2xl hover:scale-110 transition-transform flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-cyan-400" />
-             </Button>
-          </div>
-
         </motion.div>
       </div>
 
@@ -133,6 +136,7 @@ interface DeviceBtnProps {
   active: boolean;
   onClick: () => void;
 }
+
 function DeviceBtn({ icon, active, onClick }: DeviceBtnProps) {
   return (
     <button 
