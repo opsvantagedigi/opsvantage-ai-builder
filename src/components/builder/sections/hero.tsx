@@ -17,6 +17,7 @@ interface HeroSectionProps {
 export function HeroSection({ content, onUpdate }: HeroSectionProps) {
   return (
     <section className="relative min-h-150 flex items-center justify-center overflow-hidden bg-slate-50 text-slate-900">
+    <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden bg-slate-50 text-slate-900">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-blue-100/50 via-transparent to-transparent" />
       
       <div className="container relative z-10 px-6 text-center max-w-4xl">
@@ -51,4 +52,4 @@ export function HeroSection({ content, onUpdate }: HeroSectionProps) {
       </div>
     </section>
   );
-}
+  </section>

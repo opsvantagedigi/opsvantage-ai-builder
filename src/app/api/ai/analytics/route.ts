@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         // Prepare data for AI
         const analysisData = {
             usage,
-            activitySummary: recentLogs.reduce((acc: Record<string, number>, log) => {
+            activitySummary: recentLogs.reduce((acc: Record<string, number>, log: { action: string }) => {
                 acc[log.action] = (acc[log.action] || 0) + 1;
                 return acc;
             }, {}),

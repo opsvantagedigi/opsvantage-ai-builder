@@ -16,47 +16,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import { useDebouncedSave } from '@/hooks/useDebouncedSave';
-
-// Use local SectionWithOrder type
-type SectionWithOrder = _SectionWithOrder;
-
-type ProjectWithPagesAndSections = Omit<Project, 'pages'> & {
-  pages: (Page & {
-    sections: SectionWithOrder[];
-  })[];
-};
-
-// Zod schemas for safe parsing of section data
-const HeroContentSchema = z.object({
-  headline: z.string().default(''),
-  subhead: z.string().default(''),
-  cta: z.object({
-    text: z.string().default(''),
-    link: z.string().default(''),
-  }).default({ text: '', link: '' }),
-});
-
-const FeaturesContentSchema = z.object({
-  headline: z.string().default(''),
-  items: z.array(z.object({
-    title: z.string(),
-    description: z.string(),
-    icon: z.string(),
-  })).default([]),
-});
-
+  // ...existing code...
 const FooterContentSchema = z.object({
   // Define footer content properties here
 }).passthrough(); // Allow other properties
@@ -84,34 +44,23 @@ const AddSection = ({ onAdd, isAdding }: { onAdd: (type: SectionType) => void; i
         <div className="w-full border-t border-gray-300 border-dashed" />
       </div>
       <div className="relative flex justify-center">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 150)}
-          className="inline-flex items-center gap-x-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          disabled={isAdding}
-        >
-          <svg className="-ml-1 -mr-0.5 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-          </svg>
-          Add Section
-        </button>
         {isOpen && (
           <div className="absolute bottom-12 mb-2 w-56 origin-bottom rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
             <div className="py-1">
-              {sectionTypes.map((stype) => (
+              {sectionTypes.map((type) => (
                 <button
-                  key={stype}
-                  onClick={() => onAdd(stype as SectionType)}
+                  key={type}
+                  onClick={() => onAdd(type as SectionType)}
                   className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  {stype.charAt(0) + stype.slice(1).toLowerCase().replace('_', ' ')}
+                  {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
                 </button>
               ))}
             </div>
           </div>
         )}
       </div>
+    // ...existing code...
     </div>
   );
 };
@@ -125,43 +74,46 @@ const SectionPreview = ({
   onDataChange: (id: string, data: Partial<SectionData>) => void;
   projectId: string;
 }) => {
-  const parseResult = SectionDataSchema.safeParse(section.data);
-
-  if (!parseResult.success) {
-    console.error("Zod validation failed for section:", section.id, parseResult.error.issues);
-    return <DefaultPreview type={section.type} content={{ error: "Invalid data structure" }} />;
-  }
-
-  // Ensure required properties for SectionData and FeaturesContent
-  let content = parseResult.data;
-  if (section.type === 'HERO' && !content.headline) {
-    content = { ...content, headline: '' };
-  }
-  if (section.type === 'FEATURES') {
-    if (!content.headline) {
-      content = { ...content, headline: '' };
-    }
-    if (!content.items) {
-      content = { ...content, items: [] };
-    }
-  }
-
   const handleDataChange = (newContent: Partial<SectionData>) => {
     onDataChange(section.id, newContent);
   };
+
   switch (section.type) {
-    case 'HERO':
-      return <HeroPreview content={content as import('@/lib/ai/page-generator').SectionData} onContentChange={(nc) => handleDataChange(nc)} projectId={projectId} />;
-    case 'FEATURES':
-      return <FeaturesPreview content={content as import('@/types/preview').FeaturesContent} />;
-    case 'FOOTER':
-      return <FooterPreview content={content as unknown as import('@/types/preview').FooterContent} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
-    default:
-      return <DefaultPreview type={section.type} content={content} />;
+    case 'HERO': {
+      const parseResult = HeroContentSchema.safeParse(section.data);
+      if (!parseResult.success) {
+        console.error(`Zod validation failed for HERO section ${section.id}:`, parseResult.error.issues);
+        return <DefaultPreview type={section.type} content={{ error: "Invalid data structure" }} />;
+      }
+      return <HeroPreview content={parseResult.data} onContentChange={(nc) => handleDataChange(nc)} projectId={projectId} />;
+    }
+    case 'FEATURES': {
+      const parseResult = FeaturesContentSchema.safeParse(section.data);
+      if (!parseResult.success) {
+        console.error(`Zod validation failed for FEATURES section ${section.id}:`, parseResult.error.issues);
+        return <DefaultPreview type={section.type} content={{ error: "Invalid data structure" }} />;
+      }
+      return <FeaturesPreview content={parseResult.data} />;
+    }
+    case 'FOOTER': {
+      const parseResult = FooterContentSchema.safeParse(section.data);
+      if (!parseResult.success) {
+        console.error(`Zod validation failed for FOOTER section ${section.id}:`, parseResult.error.issues);
+        return <DefaultPreview type={section.type} content={{ error: "Invalid data structure" }} />;
+      }
+      return <FooterPreview content={parseResult.data} onContentChange={(nc) => handleDataChange(nc as Partial<SectionData>)} />;
+    }
+    default: {
+      const parseResult = SectionDataSchema.safeParse(section.data);
+      if (!parseResult.success) {
+        console.error(`Zod validation failed for default section ${section.id}:`, parseResult.error.issues);
+        return <DefaultPreview type={section.type} content={{ error: "Invalid data structure" }} />;
+      }
+      return <DefaultPreview type={section.type} content={parseResult.data} />;
+    }
   }
 };
 
-const SortableSection = ({
   section,
   onDuplicate,
   onDelete,
