@@ -267,7 +267,12 @@ model Workspace {
   ownerId     String
   type        WorkspaceType @default(STANDARD)
   owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  
+
+  // Branding
+  brandingLogo String?
+  brandingColors Json?
+  customDashboardDomain String?
+
   // Relations
   members     WorkspaceMember[]
   invitations Invitation[]
@@ -287,7 +292,7 @@ model Workspace {
   // billing     Billing?
   auditLogs   AuditLog[]
   usage       Usage?
-  
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -358,6 +363,8 @@ model AuditLog {
   entityType  AuditEntity
   entityId    String
   metadata    Json?
+  ipAddress   String?
+  userAgent   String?
   createdAt   DateTime @default(now())
 }
 
