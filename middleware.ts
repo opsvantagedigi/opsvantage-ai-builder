@@ -21,11 +21,17 @@ export async function middleware(request: NextRequest) {
 
   // If coming soon is active and user tries to access protected routes
   if (IS_COMING_SOON && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    const token = await getToken({ req: request });
+    try {
+      const token = await getToken({ req: request });
 
-    // Allow authenticated owner (ajay.sidal@opsvantagedigital.online) to access for testing
-    if (token && (token as any).role === 'ADMIN' && (token as any).email === 'ajay.sidal@opsvantagedigital.online') {
-      return NextResponse.next();
+      // Allow authenticated owner (ajay.sidal@opsvantagedigital.online) to access for testing
+      if (token && (token as any).role === 'ADMIN' && (token as any).email === 'ajay.sidal@opsvantagedigital.online') {
+        return NextResponse.next();
+      }
+    } catch (error) {
+      // If JWT verification fails, proceed to redirect
+      // This can happen if NEXTAUTH_SECRET is not available in edge runtime
+      console.error('Middleware token verification failed:', error);
     }
 
     // Redirect to coming soon page
