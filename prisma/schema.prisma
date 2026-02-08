@@ -121,6 +121,7 @@ model User {
   ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
   orders    Order[]
   subscriptions Subscription[] // History of subscriptions
+  sentInvites Invitation[] @relation("SentInvites") // Invitations sent by this user
 }
 
 model Account {
@@ -357,10 +358,14 @@ model Invitation {
   token       String   @unique
   email       String
   role        Role     @default(VIEWER)
+  status      String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED
   expiresAt   DateTime
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  inviterId   String
+  inviter     User     @relation("SentInvites", fields: [inviterId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
