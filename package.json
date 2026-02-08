@@ -31,7 +31,7 @@
     "clsx": "^1.2.1",
     "framer-motion": "^11.3.0",
     "geist": "^1.7.0",
-    "glob": "^10.5.0",
+    "glob": "^11.0.0",
     "gray-matter": "^4.0.3",
     "lru-cache": "^11.2.5",
     "lucide-react": "^0.563.0",
@@ -71,5 +71,12 @@
     "typescript": "^5",
     "vercel": "^32.0.1",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "debug": "4.3.7",
+    "rimraf": "^5.0.0",
+    "tar": "^7.4.0",
+    "uuid": "^9.0.0",
+    "npmlog": "^6.0.0"
   }
 }
