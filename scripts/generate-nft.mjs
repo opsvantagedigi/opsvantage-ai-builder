@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const nftPath = path.join(__dirname, '..', '.next', 'server', 'middleware.js.nft.json');
 const middlewareManifestPath = path.join(__dirname, '..', '.next', 'server', 'middleware-manifest.json');
@@ -38,3 +41,4 @@ try {
   // Don't fail the build if this script fails
   process.exit(0);
 }
+

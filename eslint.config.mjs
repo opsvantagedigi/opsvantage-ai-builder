@@ -12,6 +12,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore root-level legacy files
+    "*.jsx",
+    "*.tsx",
+    "*.ts",
+    "!src/**",
+    "!scripts/**",
+    "!next.config.ts",
+    "!eslint.config.mjs",
+    "!middleware.ts",
   ]),
 ]);
 
