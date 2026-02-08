@@ -1,1 +1,5 @@
-// ...existing code from prisma/page.tsx will be moved here...
+
+// Export a dummy component to ensure module
+export default function PricingPage() {
+	return null;
+}
