@@ -24,7 +24,10 @@ try {
   if (manifest.middleware && manifest.middleware['/']) {
     const middlewareConfig = manifest.middleware['/'];
     if (middlewareConfig.files) {
-      edgeChunkFiles.push(...middlewareConfig.files);
+      // Remove 'server/' prefix since .nft.json is in the server directory
+      edgeChunkFiles.push(...middlewareConfig.files.map(file =>
+        file.startsWith('server/') ? file.substring('server/'.length) : file
+      ));
     }
   }
 
