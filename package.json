@@ -11,6 +11,9 @@
     "test:e2e": "npx playwright test"
   },
   "dependencies": {
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^7.3.0",
