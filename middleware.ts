@@ -23,8 +23,8 @@ export async function middleware(request: NextRequest) {
   if (IS_COMING_SOON && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
     const token = await getToken({ req: request });
 
-    // Allow authenticated admins to access (for testing)
-    if (token && (token as any).role === 'ADMIN') {
+    // Allow authenticated owner (ajay.sidal@opsvantagedigital.online) to access for testing
+    if (token && (token as any).role === 'ADMIN' && (token as any).email === 'ajay.sidal@opsvantagedigital.online') {
       return NextResponse.next();
     }
 
