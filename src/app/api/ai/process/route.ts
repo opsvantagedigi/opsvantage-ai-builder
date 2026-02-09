@@ -111,7 +111,7 @@ ${JSON.stringify(task.payload, null, 2)}
             })
         }
     } else {
-        logger.warn({ msg: "No Sanity Dataset configured for project", projectId: task.project.id });
+        logger.warn(`No Sanity Dataset configured for project: ${task.project.id}`);
     }
 
     // 8. Mark task as completed
