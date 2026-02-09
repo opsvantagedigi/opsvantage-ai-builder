@@ -1,12 +1,13 @@
 import { createSanityClient } from "@/lib/sanity"
 import { prisma } from "@/lib/prisma"
 
-export default async function DynamicPage({ params }: { params: { subdomain: string; slug: string } }) {
-  const { subdomain, slug } = params
 
-  // 1. Find the project by subdomain
+export default async function DynamicPage({ params }: { params: { workspaceId: string; slug: string } }) {
+  const { workspaceId, slug } = params
+
+  // 1. Find the project by workspaceId
   const project = await prisma.project.findUnique({
-    where: { subdomain }
+    where: { subdomain: workspaceId }
   })
 
   if (!project || !project.sanityDataset) {
