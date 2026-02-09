@@ -10,7 +10,7 @@ const PUBLIC_ROUTES = ['/coming-soon', '/api', '/auth', '/_next', '/favicon.ico'
 // Routes that require launch to be active
 const PROTECTED_ROUTES = ['/dashboard', '/studio', '/builder', '/sites'];
 
-export function middleware(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for static assets and Next.js internals
