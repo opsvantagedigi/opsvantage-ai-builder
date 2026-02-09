@@ -492,7 +492,7 @@ export function MarzOperator() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-blue-600/50 transition-shadow"
+        className="w-16 h-16 bg-linear-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-blue-600/50 transition-shadow"
       >
         <Sparkles className="w-6 h-6" />
       </motion.button>
