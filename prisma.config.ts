@@ -1,7 +1,6 @@
-import { defineConfig } from "@prisma/internals/dist/cli/commandPlugins/defineConfig"
-
-export default defineConfig({
+// Prisma 7 configuration
+export default {
   datasource: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL,
   },
-})
+}
