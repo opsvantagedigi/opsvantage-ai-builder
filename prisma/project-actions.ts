@@ -39,7 +39,7 @@ export async function addCustomDomainAction(projectId: string, domain: string) {
   try {
     // 2. Add domain to Vercel
     await vercel.addDomainToProject(project.vercelProjectId, domain);
-    logger.info({ msg: 'Domain added to Vercel project', vercelProjectId: project.vercelProjectId, domain });
+    logger.info(`Domain added to Vercel project: ${JSON.stringify({ vercelProjectId: project.vercelProjectId, domain })}`);
 
     // 3. Save domain to our database
     await prisma.domain.create({
@@ -57,7 +57,7 @@ export async function addCustomDomainAction(projectId: string, domain: string) {
     };
 
   } catch (error) {
-    logger.error({ msg: 'Failed to add custom domain', error: (error as Error).message });
+    logger.error(`Failed to add custom domain: ${(error as Error).message}`);
     return { error: (error as Error).message || 'An unexpected error occurred.' };
   }
 }
