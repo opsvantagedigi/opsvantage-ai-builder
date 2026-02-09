@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Terminal, Activity, ShieldCheck, DollarSign,
@@ -13,6 +13,13 @@ export const dynamic = 'force-dynamic';
 
 const AUTHORIZED_EMAIL = "ajay.sidal@opsvantagedigital.online";
 
+interface ChatMessage {
+    role: "user" | "assistant" | "system";
+    content: string;
+    timestamp: string;
+    isError?: boolean;
+}
+
 export default function MarzCommandConsole() {
     const router = useRouter();
     const [isAuthorized, setIsAuthorized] = useState(false);
@@ -21,12 +28,9 @@ export default function MarzCommandConsole() {
     // CLIENT-SIDE AUTH GUARD
     useEffect(() => {
         const checkAuth = async () => {
-            // TODO: Replace with real session/email check in production
-            // TEMP: Allow access if running as dev OR if localStorage has the authorized email
             const isDev = process.env.NODE_ENV === 'development';
             let authorized = isDev;
             if (!isDev) {
-                // Try to read email from localStorage (simulate session)
                 try {
                     const email = window.localStorage.getItem('user_email');
                     if (email && email.toLowerCase() === AUTHORIZED_EMAIL) {
@@ -41,37 +45,99 @@ export default function MarzCommandConsole() {
     }, [router]);
 
     // STATE MANAGEMENT
-    const [logs, setLogs] = useState<string[]>([]);
+    const [logs, setLogs] = useState<ChatMessage[]>([
+        {
+            role: "system",
+            content: "[MARZ]: System Online. Ready to architect your digital presence.",
+            timestamp: new Date().toISOString(),
+        },
+        {
+            role: "system",
+            content: "[MARZ]: Neural Protocol initialized. Monitoring system health...",
+            timestamp: new Date().toISOString(),
+        }
+    ]);
     const [systemHealth, setSystemHealth] = useState(98);
     const [activeUsers, setActiveUsers] = useState(142);
     const [revenueToday, setRevenueToday] = useState(1250);
+    const [inputValue, setInputValue] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
+    const logsEndRef = useRef<HTMLDivElement>(null);
 
-    // SIMULATE MARZ \"THINKING\" STREAM
+    // Auto-scroll to latest log
+    useEffect(() => {
+        logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [logs]);
+
+    // Health check simulation (keep for dashboard feel)
     useEffect(() => {
         if (!isAuthorized) return;
 
         const interval = setInterval(() => {
-            const messages = [
-                "[MARZ]: Scanning Vercel Edge Network... Latency 24ms.",
-                "[MARZ]: Optimization complete for User #8821 (Dental Clinic).",
-                "[MARZ]: OpenProvider API Handshake successful. Token refreshed.",
-                "[MARZ]: Detecting slight anomaly in US-East-1. Re-routing...",
-                "[MARZ]: New subscription detected: PRO Plan ($49/mo).",
-                "[MARZ]: Database backup to Neon.tech encrypted and stored."
-            ];
-        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-        const timestamp = new Date().toLocaleTimeString();
-        setLogs(prev => [`[${timestamp}] ${randomMsg}`, ...prev.slice(0, 15)]);
+            setSystemHealth(health => Math.min(100, Math.max(95, health + (Math.random() - 0.45))));
+            setActiveUsers(users => users + (Math.random() > 0.9 ? (Math.random() > 0.5 ? 1 : -1) : 0));
+            if (Math.random() > 0.8) {
+                setRevenueToday(rev => rev + 49);
+            }
+        }, 2500);
 
-        // Use setters to make the console feel more alive
-        setSystemHealth(health => Math.min(100, Math.max(95, health + (Math.random() - 0.45))));
-        setActiveUsers(users => users + (Math.random() > 0.9 ? (Math.random() > 0.5 ? 1 : -1) : 0));
-        if (randomMsg.includes("subscription")) {
-            setRevenueToday(rev => rev + 49);
+        return () => clearInterval(interval);
+    }, [isAuthorized]);
+
+    // Send message to MARZ
+    const handleSendMessage = async (e?: React.FormEvent) => {
+        e?.preventDefault();
+
+        if (!inputValue.trim() || isProcessing) return;
+
+        // Add user message immediately
+        const userMessage: ChatMessage = {
+            role: "user",
+            content: inputValue,
+            timestamp: new Date().toISOString(),
+        };
+        setLogs(prev => [...prev, userMessage]);
+        setInputValue("");
+        setIsProcessing(true);
+
+        try {
+            // Call MARZ Chat API
+            const response = await fetch("/api/marz/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: inputValue,
+                    history: logs.slice(-10), // Send last 10 messages for context
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Add MARZ response
+            const assistantMessage: ChatMessage = {
+                role: "assistant",
+                content: data.content,
+                timestamp: data.timestamp,
+                isError: data.isError,
+            };
+            setLogs(prev => [...prev, assistantMessage]);
+
+        } catch (error) {
+            const errorContent = `⚠️ NEURAL LINK DEGRADED\nError: ${error instanceof Error ? error.message : String(error)}\nMARZ is attempting recovery...`;
+            setLogs(prev => [...prev, {
+                role: "system",
+                content: errorContent,
+                timestamp: new Date().toISOString(),
+                isError: true,
+            }]);
+        } finally {
+            setIsProcessing(false);
         }
-    }, 2500);
-    return () => clearInterval(interval);
-}, [isAuthorized]);
+    };
 
 if (isLoading) {
     return (
@@ -179,32 +245,54 @@ return (
 
                         <div className="flex-1 p-4 overflow-y-auto font-mono text-sm space-y-3 custom-scrollbar">
                             <AnimatePresence>
-                                {
-                                    logs.map((log, i) => (
-                                        <motion.div
-                                            key={i}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            className={`border-l-2 pl-3 ${log.includes("Anomaly") ? "border-red-500 text-red-300" :
-                                                log.includes("subscription") ? "border-yellow-500 text-yellow-300" :
-                                                    "border-blue-500 text-blue-100"
-                                                }`}
-                                        >
-                                            {log}
-                                        </motion.div>
-                                    ))
-                                }
+                                {logs.map((msg, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className={`border-l-2 pl-3 whitespace-pre-wrap ${
+                                            msg.isError
+                                                ? "border-red-500 text-red-300"
+                                                : msg.role === "user"
+                                                ? "border-yellow-500 text-yellow-300"
+                                                : "border-blue-500 text-blue-100"
+                                        }`}
+                                    >
+                                        {msg.content}
+                                    </motion.div>
+                                ))}
                             </AnimatePresence>
-                            <div className="animate-pulse text-cyan-500">_</div>
+                            {isProcessing && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="border-l-2 border-cyan-500 pl-3 text-cyan-400 flex items-center gap-2"
+                                >
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    MARZ is processing...
+                                </motion.div>
+                            )}
+                            <div ref={logsEndRef} />
+                            {!isProcessing && <div className="animate-pulse text-cyan-500 text-xs">Ready for input_</div>}
                         </div>
 
-                        <div className="p-4 bg-white/5 border-t border-white/10">
+                        <form onSubmit={handleSendMessage} className="p-4 bg-white/5 border-t border-white/10 flex gap-2">
                             <input
                                 type="text"
-                                placeholder="Command MARZ (e.g., 'Run diagnostics on OpenProvider endpoint')..."
-                                className="w-full bg-transparent border-none outline-none text-white placeholder-slate-600 font-bold"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                placeholder="Command MARZ (e.g., 'Run diagnostics' or 'Check OpenProvider status')..."
+                                className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-600 font-bold"
+                                disabled={isProcessing}
                             />
-                        </div>
+                            <button
+                                type="submit"
+                                disabled={isProcessing || !inputValue.trim()}
+                                className="px-4 py-2 bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/50 rounded font-bold transition-all disabled:opacity-50"
+                            >
+                                {isProcessing ? "..." : "→"}
+                            </button>
+                        </form>
                     </div>
                 </div>
 
