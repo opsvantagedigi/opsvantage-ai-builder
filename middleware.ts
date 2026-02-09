@@ -1,39 +1,53 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-const LAUNCH_DATE = new Date('2026-03-13T00:00:00Z');
-const IS_COMING_SOON = new Date() < LAUNCH_DATE;
-
-// Routes that should always be accessible (no middleware checks needed)
-const PUBLIC_ROUTES = ['/coming-soon', '/api', '/auth', '/_next', '/favicon.ico'];
-
-// Routes that require launch to be active
-const PROTECTED_ROUTES = ['/dashboard', '/studio', '/builder', '/sites'];
-
-export default function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Skip middleware for static assets and Next.js internals
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
-    return NextResponse.next();
-  }
-
-  // If coming soon is active and user tries to access protected routes
-  // Redirect to coming soon page (no JWT validation in edge runtime)
-  if (IS_COMING_SOON && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/coming-soon', request.url));
-  }
-
-  // If launch date has passed and user is on coming soon, redirect to home
-  if (!IS_COMING_SOON && pathname === '/coming-soon') {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  return NextResponse.next();
-}
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api/|_next/|_static/|[\\w-]+\\.\\w+).*)",
   ],
 };
+
+export default function middleware(req: NextRequest) {
+  const url = req.nextUrl;
+  const hostname = req.headers.get("host") || "";
+
+  // Define your main domain (localhost for dev, real domain for prod)
+  // Ensure this matches your env variable exactly
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "opsvantage.online";
+
+  // Check if we are on a custom subdomain/domain
+  const isCustomDomain =
+    hostname &&
+    !hostname.includes(rootDomain) &&
+    !hostname.includes("localhost") &&
+    !hostname.includes("vercel.app");
+
+  // EXTRACT SUBDOMAIN (e.g., "nexus" from "nexus.opsvantage.online")
+  const searchParams = req.nextUrl.searchParams.toString();
+  const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
+
+  // 1. HANDLE CUSTOM DOMAINS (e.g. my-bakery.com)
+  if (isCustomDomain) {
+    return NextResponse.rewrite(
+      new URL(`/sites/${hostname}${path}`, req.url)
+    );
+  }
+
+  // 2. HANDLE SUBDOMAINS (e.g. nexus.opsvantage.online)
+  if (hostname.includes(`.${rootDomain}`)) {
+    const subdomain = hostname.replace(`.${rootDomain}`, "");
+    return NextResponse.rewrite(
+      new URL(`/sites/${subdomain}${path}`, req.url)
+    );
+  }
+
+  // 3. DEFAULT: LANDING PAGE & DASHBOARD
+  return NextResponse.next();
+}
