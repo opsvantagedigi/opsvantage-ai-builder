@@ -49,3 +49,6 @@ next-env.d.ts
 # Ignore temporary build directories and Claude Code temporary files
 tmpclaude-*/
 tmpclaude-*
+
+.vercel
+.env*.local
