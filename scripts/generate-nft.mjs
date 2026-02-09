@@ -62,7 +62,6 @@ async function middlewareHandler(req, context) {
 
 // Export for CommonJS compatibility
 module.exports = middlewareHandler;
-export default middlewareHandler;
 `;
     fs.writeFileSync(middlewareJsPath, stub);
     console.log('✓ Generated middleware.js stub with handler for Vercel');
