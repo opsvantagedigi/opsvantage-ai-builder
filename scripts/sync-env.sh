@@ -40,8 +40,6 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     echo "🔒 Syncing '$KEY' to Vercel for environment(s): $VERCEL_ENVIRONMENTS"
     # Use a here-string to safely pass the value, handling special characters and newlines
     echo -n "$VALUE" | vercel env add "$KEY" $VERCEL_ENVIRONMENTS --yes
-    # Use a here-string to safely pass the value, handling special characters
-    echo -n "$VALUE" | vercel env add "$KEY" "$VERCEL_ENVIRONMENTS" --yes
 done < .env.local
 
 echo "✅ All environment variables have been successfully synced to Vercel."

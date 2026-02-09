@@ -1,13 +1,15 @@
-import { GeistSans } from 'geist/font/sans';
+import { Inter } from 'next/font/google';
 import { 
   LayoutDashboard, Globe, Zap, Settings, 
   CreditCard, LogOut, Command 
 } from 'lucide-react';
 import Link from 'next/link';
 
+const inter = Inter({ subsets: ['latin'] });
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`min-h-screen bg-[#020617] text-white ${GeistSans.className} flex`}>
+    <div className={`min-h-screen bg-[#020617] text-white ${inter.className} flex`}>
       
       {/* SIDEBAR NAVIGATION */}
       <aside className="w-64 border-r border-white/10 bg-slate-950/50 backdrop-blur-xl flex flex-col fixed h-full z-50">
