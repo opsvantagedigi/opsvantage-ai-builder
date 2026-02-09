@@ -36,14 +36,14 @@ export const POST = withErrorHandling(async (req) => {
   // Instruct model to return JSON { "suggestion": "..." }
   const basePrompt = SUGGESTION_PROMPTS[field](data || {})
   const prompt = `${basePrompt}\n\nRespond only with valid JSON in this shape: { "suggestion": "string" }`
-  logger.info({ msg: "Gemini suggestion prompt", field, prompt })
+  logger.info(`Gemini suggestion prompt. Field: ${field}, Prompt: ${prompt}`)
 
   try {
     const validated = await generateValidatedJSON(genAI, prompt, suggestionResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
-    logger.info({ msg: "Gemini suggestion result", field, suggestion: validated.suggestion })
+    logger.info(`Gemini suggestion result. Field: ${field}, Suggestion: ${validated.suggestion}`)
     return NextResponse.json({ suggestion: validated.suggestion })
   } catch (err: unknown) {
-    logger.error({ msg: "Gemini suggestion failed", field, err: String(err) })
+    logger.error(`Gemini suggestion failed. Field: ${field}, Error: ${String(err)}`)
     return NextResponse.json({ error: "AI suggestion failed" }, { status: 500 })
   }
 })

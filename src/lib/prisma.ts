@@ -54,7 +54,7 @@ export async function withRetry<T>(
       }
 
       const retryDelay = delay * Math.pow(2, i); // Exponential backoff
-      logger.warn({ msg: `Database operation failed, retrying (${i + 1}/${maxRetries})`, error: String(errAny?.message ?? errAny), retryDelay });
+      logger.warn(`Database operation failed, retrying (${i + 1}/${maxRetries}). Error: ${String(errAny?.message ?? errAny)}, Retry delay: ${retryDelay}ms`);
       await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }

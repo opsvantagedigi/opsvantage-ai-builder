@@ -123,11 +123,11 @@ ${JSON.stringify(task.payload, null, 2)}
       }
     })
 
-    logger.info({ msg: "Task completed successfully", taskId: task.id });
+    logger.info(`Task completed successfully. Task ID: ${task.id}`);
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const e = err as Error
-    logger.error({ msg: "Task processing failed", taskId: task.id, error: e.message });
+    logger.error(`Task processing failed. Task ID: ${task.id}, Error: ${e.message}`);
 
     await prisma.aiTask.update({
       where: { id: task.id },

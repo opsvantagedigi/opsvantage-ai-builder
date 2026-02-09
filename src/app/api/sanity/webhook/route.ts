@@ -20,7 +20,7 @@ export const POST = async (req: Request) => {
       return NextResponse.json({ error: "Invalid signature comparison" }, { status: 401 })
     }
   } else {
-    logger.info({ msg: "SANITY_WEBHOOK_SECRET not set — skipping signature verification" })
+    logger.info(`SANITY_WEBHOOK_SECRET not set — skipping signature verification`)
   }
 
   let payload: unknown
@@ -28,7 +28,7 @@ export const POST = async (req: Request) => {
     payload = JSON.parse(raw) as unknown
   } catch (e: unknown) {
     const ex = e as Error
-    logger.warn({ msg: "Sanity webhook: invalid JSON", err: String(ex) })
+    logger.warn(`Sanity webhook: invalid JSON. Error: ${String(ex)}`)
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
@@ -44,7 +44,7 @@ export const POST = async (req: Request) => {
   }
 
   if (!doc) {
-    logger.info({ msg: "Sanity webhook: no document in payload" })
+    logger.info(`Sanity webhook: no document in payload`)
     return NextResponse.json({ ok: true })
   }
 
@@ -73,14 +73,14 @@ export const POST = async (req: Request) => {
     for (const p of pathsToRevalidate) {
       try {
         revalidatePath(p)
-        logger.info({ msg: "Revalidated path", path: p })
+        logger.info(`Revalidated path. Path: ${p}`)
       } catch (e) {
-        logger.warn({ msg: "Failed to revalidate path", path: p, err: String(e) })
+        logger.warn(`Failed to revalidate path. Path: ${p}, Error: ${String(e)}`)
       }
     }
   } catch (e: unknown) {
     const ex = e as Error
-    logger.error({ msg: "Error processing Sanity webhook", err: String(ex) })
+    logger.error(`Error processing Sanity webhook. Error: ${String(ex)}`)
     return NextResponse.json({ error: "Failed to process webhook", message: String(ex) }, { status: 500 })
   }
 

@@ -19,13 +19,7 @@ export function withErrorHandling(handler: ApiHandler): ApiHandler {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       const errorStack = error instanceof Error ? error.stack : undefined;
 
-      logger.error({
-        msg: "API Error occurred",
-        url,
-        method,
-        error: errorMessage,
-        stack: errorStack,
-      });
+      logger.error(`API Error occurred. URL: ${url}, Method: ${method}, Error: ${errorMessage}, Stack: ${errorStack}`);
 
       // Handle Zod Validation Errors
       if (error instanceof ZodError) {

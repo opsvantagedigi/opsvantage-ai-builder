@@ -43,14 +43,14 @@ export const POST = withErrorHandling(async (req) => {
     onboarding
   )} generate a sitemap. Respond ONLY with valid JSON matching this schema: { "sitemap": [ { "id": "string", "title": "string", "slug": "kebab-case", "type": "HOME|ABOUT|SERVICES|CONTACT|BLOG|CUSTOM", "children": [] } ] }`;
 
-  logger.info({ msg: "Sitemap generation prompt", projectId: project.id })
+  logger.info(`Sitemap generation prompt. Project ID: ${project.id}`)
 
   let validated: SitemapResponse
   try {
     validated = await generateValidatedJSON(genAI, prompt, sitemapResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
   } catch (err: unknown) {
     const e = err as Error
-    logger.error({ msg: "Sitemap generation failed", err: String(e) })
+    logger.error(`Sitemap generation failed. Error: ${String(e)}`)
     return NextResponse.json({ error: "AI failed to generate a valid sitemap" }, { status: 500 })
   }
 
@@ -66,7 +66,7 @@ export const POST = withErrorHandling(async (req) => {
     }
   })
 
-  logger.info({ msg: "Sitemap generated", projectId: project.id, aiTaskId: aiTask.id })
+  logger.info(`Sitemap generated. Project ID: ${project.id}, AI Task ID: ${aiTask.id}`)
   return NextResponse.json({ ok: true, sitemap: validated.sitemap, aiTaskId: aiTask.id })
   } catch (err: unknown) {
     // Last-resort defensive JSON response with headers for debugging
@@ -76,7 +76,7 @@ export const POST = withErrorHandling(async (req) => {
       xVercelId: req.headers.get('x-vercel-id'),
       xForwardedFor: req.headers.get('x-forwarded-for')
     }
-    logger.error({ msg: "Sitemap POST failed (unexpected)", err: String(err), requestId, headers: headersToLog })
+    logger.error(`Sitemap POST failed (unexpected). Error: ${String(err)}, Request ID: ${requestId}, Headers: ${JSON.stringify(headersToLog)}`)
     return NextResponse.json({ error: "Internal Server Error", message: String(err), requestId }, { status: 500 })
   }
 })

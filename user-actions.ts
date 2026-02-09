@@ -27,7 +27,7 @@ export async function getRegisteredDomainsAction() {
     return { domains };
   } catch (error) {
     const err = error as Error;
-    logger.error({ msg: 'getRegisteredDomainsAction Error:', error: err.message });
+    logger.error(`getRegisteredDomainsAction Error: ${err.message}`);
     return { error: 'Failed to fetch registered domains.' };
   }
 }

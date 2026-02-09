@@ -12,30 +12,30 @@ export const GET = withErrorHandling(async () => {
   try {
     const session = await getServerSession(authOptions)
     if (!session || !session.user?.email) {
-      logger.error({ msg: "Onboarding GET: Unauthorized", session })
+      logger.error(`Onboarding GET: Unauthorized. Session: ${JSON.stringify(session)}`)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    logger.info({ msg: "Onboarding GET: session", email: session.user.email })
+    logger.info(`Onboarding GET: session. Email: ${session.user.email}`)
     const user = await prisma.user.findUnique({ where: { email: session.user.email } })
     if (!user) {
-      logger.error({ msg: "Onboarding GET: User not found", email: session.user.email })
+      logger.error(`Onboarding GET: User not found. Email: ${session.user.email}`)
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
     const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
     if (!member) {
-      logger.error({ msg: "Onboarding GET: No workspace found", userId: user.id })
+      logger.error(`Onboarding GET: No workspace found. User ID: ${user.id}`)
       return NextResponse.json({ error: "No workspace found" }, { status: 404 })
     }
     const project = await prisma.project.findFirst({ where: { workspaceId: member.workspaceId }, orderBy: { createdAt: "desc" } })
     if (!project) {
-      logger.error({ msg: "Onboarding GET: No project found", workspaceId: member.workspaceId })
+      logger.error(`Onboarding GET: No project found. Workspace ID: ${member.workspaceId}`)
       return NextResponse.json({ error: "No project found" }, { status: 404 })
     }
     const onboarding = await prisma.onboarding.findUnique({ where: { projectId: project.id } })
-    logger.info({ msg: "Onboarding GET: Success", projectId: project.id, onboardingId: onboarding?.id })
+    logger.info(`Onboarding GET: Success. Project ID: ${project.id}, Onboarding ID: ${onboarding?.id}`)
     return NextResponse.json({ onboarding, projectId: project.id })
   } catch (err) {
-    logger.error({ msg: "Onboarding GET: Exception", err: String(err) })
+    logger.error(`Onboarding GET: Exception. Error: ${String(err)}`)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 })
@@ -111,7 +111,7 @@ export const POST = withErrorHandling(async (req) => {
       status: "DRAFT"
     }
   })
-  logger.info({ msg: "Onboarding created", onboardingId: onboarding.id, projectId: project.id })
+  logger.info(`Onboarding created. Onboarding ID: ${onboarding.id}, Project ID: ${project.id}`)
   return NextResponse.json({ ok: true, onboardingId: onboarding.id, projectId: project.id })
 })
 
@@ -141,6 +141,6 @@ export const PATCH = withErrorHandling(async (req) => {
     where: { id: onboarding.id },
     data: { ...patch.data },
   })
-  logger.info({ msg: "Onboarding updated", onboardingId: onboarding.id, fields: Object.keys(patch.data) })
+  logger.info(`Onboarding updated. Onboarding ID: ${onboarding.id}, Fields: ${Object.keys(patch.data).join(", ")}`)
   return NextResponse.json({ ok: true, onboardingId: onboarding.id })
 })

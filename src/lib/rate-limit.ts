@@ -26,7 +26,7 @@ export function rateLimit(options?: RateLimitOptions) {
         const isRateLimited = currentUsage > limit;
 
         if (isRateLimited) {
-            logger.warn({ msg: "Rate limit exceeded", token, currentUsage, limit });
+            logger.warn(`Rate limit exceeded. Token: ${token}, Current usage: ${currentUsage}, Limit: ${limit}`);
             reject('Rate limit exceeded');
         } else {
             resolve();

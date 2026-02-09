@@ -54,7 +54,7 @@ export const POST = withErrorHandling(async (req) => {
   }
   prompt += `\nRespond ONLY with valid JSON matching this schema: ${pageGenerationResponseSchema.toString()}`
 
-  logger.info({ msg: "Page generation prompt", projectId: project.id })
+  logger.info(`Page generation prompt. Project ID: ${project.id}`)
 
   try {
     const validated = await generateValidatedJSON(genAI, prompt, pageGenerationResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
@@ -74,7 +74,7 @@ export const POST = withErrorHandling(async (req) => {
     return NextResponse.json({ ok: true, page: validated, aiTaskId: aiTask.id })
   } catch (err: unknown) {
     const e = err as Error
-    logger.error({ msg: "Page generation failed", err: String(e) })
+    logger.error(`Page generation failed. Error: ${String(e)}`)
     // Persist failed AiTask
     try {
         if (projectIdRef) {
@@ -91,14 +91,14 @@ export const POST = withErrorHandling(async (req) => {
       }
     } catch (e: unknown) {
       const ee = e as Error
-      logger.warn({ msg: "Failed to persist failed AiTask", err: String(ee) })
+      logger.warn(`Failed to persist failed AiTask. Error: ${String(ee)}`)
     }
 
     return NextResponse.json({ error: "AI failed to generate page" }, { status: 500 })
   }
   } catch (err: unknown) {
     const ex = err as Error
-    logger.error({ msg: "Page generation failed", err: String(ex) })
+    logger.error(`Page generation failed. Error: ${String(ex)}`)
     // Persist failed AiTask
     try {
         if (projectIdRef) {

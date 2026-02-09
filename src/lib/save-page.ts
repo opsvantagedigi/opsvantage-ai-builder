@@ -33,7 +33,7 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
         }
       })
     } catch (e) {
-      logger.warn({ msg: "Failed to create section", err: String(e), section: sec })
+      logger.warn(`Failed to create section. Error: ${String(e)}, Section: ${JSON.stringify(sec)}`)
     }
   }
 
@@ -52,10 +52,10 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
       const res = await sanityClient.create(doc)
       sanityId = res?._id || null
     } catch (e) {
-      logger.warn({ msg: "Sanity publish failed", err: String(e) })
+      logger.warn(`Sanity publish failed. Error: ${String(e)}`)
     }
   } else {
-    logger.info({ msg: "Sanity not configured — skipping publish" })
+    logger.info(`Sanity not configured — skipping publish`)
   }
 
   return { pageId: created.id, sanityId }

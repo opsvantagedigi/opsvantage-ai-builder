@@ -16,7 +16,7 @@ export const POST = async (req: Request) => {
     // Prefer console logging so it always appears even if pino transport fails
     console.error('[api/register] incoming request', { method: req.method, headers: headerObj, bodyPreview: rawText?.slice(0, 1000) })
     try {
-      logger.info?.({ msg: 'api/register incoming', method: req.method, headers: headerObj })
+      logger.info?.(`api/register incoming. Method: ${req.method}`)
     } catch (e) {
       // ignore logger failures
     }

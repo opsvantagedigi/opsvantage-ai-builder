@@ -15,7 +15,7 @@ async function handler(req: Request) {
     });
   } catch (error: unknown) {
     const e = error as Error
-    logger.error({ msg: "Health Check: DB Connection Failed", error: e.message });
+    logger.error(`Health Check: DB Connection Failed. Error: ${e.message}`);
     return NextResponse.json(
       { status: "error", database: "disconnected", error: e.message },
       { status: 503 }
