@@ -53,12 +53,16 @@ try {
 // The actual middleware logic is compiled to edge chunks via Turbopack
 // This file is a placeholder for Vercel's build system
 
+// Import NextResponse for proper response handling
+const { NextResponse } = require('next/server');
+
 // Export a handler function that Vercel can invoke
 // This allows the middleware to be recognized and executed
 async function middlewareHandler(req, context) {
   // The actual middleware execution happens through Vercel's edge runtime
   // and the compiled edge chunks referenced in middleware.js.nft.json
-  return null;
+  // Return NextResponse.next() to allow request to proceed
+  return NextResponse.next();
 }
 
 module.exports = middlewareHandler;\n`;

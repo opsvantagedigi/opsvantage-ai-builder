@@ -1,40 +1,26 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 
 const LAUNCH_DATE = new Date('2026-03-13T00:00:00Z');
 const IS_COMING_SOON = new Date() < LAUNCH_DATE;
 
-// Routes that should always be accessible
-const PUBLIC_ROUTES = ['/coming-soon', '/api', '/auth'];
+// Routes that should always be accessible (no middleware checks needed)
+const PUBLIC_ROUTES = ['/coming-soon', '/api', '/auth', '/_next', '/favicon.ico'];
 
 // Routes that require launch to be active
 const PROTECTED_ROUTES = ['/dashboard', '/studio', '/builder', '/sites'];
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow all public routes
+  // Skip middleware for static assets and Next.js internals
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
   // If coming soon is active and user tries to access protected routes
+  // Redirect to coming soon page (no JWT validation in edge runtime)
   if (IS_COMING_SOON && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    try {
-      const token = await getToken({ req: request });
-
-      // Allow authenticated owner (ajay.sidal@opsvantagedigital.online) to access for testing
-      if (token && (token as any).role === 'ADMIN' && (token as any).email === 'ajay.sidal@opsvantagedigital.online') {
-        return NextResponse.next();
-      }
-    } catch (error) {
-      // If JWT verification fails, proceed to redirect
-      // This can happen if NEXTAUTH_SECRET is not available in edge runtime
-      console.error('Middleware token verification failed:', error);
-    }
-
-    // Redirect to coming soon page
     return NextResponse.redirect(new URL('/coming-soon', request.url));
   }
 

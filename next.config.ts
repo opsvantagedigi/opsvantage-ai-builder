@@ -2,10 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  reactCompiler: true,
   experimental: {
     // Ensure proper middleware compilation
     optimizeCss: true,
+    reactCompiler: true,
   },
   images: {
     remotePatterns: [

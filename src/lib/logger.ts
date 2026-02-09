@@ -1,23 +1,31 @@
-import pino, { type LoggerOptions, type LevelWithSilent } from 'pino';
+// Simple logger implementation to avoid pino dependency issues in Edge Runtime
+export interface Logger {
+  debug: (msg: string, ...args: unknown[]) => void;
+  info: (msg: string, ...args: unknown[]) => void;
+  warn: (msg: string, ...args: unknown[]) => void;
+  error: (msg: string, ...args: unknown[]) => void;
+}
 
 const logLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'development' ? 'debug' : 'info');
 
-// Only enable the `pino-pretty` transport in development where it's available.
-const pinoOptions: LoggerOptions = {
-  level: logLevel as LevelWithSilent,
-  base: { env: process.env.NODE_ENV },
+const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+const currentLevel = levels[logLevel as keyof typeof levels] || 1;
+
+const createLogger = (): Logger => {
+  const timestamp = () => new Date().toISOString();
+
+  const log = (level: string, levelValue: number, msg: string, ...args: unknown[]) => {
+    if (levelValue >= currentLevel) {
+      console.log(`[${timestamp()}] [${level.toUpperCase()}]`, msg, ...args);
+    }
+  };
+
+  return {
+    debug: (msg: string, ...args: unknown[]) => log('debug', 0, msg, ...args),
+    info: (msg: string, ...args: unknown[]) => log('info', 1, msg, ...args),
+    warn: (msg: string, ...args: unknown[]) => log('warn', 2, msg, ...args),
+    error: (msg: string, ...args: unknown[]) => log('error', 3, msg, ...args),
+  };
 };
 
-if (process.env.NODE_ENV === 'development') {
-  // transport isn't always present in older pino types; assign via a generic record to avoid `any`
-  (pinoOptions as unknown as Record<string, unknown>).transport = {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      ignore: 'pid,hostname',
-      translateTime: 'SYS:standard',
-    },
-  };
-}
-
-export const logger = pino(pinoOptions);
+export const logger = createLogger();

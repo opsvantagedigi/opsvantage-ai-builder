@@ -21,13 +21,22 @@ export default function MarzCommandConsole() {
     // CLIENT-SIDE AUTH GUARD
     useEffect(() => {
         const checkAuth = async () => {
-            // In production, replace with real session check via useSession()
-            // For MVP/Demo, we allow access in development mode
+            // TODO: Replace with real session/email check in production
+            // TEMP: Allow access if running as dev OR if localStorage has the authorized email
             const isDev = process.env.NODE_ENV === 'development';
-            setIsAuthorized(isDev); // Allow in dev, block in prod until NextAuth is configured
+            let authorized = isDev;
+            if (!isDev) {
+                // Try to read email from localStorage (simulate session)
+                try {
+                    const email = window.localStorage.getItem('user_email');
+                    if (email && email.toLowerCase() === AUTHORIZED_EMAIL) {
+                        authorized = true;
+                    }
+                } catch {}
+            }
+            setIsAuthorized(authorized);
             setIsLoading(false);
         };
-
         checkAuth();
     }, [router]);
 
