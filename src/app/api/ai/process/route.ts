@@ -39,7 +39,6 @@ async function handler(req: Request) {
     return NextResponse.json({ message: "No pending tasks" })
   }
 
-  logger.info({ msg: "Processing task", taskId: task.id, type: task.type });
   logger.info(`Processing task: ${JSON.stringify({ taskId: task.id, type: task.type })}`);
 
   // 2. Mark task as PROCESSING
