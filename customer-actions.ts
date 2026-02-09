@@ -1,9 +1,10 @@
 'use server';
 
-import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { openProvider } from '@/lib/openprovider/client';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 
 export type CustomerData = {
   email: string;
@@ -13,12 +14,22 @@ export type CustomerData = {
 };
 
 export async function createCustomerHandleAction(data: CustomerData) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  // Manually verify the session using the JWT token from cookies
+  const nextAuthSessionToken = cookies().get('next-auth.session-token');
+  if (!nextAuthSessionToken) {
     return { error: 'User not authenticated.' };
   }
 
   try {
+    // Verify the JWT token using the same secret as NextAuth
+    const secret = process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret';
+    const verified = await jwtVerify(nextAuthSessionToken.value, new TextEncoder().encode(secret));
+    
+    const userId = verified.payload.sub;
+    if (!userId) {
+      return { error: 'Invalid session.' };
+    }
+
     const res = await openProvider.createCustomer(data);
     if (res.code !== 0 || !res.data?.handle) {
       throw new Error(res.desc || 'Failed to create customer handle.');
@@ -28,7 +39,7 @@ export async function createCustomerHandleAction(data: CustomerData) {
 
     // Save the handle to the user's profile
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { openProviderHandle: handle },
     });
 

@@ -1,7 +1,31 @@
-import { type NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import GithubProvider from "next-auth/providers/github"
-import GoogleProvider from "next-auth/providers/google"
+import { type NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import { JWT } from "next-auth/jwt";
+
+// Extend the built-in session and user types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    user?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
 
 const credentialProvider = CredentialsProvider({
   name: "Credentials",
@@ -9,7 +33,7 @@ const credentialProvider = CredentialsProvider({
     email: { label: "Email", type: "email" },
     password: { label: "Password", type: "password" }
   },
-  async authorize(credentials) {
+  async authorize(credentials: any) {
     if (credentials?.email) {
       return { id: credentials.email, email: credentials.email }
     }
@@ -31,7 +55,10 @@ export const authOptions: NextAuthOptions = {
     ...(githubProvider ? [githubProvider] : []),
     ...(googleProvider ? [googleProvider] : []),
   ].filter(Boolean)) as NextAuthOptions['providers'],
-  session: { strategy: "jwt" },
+  session: { 
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   // Ensure a secret is always present to avoid runtime errors in production
   secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
   // Temporarily enable debug mode unconditionally to capture detailed
@@ -71,23 +98,21 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        ;(token as unknown as Record<string, unknown>)['user'] = user as unknown
+        token.user = user;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
-      const tokenUser = (token as unknown as { user?: unknown }).user
-      if (tokenUser) {
-        ;(session as unknown as Record<string, unknown>)['user'] = tokenUser
+      if (token.user) {
+        session.user = token.user;
       }
-      return session
+      return session;
     }
   },
   pages: {
     signIn: '/login'
-  }
-  ,
+  },
   // Note: We rely on the `logger.error` handler above to capture runtime
   // NextAuth errors. Avoid adding an `events` block with incompatible typing
   // to keep the TypeScript build clean in production.
-}
+};

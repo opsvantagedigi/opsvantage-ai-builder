@@ -1,10 +1,11 @@
 'use server';
 
-import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { openProvider } from '@/lib/openprovider/client';
 import { prisma } from '@/lib/prisma';
 import { nowPayments } from '@/lib/nowpayments/client';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 
 const MARKUP = parseFloat(process.env.NEXT_PUBLIC_PRICING_MARKUP || "1.2");
 
@@ -38,13 +39,23 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
 }
 
 export async function registerDomainAction(domain: string, price: { amount: string, currency: string }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  // Manually verify the session using the JWT token from cookies
+  const nextAuthSessionToken = cookies().get('next-auth.session-token');
+  if (!nextAuthSessionToken) {
     return { error: 'You must be logged in to register a domain.' };
   }
 
+  // Verify the JWT token using the same secret as NextAuth
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret';
+  const verified = await jwtVerify(nextAuthSessionToken.value, new TextEncoder().encode(secret));
+  
+  const userId = verified.payload.sub;
+  if (!userId) {
+    return { error: 'Invalid session.' };
+  }
+
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { id: true, openProviderHandle: true, email: true, name: true },
   });
 

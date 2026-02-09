@@ -1,13 +1,18 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
+    setError("")
+    
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -17,15 +22,15 @@ export default function RegisterPage() {
 
       const json = await res.json()
       if (!res.ok) {
-        alert(json.error || 'Registration failed')
+        setError(json.error || 'Registration failed')
         return
       }
 
       // Redirect to login on success
-      window.location.href = '/login'
+      router.push('/login')
     } catch (e) {
       console.error(e)
-      alert('Registration failed')
+      setError('Registration failed')
     }
   }
 
@@ -33,6 +38,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form onSubmit={handleRegister} className="bg-white p-6 rounded shadow-md w-80">
         <h1 className="text-xl font-semibold mb-4">Register</h1>
+
+        {error && <div className="text-red-500 text-sm mb-3">{error}</div>}
 
         <input
           type="email"
