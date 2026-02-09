@@ -10,7 +10,7 @@ const credentialProvider = CredentialsProvider({
     email: { label: "Email", type: "email" },
     password: { label: "Password", type: "password" }
   },
-  async authorize(credentials: any) {
+  async authorize(credentials: { email?: string }) {
     if (credentials?.email) {
       return { id: credentials.email, email: credentials.email }
     }
@@ -72,14 +72,14 @@ export const authOptions: NextAuthOptions = {
     }
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.sub = user.id;
         token.email = user.email;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (token.sub) {
         session.user = {
           ...session.user,
