@@ -20,7 +20,7 @@ export async function generateValidatedJSON<T extends z.ZodTypeAny>(
 
   let lastRaw = ""
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    logger.info({ msg: "AI generation attempt", attempt, model: modelName })
+    logger.info(`AI generation attempt: ${JSON.stringify({ attempt, model: modelName })}`)
     const model = genAI.getGenerativeModel({ model: modelName })
     const result = await model.generateContent(prompt)
     const raw = result.response.text().trim()
@@ -31,7 +31,7 @@ export async function generateValidatedJSON<T extends z.ZodTypeAny>(
     try {
       parsed = JSON.parse(raw)
     } catch (e) {
-      logger.warn({ msg: "AI returned non-JSON; will attempt repair", attempt, raw })
+      logger.warn(`AI returned non-JSON; will attempt repair: ${JSON.stringify({ attempt, raw })}`)
       // fall through to retry with repair prompt
     }
 
@@ -40,7 +40,7 @@ export async function generateValidatedJSON<T extends z.ZodTypeAny>(
       if (validated.success) {
         return validated.data
       }
-      logger.warn({ msg: "AI JSON did not validate against schema", attempt, issues: validated.error.issues })
+      logger.warn(`AI JSON did not validate against schema: ${JSON.stringify({ attempt, issues: validated.error.issues })}`)
     }
 
     // If we have more attempts left, ask the model to return only valid JSON following the schema
@@ -54,7 +54,7 @@ export async function generateValidatedJSON<T extends z.ZodTypeAny>(
     }
   }
 
-  logger.error({ msg: "AI failed to produce valid JSON after attempts", lastRaw })
+  logger.error(`AI failed to produce valid JSON after attempts: ${JSON.stringify({ lastRaw })}`)
   throw new Error("AI failed to produce valid JSON output")
 }
 

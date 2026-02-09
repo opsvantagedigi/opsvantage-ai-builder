@@ -12,7 +12,7 @@ import { vercel } from '@/lib/vercel/client';
 function verifyNowPaymentsSignature(payload: string, signature: string | null): boolean {
   const ipnSecret = process.env.NOWPAYMENTS_IPN_SECRET_KEY;
   if (!ipnSecret || !signature) {
-    logger.warn({ msg: 'IPN secret or signature missing, skipping verification.' });
+    logger.warn('IPN secret or signature missing, skipping verification.');
     // In production, you should probably fail here if the secret is expected.
     return !ipnSecret;
   }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const signature = hdrs.get('x-nowpayments-sig');
 
   if (!verifyNowPaymentsSignature(bodyText, signature)) {
-    logger.error({ msg: 'Invalid NowPayments signature.' });
+    logger.error('Invalid NowPayments signature.');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     const { order_id: orderId, payment_status, price_amount, pay_amount } = payload;
 
     logger.info({ msg: 'Received NowPayments IPN', orderId, payment_status });
+  logger.info(`Received NowPayments IPN: ${JSON.stringify({ orderId, payment_status })}`);
 
     // Find the order in our database
     const order = await prisma.order.findUnique({
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     });
 
     if (!order) {
-      logger.error({ msg: 'Webhook received for non-existent order', orderId });
+      logger.error(`Webhook received for non-existent order: ${orderId}`);
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
@@ -98,7 +99,7 @@ export async function POST(request: Request) {
           },
         });
 
-        logger.info({ msg: 'Domain successfully registered', orderId, domain: order.productId });
+        logger.info(`Domain successfully registered: ${JSON.stringify({ orderId, domain: order.productId })}`);
 
         // --- Add Domain to Vercel Project ---
         // Find the user's latest project to associate the domain with.
@@ -113,14 +114,14 @@ export async function POST(request: Request) {
 
         if (project?.vercelProjectId) {
           await vercel.addDomainToProject(project.vercelProjectId, order.productId);
-          logger.info({ msg: 'Domain added to Vercel project', vercelProjectId: project.vercelProjectId, domain: order.productId });
+          logger.info(`Domain added to Vercel project: ${JSON.stringify({ vercelProjectId: project.vercelProjectId, domain: order.productId })}`);
 
           // Create a record in our own DB to track the domain
           await prisma.domain.create({
             data: { projectId: project.id, hostname: order.productId },
           });
         } else {
-          logger.warn({ msg: 'Could not add domain to Vercel: vercelProjectId not found for project', projectId: project?.id });
+          logger.warn(`Could not add domain to Vercel: vercelProjectId not found for project: ${project?.id}`);
         }
       }
     }
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
 
   } catch (error: any) {
-    logger.error({ msg: 'Error processing NowPayments webhook', error: error.message });
+    logger.error(`Error processing NowPayments webhook: ${error.message}`);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }
