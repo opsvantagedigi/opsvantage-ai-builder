@@ -38,8 +38,8 @@ export type CustomerData = z.infer<typeof customerDataSchema>;
  */
 export async function getOrCreateCustomerHandleAction(customerData: CustomerData) {
   // Manually verify the session using the JWT token from cookies
-  const cookieStore = cookies();
-  const token = cookieStore.get('next-auth.session-token')?.value || 
+  const cookieStore = await cookies();
+  const token = cookieStore.get('next-auth.session-token')?.value ||
                cookieStore.get('__Secure-next-auth.session-token')?.value;
   
   if (!token) {

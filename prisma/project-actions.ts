@@ -10,7 +10,7 @@ import { checkSubscription } from '@/lib/subscription';
 
 export async function addCustomDomainAction(projectId: string, domain: string) {
   // Manually verify the session using the JWT token from cookies
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('next-auth.session-token')?.value || 
                cookieStore.get('__Secure-next-auth.session-token')?.value;
   
