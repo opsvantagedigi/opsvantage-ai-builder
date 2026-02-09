@@ -1,9 +1,10 @@
 'use server';
 
-import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { nowPayments } from '@/lib/nowpayments/client';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 
 interface PaymentDetails {
   domain: string;
@@ -13,9 +14,8 @@ interface PaymentDetails {
   };
 }
 
-export async function createPaymentAction(details: PaymentDetails) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+export async function createPaymentAction(details: PaymentDetails, userId: string) {
+  if (!userId) {
     return { error: 'User not authenticated.' };
   }
 
@@ -23,7 +23,7 @@ export async function createPaymentAction(details: PaymentDetails) {
     // 1. Create an order record in your database
     const order = await prisma.order.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         productId: details.domain,
         productType: 'DOMAIN_REGISTRATION',
         status: 'PENDING',

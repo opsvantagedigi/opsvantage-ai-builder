@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   // Manually verify the session using the JWT token from cookies
-  const nextAuthSessionToken = cookies().get('next-auth.session-token');
+  const cookieStore = await cookies();
+  const nextAuthSessionToken = cookieStore.get('next-auth.session-token');
   if (!nextAuthSessionToken) {
     redirect('/login');
   }

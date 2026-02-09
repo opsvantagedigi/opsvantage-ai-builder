@@ -1,31 +1,8 @@
-import { type NextAuthOptions } from "next-auth";
+import { type NextAuthOptions, type User, type Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import { JWT } from "next-auth/jwt";
-
-// Extend the built-in session and user types
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    };
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    user?: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    };
-  }
-}
 
 const credentialProvider = CredentialsProvider({
   name: "Credentials",
@@ -56,7 +33,6 @@ export const authOptions: NextAuthOptions = {
     ...(googleProvider ? [googleProvider] : []),
   ].filter(Boolean)) as NextAuthOptions['providers'],
   session: { 
-    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   // Ensure a secret is always present to avoid runtime errors in production
@@ -96,15 +72,25 @@ export const authOptions: NextAuthOptions = {
     }
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
-        token.user = user;
+        token.sub = user.id;
+        token.email = user.email;
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token.user) {
-        session.user = token.user;
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (token.sub) {
+        session.user = {
+          ...session.user,
+          id: token.sub as string
+        };
+      }
+      if (token.email) {
+        session.user = {
+          ...session.user,
+          email: token.email as string
+        };
       }
       return session;
     }

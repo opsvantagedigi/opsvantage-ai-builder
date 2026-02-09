@@ -13,23 +13,12 @@ export type CustomerData = {
   phone: { countryCode: string; areaCode: string; subscriberNumber: string };
 };
 
-export async function createCustomerHandleAction(data: CustomerData) {
-  // Manually verify the session using the JWT token from cookies
-  const nextAuthSessionToken = cookies().get('next-auth.session-token');
-  if (!nextAuthSessionToken) {
+export async function createCustomerHandleAction(data: CustomerData, userId: string) {
+  if (!userId) {
     return { error: 'User not authenticated.' };
   }
 
   try {
-    // Verify the JWT token using the same secret as NextAuth
-    const secret = process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret';
-    const verified = await jwtVerify(nextAuthSessionToken.value, new TextEncoder().encode(secret));
-    
-    const userId = verified.payload.sub;
-    if (!userId) {
-      return { error: 'Invalid session.' };
-    }
-
     const res = await openProvider.createCustomer(data);
     if (res.code !== 0 || !res.data?.handle) {
       throw new Error(res.desc || 'Failed to create customer handle.');

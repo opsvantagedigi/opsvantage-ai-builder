@@ -34,9 +34,11 @@
     "*.ts",
     "*.tsx",
     "components/**/*",
+    "custom.d.ts",
     "next-env.d.ts",
     "prisma/**/*",
     "src/**/*",
+    "types/**/*",
     ".next/types/**/*.ts"
   ],
   "exclude": [

@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { randomBytes } from 'crypto';
 import { getPlanById } from '@/config/subscriptions';

@@ -3,7 +3,7 @@
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { addDomain, checkDomainConfig } from '@/lib/vercel';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { getPlanIdFromStripePrice, getUsageLimit } from '@/config/subscriptions';
 
 interface PublishResult {

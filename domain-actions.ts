@@ -38,20 +38,9 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
   }
 }
 
-export async function registerDomainAction(domain: string, price: { amount: string, currency: string }) {
-  // Manually verify the session using the JWT token from cookies
-  const nextAuthSessionToken = cookies().get('next-auth.session-token');
-  if (!nextAuthSessionToken) {
-    return { error: 'You must be logged in to register a domain.' };
-  }
-
-  // Verify the JWT token using the same secret as NextAuth
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret';
-  const verified = await jwtVerify(nextAuthSessionToken.value, new TextEncoder().encode(secret));
-  
-  const userId = verified.payload.sub;
+export async function registerDomainAction(domain: string, price: { amount: string, currency: string }, userId: string) {
   if (!userId) {
-    return { error: 'Invalid session.' };
+    return { error: 'You must be logged in to register a domain.' };
   }
 
   const user = await prisma.user.findUnique({

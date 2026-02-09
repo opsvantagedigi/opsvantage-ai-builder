@@ -1,10 +1,11 @@
 'use server';
 
-import { getServerSession } from 'next-auth/next';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { openProvider } from '@/lib/openprovider/client';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 
 // Schema for the customer data required by OpenProvider, based on ICANN rules.
 const customerDataSchema = z.object({
@@ -36,13 +37,33 @@ export type CustomerData = z.infer<typeof customerDataSchema>;
  * If not, it creates a new customer handle with OpenProvider and saves it.
  */
 export async function getOrCreateCustomerHandleAction(customerData: CustomerData) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return { error: 'User not authenticated.' };
+  // Manually verify the session using the JWT token from cookies
+  const cookieStore = cookies();
+  const token = cookieStore.get('next-auth.session-token')?.value || 
+               cookieStore.get('__Secure-next-auth.session-token')?.value;
+  
+  if (!token) {
+    return { error: 'User not authenticated: No session token.' };
+  }
+
+  let sessionPayload;
+  try {
+    // Verify the JWT token using the NEXTAUTH_SECRET
+    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+    sessionPayload = await jwtVerify(token, secret);
+  } catch (error) {
+    console.error('Session verification failed:', error);
+    return { error: 'User not authenticated: Invalid session.' };
+  }
+
+  // Extract user ID from the verified token
+  const userId = sessionPayload.payload.sub as string;
+  if (!userId) {
+    return { error: 'User not authenticated: No user ID in session.' };
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { openProviderHandle: true },
   });
 
@@ -70,7 +91,7 @@ export async function getOrCreateCustomerHandleAction(customerData: CustomerData
     const newHandle = response.data.handle;
 
     // Save the new handle to our database for future use
-    await prisma.user.update({ where: { id: session.user.id }, data: { openProviderHandle: newHandle } });
+    await prisma.user.update({ where: { id: userId }, data: { openProviderHandle: newHandle } });
 
     return { handle: newHandle };
   } catch (error: any) {

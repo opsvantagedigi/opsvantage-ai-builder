@@ -54,13 +54,13 @@ const CopywritingMenu = ({ onRefine, isRefining }: { onRefine: (instruction: Ref
 };
 
 const EditableText: React.FC<EditableTextProps> = ({ value, onSave, className, as: Component = 'p', projectId }) => {
-  const elementRef = useRef<HTMLElement>(null);
+  const [elementRef, setElementRef] = useState<HTMLElement | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
 
   const handleRefine = async (instruction: RefineInstruction) => {
-    if (!projectId || !elementRef.current) return;
-    const originalText = elementRef.current.innerText;
+    if (!projectId || !elementRef) return;
+    const originalText = elementRef?.innerText || '';
     setIsRefining(true);
     try {
       const response = await fetch('/api/ai/refine-text', {
@@ -70,18 +70,18 @@ const EditableText: React.FC<EditableTextProps> = ({ value, onSave, className, a
       });
       if (!response.ok) throw new Error('Failed to refine text.');
       const { refinedText } = await response.json();
-      if (elementRef.current) elementRef.current.innerText = refinedText;
+      if (elementRef) elementRef.innerHTML = refinedText;
       onSave(refinedText);
     } catch (error) {
       console.error(error);
-      if (elementRef.current) elementRef.current.innerText = originalText;
+      if (elementRef) elementRef.innerHTML = value;
     } finally {
       setIsRefining(false);
     }
   };
 
   const handleBlur = () => {
-    if (elementRef.current && elementRef.current.innerText !== value) onSave(elementRef.current.innerText);
+    if (elementRef && elementRef.innerText !== value) onSave(elementRef.innerText);
     setIsFocused(false);
   };
 
@@ -95,7 +95,7 @@ const EditableText: React.FC<EditableTextProps> = ({ value, onSave, className, a
   return (
     <div className="relative group" onFocus={() => setIsFocused(true)} onBlur={handleBlur}>
       <Component
-        ref={(el) => { elementRef.current = el as HTMLElement | null }}
+        ref={setElementRef}
         contentEditable={!isRefining}
         suppressContentEditableWarning
         onKeyDown={handleKeyDown}

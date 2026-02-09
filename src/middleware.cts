@@ -8,6 +8,9 @@ const { NextResponse } = require('next/server');
 const middleware = withAuth(
   // This function is called ONLY IF the user is authenticated.
   // You can add custom logic here, like role-based access control.
+  /**
+   * @param {import('next/server').NextRequest} req
+   */
   function middleware(req) {
     // Example: Redirect admins from a generic dashboard to the admin panel.
     if (req.nextUrl.pathname.startsWith('/dashboard') && req.nextauth.token?.role === 'admin') {
@@ -17,6 +20,9 @@ const middleware = withAuth(
   {
     callbacks: {
       // This callback determines if a user is authorized.
+      /**
+       * @param {{ token: any }} param0
+       */
       authorized: ({ token }) => !!token, // `!!token` checks if the user is logged in.
     },
   }

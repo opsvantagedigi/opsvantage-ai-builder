@@ -1,18 +1,38 @@
 'use server';
 
-import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vercel } from '@/lib/vercel/client';
 import { logger } from '@/lib/logger';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 import { checkSubscription } from '@/lib/subscription';
 
 export async function addCustomDomainAction(projectId: string, domain: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return { error: 'User not authenticated.' };
+  // Manually verify the session using the JWT token from cookies
+  const cookieStore = cookies();
+  const token = cookieStore.get('next-auth.session-token')?.value || 
+               cookieStore.get('__Secure-next-auth.session-token')?.value;
+  
+  if (!token) {
+    return { error: 'User not authenticated: No session token.' };
   }
-  const userId = session.user.id;
+
+  let sessionPayload;
+  try {
+    // Verify the JWT token using the NEXTAUTH_SECRET
+    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+    sessionPayload = await jwtVerify(token, secret);
+  } catch (error) {
+    console.error('Session verification failed:', error);
+    return { error: 'User not authenticated: Invalid session.' };
+  }
+
+  // Extract user ID from the verified token
+  const userId = sessionPayload.payload.sub as string;
+  if (!userId) {
+    return { error: 'User not authenticated: No user ID in session.' };
+  }
 
   // 1. Find project and verify ownership/membership
   const project = await prisma.project.findUnique({
