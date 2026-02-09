@@ -41,8 +41,7 @@ export async function POST(request: Request) {
     const payload = JSON.parse(bodyText);
     const { order_id: orderId, payment_status, price_amount, pay_amount } = payload;
 
-    logger.info({ msg: 'Received NowPayments IPN', orderId, payment_status });
-  logger.info(`Received NowPayments IPN: ${JSON.stringify({ orderId, payment_status })}`);
+    logger.info(`Received NowPayments IPN: ${JSON.stringify({ orderId, payment_status })}`);
 
     // Find the order in our database
     const order = await prisma.order.findUnique({
