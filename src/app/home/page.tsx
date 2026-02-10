@@ -1,82 +1,77 @@
-import React from 'react';
-import { Terminal, Cpu, Globe, Shield, Activity } from "lucide-react";
+"use client";
+import React, { useState, useEffect } from 'react';
+import { Terminal, Cpu, Globe, Shield, Activity, Timer } from "lucide-react";
 
 export default function ComingSoon() {
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(d => d.length > 2 ? "" : d + ".");
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-slate-200 p-6 font-sans selection:bg-blue-500/30">
-      <div className="max-w-2xl w-full space-y-12 text-center">
-        
-        {/* Visual Brand Header */}
-        <div className="relative inline-block">
-          <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
-          <div className="relative bg-slate-900/50 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl">
-            <Cpu className="w-14 h-14 text-blue-500 mx-auto" />
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-slate-200 p-6 font-sans selection:bg-blue-500/30 overflow-hidden">
+      {/* Background Grid Effect */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20"></div>
+
+      <div className="relative max-w-3xl w-full space-y-10 text-center z-10">
+        <div className="relative inline-block group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+          <div className="relative bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-2xl">
+            <Cpu className="w-12 h-12 text-blue-400 mx-auto" />
           </div>
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-6xl font-extrabold tracking-tighter text-white">
-            OpsVantage <span className="text-blue-500">Digital</span>
+          <h1 className="text-6xl font-black tracking-tighter text-white uppercase italic">
+            MARZ <span className="text-blue-500">Initializing</span>{dots}
           </h1>
-          <p className="text-slate-400 text-xl font-light max-w-lg mx-auto leading-relaxed">
-            The future of business automation is being forged. Governed by <span className="text-blue-400 font-medium">MARZ AI</span>.
+          <p className="text-slate-400 text-lg font-light tracking-wide max-w-lg mx-auto">
+            OpsVantage Digital is migrating to autonomous AI governance.
           </p>
         </div>
 
-        {/* MARZ Operator Status Terminal */}
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-b from-blue-500/20 to-transparent rounded-2xl blur-sm opacity-50"></div>
-          <div className="relative bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-left font-mono text-sm shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-blue-400" />
-                <span className="text-xs uppercase tracking-[0.2em] text-blue-400 font-bold">MARZ_v1.0.4_Console</span>
-              </div>
-              <div className="flex gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
-                <div className="w-2 h-2 rounded-full bg-yellow-500/50"></div>
-                <div className="w-2 h-2 rounded-full bg-green-500/50 animate-pulse"></div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex gap-3">
-                <span className="text-slate-600">08:24:11</span>
-                <span className="text-green-500">[OK]</span>
-                <span className="text-slate-300 text-xs">Infrastructure handshake: us-central1</span>
-              </div>
-              <div className="flex gap-3">
-                <span className="text-slate-600">08:24:15</span>
-                <span className="text-blue-400">[INFO]</span>
-                <span className="text-slate-300 text-xs">Domain verified: opsvantagedigital.online</span>
-              </div>
-              <div className="flex gap-3">
-                <span className="text-slate-600">08:25:02</span>
-                <span className="text-yellow-500">[WARN]</span>
-                <span className="text-slate-300 text-xs">Neural Bridge: Syncing Windows-to-Linux build...</span>
-              </div>
-              <div className="flex gap-3 items-center">
-                <span className="text-slate-600">08:25:04</span>
-                <Activity className="w-3 h-3 text-blue-500 animate-spin" />
-                <span className="text-blue-400 animate-pulse text-xs italic font-bold">"Stand by. I am optimizing your environment." — MARZ</span>
-              </div>
-            </div>
+        {/* Dynamic Event Timeline */}
+        <div className="grid md:grid-cols-2 gap-4 text-left">
+          <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-5 space-y-4 shadow-xl">
+             <div className="flex items-center gap-2 text-blue-400 font-bold text-xs tracking-widest uppercase border-b border-white/5 pb-2">
+                <Timer className="w-4 h-4" /> System Timeline
+             </div>
+             <div className="space-y-3 font-mono text-[11px]">
+                <div className="flex justify-between items-center opacity-50">
+                   <span>CORE_KERNEL_LOAD</span> <span className="text-green-500">COMPLETE</span>
+                </div>
+                <div className="flex justify-between items-center opacity-70">
+                   <span>DOMAIN_MAPPING_SSL</span> <span className="text-green-500">STABLE</span>
+                </div>
+                <div className="flex justify-between items-center text-blue-400">
+                   <span className="animate-pulse">NEURAL_BRIDGE_SYNC</span> <span className="animate-pulse">89%</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-500">
+                   <span>MARKET_DEPLOYMENT</span> <span>WAITING...</span>
+                </div>
+             </div>
+          </div>
+
+          <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-5 space-y-4 shadow-xl">
+             <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs tracking-widest uppercase border-b border-white/5 pb-2">
+                <Activity className="w-4 h-4" /> Live Neural Feed
+             </div>
+             <div className="font-mono text-[10px] space-y-2 text-slate-300">
+                <p className="">{'>'} MARZ: Syncing global build hash...</p>
+                <p className="">{'>'} Handshaking with Google Edge...</p>
+                <p className="text-cyan-400 animate-pulse">{'>'} "I am currently constructing the Hero Gateway. Please remain logged in."</p>
+             </div>
           </div>
         </div>
 
-        {/* Footer Metrics */}
-        <div className="flex flex-wrap justify-center items-center gap-8 pt-12">
-            <div className="flex items-center gap-2 text-slate-500 text-[10px] uppercase tracking-widest font-bold">
-                <Globe className="w-4 h-4 text-slate-600" /> Edge Network: Active
-            </div>
-            <div className="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
-            <div className="flex items-center gap-2 text-slate-500 text-[10px] uppercase tracking-widest font-bold">
-                <Shield className="w-4 h-4 text-slate-600" /> Security Level: Lvl 4
-            </div>
-            <div className="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
-            <div className="text-blue-500/80 text-[10px] uppercase tracking-[0.3em] font-black">
-                EST. LAUNCH 2026
-            </div>
+        <div className="flex justify-center items-center gap-6 pt-8 text-slate-500 text-[10px] uppercase tracking-[0.4em] font-bold">
+            <span className="flex items-center gap-2"><Globe className="w-4 h-4" /> Global Presence Active</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></div>
+            <span className="flex items-center gap-2"><Shield className="w-4 h-4" /> Security Level: MAX</span>
         </div>
       </div>
     </div>
