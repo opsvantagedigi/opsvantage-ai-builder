@@ -1,9 +1,9 @@
-/**
- * @param {import('next/server').NextRequest} req
- */
 const { withAuth } = require('next-auth/middleware');
 const { NextResponse } = require('next/server');
 
+/**
+ * @param {import('next/server').NextRequest} req
+ */
 async function middleware(req) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host");
