@@ -1,36 +1,35 @@
-// IMPORTANT: This file uses the `.cts` extension to ensure CommonJS output for Next.js middleware.
-
+/**
+ * @param {import('next/server').NextRequest} req
+ */
 const { withAuth } = require('next-auth/middleware');
 const { NextResponse } = require('next/server');
 
-// `withAuth` is a higher-order function that returns the actual middleware.
-// It automatically protects all pages specified in the `matcher` below.
-const middleware = withAuth(
-  // This function is called ONLY IF the user is authenticated.
-  // You can add custom logic here, like role-based access control.
-  /**
-   * @param {import('next/server').NextRequest} req
-   */
-  function middleware(req: any) {
-    // Example: Redirect admins from a generic dashboard to the admin panel.
-    if (req.nextUrl.pathname.startsWith('/dashboard') && req.nextauth.token?.role === 'admin') {
-      return NextResponse.redirect(new URL('/admin', req.url));
-    }
-  },
-  {
-    callbacks: {
-      // This callback determines if a user is authorized.
-      /**
-       * @param {{ token: any }} param0
-       */
-      authorized: ({ token }: any) => !!token, // `!!token` checks if the user is logged in.
-    },
-  }
-);
+async function middleware(req) {
+  const url = req.nextUrl;
+  const hostname = req.headers.get("host");
+  const path = url.pathname;
 
-// In CommonJS, we export the config as a property on the middleware export.
-// Next.js is designed to detect this pattern.
-module.exports = middleware;
-module.exports.config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*'],
+  // 1. MARZ OVERRIDE: Map your domain to the /home folder
+  if (hostname === "opsvantagedigital.online" || hostname === "www.opsvantagedigital.online") {
+    // If it's an admin/dashboard path, run the auth middleware
+    if (path.startsWith('/admin') || path.startsWith('/dashboard')) {
+      return withAuth(req);
+    }
+    // Otherwise, show the Home/Coming Soon content
+    return NextResponse.rewrite(new URL(`/home${path === "/" ? "" : path}`, req.url));
+  }
+
+  // 2. Default Auth protection for other domains/paths
+  if (path.startsWith('/admin') || path.startsWith('/dashboard')) {
+    return withAuth(req);
+  }
+
+  return NextResponse.next();
+}
+
+const config = {
+  matcher: ["/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)"],
 };
+
+module.exports = middleware;
+module.exports.config = config;
