@@ -4,7 +4,6 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { openProvider } from '@/lib/openprovider/client';
 import { logger } from '@/lib/logger';
-import { vercel } from '@/lib/vercel/client';
 
 /**
  * Verifies the signature of the NowPayments IPN request.
@@ -76,10 +75,10 @@ export async function POST(request: Request) {
           owner_handle: order.user.openProviderHandle,
           admin_handle: order.user.openProviderHandle,
           tech_handle: order.user.openProviderHandle,
-          // Set nameservers to Vercel's by default
+          // Set default nameservers (Vercel nameservers removed for Google Cloud deployment)
           name_servers: [
-            { name: 'ns1.vercel-dns.com' },
-            { name: 'ns2.vercel-dns.com' },
+            { name: 'ns1.example.com' }, // Placeholder - will be updated based on actual DNS provider
+            { name: 'ns2.example.com' },
           ],
         };
 
@@ -100,7 +99,7 @@ export async function POST(request: Request) {
 
         logger.info(`Domain successfully registered: ${JSON.stringify({ orderId, domain: order.productId })}`);
 
-        // --- Add Domain to Vercel Project ---
+        // --- Track Domain in Database (skip Vercel integration for Google Cloud deployment) ---
         // Find the user's latest project to associate the domain with.
         const member = await prisma.workspaceMember.findFirst({ where: { userId: order.userId } });
         if (!member) {
@@ -111,16 +110,15 @@ export async function POST(request: Request) {
           orderBy: { createdAt: 'desc' },
         });
 
-        if (project?.vercelProjectId) {
-          await vercel.addDomainToProject(project.vercelProjectId, order.productId);
-          logger.info(`Domain added to Vercel project: ${JSON.stringify({ vercelProjectId: project.vercelProjectId, domain: order.productId })}`);
-
-          // Create a record in our own DB to track the domain
+        if (project) {
+          // Create a record in our own DB to track the domain (skip Vercel integration)
           await prisma.domain.create({
             data: { projectId: project.id, hostname: order.productId },
           });
+          
+          logger.info(`Domain tracked in database: ${JSON.stringify({ projectId: project.id, domain: order.productId })}`);
         } else {
-          logger.warn(`Could not add domain to Vercel: vercelProjectId not found for project: ${project?.id}`);
+          logger.warn(`Could not find project for user: ${order.userId}`);
         }
       }
     }

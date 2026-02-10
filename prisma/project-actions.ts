@@ -2,7 +2,6 @@
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { vercel } from '@/lib/vercel/client';
 import { logger } from '@/lib/logger';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
@@ -40,14 +39,10 @@ export async function addCustomDomainAction(projectId: string, domain: string) {
     include: {
       workspace: { include: { members: true } },
     },
-  }) as { vercelProjectId?: string, id: string, workspaceId: string, workspace: { members: Array<{ userId: string }> } };
+  }) as { id: string, workspaceId: string, workspace: { members: Array<{ userId: string }> } };
 
   if (!project || !Array.isArray(project.workspace.members) || !project.workspace.members.some((m) => m.userId === userId)) {
     return { error: 'Project not found or you do not have access.' };
-  }
-
-  if (!project.vercelProjectId) {
-    return { error: 'Vercel project ID is not configured for this project.' };
   }
 
   // 2. Check subscription plan
@@ -57,11 +52,7 @@ export async function addCustomDomainAction(projectId: string, domain: string) {
   }
 
   try {
-    // 2. Add domain to Vercel
-    await vercel.addDomainToProject(project.vercelProjectId, domain);
-    logger.info(`Domain added to Vercel project: ${JSON.stringify({ vercelProjectId: project.vercelProjectId, domain })}`);
-
-    // 3. Save domain to our database
+    // 2. Save domain to our database (skip Vercel integration for Google Cloud deployment)
     await prisma.domain.create({
       data: {
         projectId: project.id,
@@ -69,11 +60,11 @@ export async function addCustomDomainAction(projectId: string, domain: string) {
       },
     });
 
-    // 4. Return the configuration details needed by the user
+    // 3. Return success message
     return {
       success: true,
-      message: `Domain ${domain} added successfully.`,
-      configuration: {}, // Stub, as our vercel client does not return verification
+      message: `Domain ${domain} added successfully. Note: Vercel integration skipped for Google Cloud deployment.`,
+      configuration: {},
     };
 
   } catch (error) {
