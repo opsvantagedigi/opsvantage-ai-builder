@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { authOptions } from '@/lib/auth';
-import { stripe } from '@/lib/stripe';
+import stripe from '@/lib/stripe';
 import { db } from '@/lib/db';
 import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 
