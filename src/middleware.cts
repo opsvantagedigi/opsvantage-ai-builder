@@ -1,10 +1,8 @@
-const { withAuth } = require('next-auth/middleware');
-const { NextResponse } = require('next/server');
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-/**
- * @param {import('next/server').NextRequest} req
- */
-async function middleware(req) {
+async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host");
   const path = url.pathname;
@@ -27,9 +25,8 @@ async function middleware(req) {
   return NextResponse.next();
 }
 
-const config = {
+export const config = {
   matcher: ["/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)"],
 };
 
-module.exports = middleware;
-module.exports.config = config;
+export default middleware;
