@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# The "Nuclear" fix for the Windows/Linux conflict
+RUN npm install --no-package-lock --include=optional
 
 # Copy the rest of the application
 COPY . .
