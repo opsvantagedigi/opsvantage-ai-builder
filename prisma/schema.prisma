@@ -1,7 +1,3 @@
-// =========================
-// Prisma Generator & DB
-// =========================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,9 +7,288 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// =========================
-// Enums
-// =========================
+model User {
+  id                     String            @id @default(cuid())
+  email                  String            @unique
+  name                   String?
+  createdAt              DateTime          @default(now())
+  image                  String?
+  updatedAt              DateTime          @updatedAt
+  openProviderHandle     String?           @unique
+  aiGenerationsUsed      Int               @default(0)
+  sitesPublished         Int               @default(0)
+  stripeCurrentPeriodEnd DateTime?         @map("stripe_current_period_end")
+  stripeCustomerId       String?           @unique @map("stripe_customer_id")
+  stripePriceId          String?           @map("stripe_price_id")
+  stripeSubscriptionId   String?           @unique @map("stripe_subscription_id")
+  subscriptionStatus     String?           @default("none")
+  usageResetDate         DateTime          @default(now())
+  accounts               Account[]
+  sentInvites            Invitation[]      @relation("SentInvites")
+  orders                 Order[]
+  sessions               Session[]
+  subscriptions          Subscription[]
+  ownedWorkspaces        Workspace[]       @relation("WorkspaceOwner")
+  workspaces             WorkspaceMember[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String
+  stripeSubscriptionId String    @unique
+  stripePriceId        String
+  stripeCustomerId     String
+  plan                 String
+  status               String
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  canceledAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Project {
+  id              String      @id @default(cuid())
+  name            String
+  subdomain       String?     @unique
+  sanityDataset   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  workspaceId     String
+  vercelProjectId String?
+  content         Json?
+  customDomain    String?     @unique
+  published       Boolean     @default(false)
+  publishedAt     DateTime?
+  aiTasks         AiTask[]
+  domains         Domain[]
+  onboarding      Onboarding?
+  pages           Page[]
+  workspace       Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Domain {
+  id        String   @id @default(cuid())
+  projectId String
+  hostname  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Onboarding {
+  id                       String           @id @default(cuid())
+  projectId                String           @unique
+  businessName             String?
+  industry                 String?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  brandVoice               String?
+  businessType             String?
+  colorPalette             Json?
+  competitors              Json?
+  description              String?
+  designStyle              String?
+  goals                    String?
+  status                   OnboardingStatus @default(DRAFT)
+  targetAudience           String?
+  backgroundTexturePrompts Json?
+  fontPairing              Json?
+  heroImagePrompts         Json?
+  iconSet                  Json?
+  layoutRecommendations    Json?
+  project                  Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model AiTask {
+  id        String   @id @default(cuid())
+  projectId String
+  type      TaskType
+  status    Status   @default(PENDING)
+  provider  Provider @default(GEMINI)
+  payload   Json
+  result    Json?
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Page {
+  id             String    @id @default(cuid())
+  projectId      String
+  title          String
+  slug           String
+  type           PageType  @default(CUSTOM)
+  isHome         Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  seoDescription String?
+  seoTitle       String?
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sections       Section[]
+
+  @@unique([projectId, slug])
+}
+
+model Section {
+  id        String      @id @default(cuid())
+  pageId    String
+  type      SectionType @default(CUSTOM)
+  variant   String?
+  data      Json
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  order     Int         @default(0)
+  page      Page        @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+model Workspace {
+  id                     String            @id @default(cuid())
+  name                   String
+  slug                   String            @unique
+  ownerId                String
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  type                   WorkspaceType     @default(STANDARD)
+  plan                   Plan              @default(FREE)
+  stripeCurrentPeriodEnd DateTime?         @map("stripe_current_period_end")
+  stripeCustomerId       String?           @unique @map("stripe_customer_id")
+  stripePriceId          String?           @map("stripe_price_id")
+  stripeSubscriptionId   String?           @unique @map("stripe_subscription_id")
+  brandingColors         Json?
+  brandingLogo           String?
+  customDashboardDomain  String?
+  managedClients         AgencyClient[]    @relation("AgencyRelation")
+  managedByAgencies      AgencyClient[]    @relation("ClientRelation")
+  auditLogs              AuditLog[]
+  invitations            Invitation[]
+  projects               Project[]
+  usage                  Usage?
+  owner                  User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members                WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        Role      @default(VIEWER)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  email       String
+  role        Role      @default(VIEWER)
+  expiresAt   DateTime
+  workspaceId String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  inviterId   String
+  status      String    @default("PENDING")
+  inviter     User      @relation("SentInvites", fields: [inviterId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId])
+}
+
+model AgencyClient {
+  id        String             @id @default(cuid())
+  agencyId  String
+  clientId  String
+  status    AgencyClientStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  agency    Workspace          @relation("AgencyRelation", fields: [agencyId], references: [id], onDelete: Cascade)
+  client    Workspace          @relation("ClientRelation", fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([agencyId, clientId])
+}
+
+model Order {
+  id                   String   @id @default(cuid())
+  userId               String
+  productId            String
+  productType          String
+  status               String   @default("PENDING")
+  priceAmount          Float
+  priceCurrency        String
+  nowPaymentsInvoiceId String?  @unique
+  openProviderOrderId  String?  @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  workspaceId String
+  actorId     String
+  action      String
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  entityId    String
+  entityType  AuditEntity
+  ipAddress   String?
+  userAgent   String?
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+}
+
+model Usage {
+  id             String    @id @default(cuid())
+  workspaceId    String    @unique
+  aiTokensUsed   Int       @default(0)
+  pagesGenerated Int       @default(0)
+  month          DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model EarlyAccessSignup {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  signedUpAt DateTime @default(now())
+  notified   Boolean  @default(false)
+}
 
 enum Status {
   PENDING
@@ -50,8 +325,8 @@ enum SectionType {
   FEATURES
   TESTIMONIALS
   FAQ
-  FOOTER
   CUSTOM
+  FOOTER
 }
 
 enum Role {
@@ -85,426 +360,4 @@ enum AuditEntity {
   MEMBER
   DOMAIN
   AI_TASK
-}
-
-// =========================
-// Auth Models (NextAuth)
-// =========================
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  openProviderHandle String? @unique
-
-  // ===== STRIPE SUBSCRIPTION DATA =====
-  stripeCustomerId       String?   @unique @map("stripe_customer_id")
-  stripeSubscriptionId   String?   @unique @map("stripe_subscription_id")
-  stripePriceId          String?   @map("stripe_price_id")
-  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
-  subscriptionStatus     String?   @default("none") // none, active, past_due, canceled, incomplete
-
-  // ===== USAGE TRACKING =====
-  aiGenerationsUsed      Int       @default(0)      // Track AI calls per month
-  sitesPublished         Int       @default(0)      // Count of published sites
-  usageResetDate         DateTime  @default(now())  // When the monthly usage resets
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  accounts   Account[]
-  sessions   Session[]
-  workspaces WorkspaceMember[]
-  // Workspaces this user owns
-  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
-  orders    Order[]
-  subscriptions Subscription[] // History of subscriptions
-  sentInvites Invitation[] @relation("SentInvites") // Invitations sent by this user
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-// =========================
-// Billing & Subscriptions
-// =========================
-
-model Subscription {
-  id                     String   @id @default(cuid())
-  userId                 String
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Stripe identifiers
-  stripeSubscriptionId   String   @unique
-  stripePriceId          String
-  stripeCustomerId       String
-
-  // Plan info
-  plan                   String   // "starter", "pro", "agency"
-  status                 String   // "active", "past_due", "canceled", "incomplete"
-
-  // Billing period
-  currentPeriodStart     DateTime
-  currentPeriodEnd       DateTime
-  canceledAt             DateTime?
-
-  // Metadata
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-}
-
-
-
-model Project {
-  id            String    @id @default(cuid())
-  name          String
-  subdomain     String?   @unique
-  customDomain  String?   @unique  // Custom domain for published sites
-  sanityDataset String?
-  content       Json?     // Full site content structure (pages, sections, styling)
-  published     Boolean   @default(false)
-  publishedAt   DateTime? // When the site was published
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  workspaceId   String
-  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  onboarding Onboarding?
-  pages      Page[]
-  aiTasks    AiTask[]
-  domains    Domain[]
-
-  // Analytics
-  pageViews PageView[]
-  conversionEvents ConversionEvent[]
-  analyticsSummary AnalyticsSummary?
-}
-
-model Domain {
-  id         String   @id @default(cuid())
-  projectId  String
-  hostname   String   @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
-
-model Onboarding {
-  id             String   @id @default(cuid())
-  projectId      String   @unique
-  
-  // Step 1: Business Identity
-  businessName   String?
-  businessType   String?  // e.g., "SaaS", "E-commerce", "Local Business"
-  industry       String?  // e.g., "Technology", "Healthcare"
-  description    String?  // Short description of what they do
-
-  // Step 2: Brand & Audience
-  brandVoice     String?  // e.g., "Professional", "Playful", "Luxurious"
-  targetAudience String?  // e.g., "Small business owners involved in tech"
-  
-  // Step 3: Design Preferences
-  colorPalette   Json?    // Array of hex codes or a preset name
-  designStyle    String?  // e.g., "Minimalist", "Bold", "Corporate"
-
-  // Additional AI-generated suggestions
-  layoutRecommendations Json?
-  heroImagePrompts     Json?
-  iconSet              Json?
-  fontPairing          Json?
-  backgroundTexturePrompts Json?
-
-  // Step 4: Strategic Goals
-  goals          String?  // Primary website goal
-  competitors    Json?    // Array of competitor URLs or names
-  
-  status         OnboardingStatus @default(DRAFT)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
-
-model AiTask {
-  id          String    @id @default(cuid())
-  projectId   String
-  type        TaskType
-  status      Status    @default(PENDING)
-  provider    Provider  @default(GEMINI)
-  payload     Json
-  result      Json?
-  error       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
-
-model Page {
-  id          String    @id @default(cuid())
-  projectId   String
-  title       String
-  slug        String
-  seoTitle    String?
-  seoDescription String?
-  type        PageType  @default(CUSTOM)
-  isHome      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sections Section[]
-
-  @@unique([projectId, slug])
-}
-
-model Section {
-  id          String      @id @default(cuid())
-  pageId      String
-  type        SectionType @default(CUSTOM)
-  variant     String?
-  data        Json
-  order       Int @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
-}
-
-model Workspace {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  ownerId     String
-  type        WorkspaceType @default(STANDARD)
-  owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-
-  // Branding
-  brandingLogo String?
-  brandingColors Json?
-  customDashboardDomain String?
-
-  // Relations
-  members     WorkspaceMember[]
-  invitations Invitation[]
-  projects    Project[]
-
-  // Agency relations
-  managedClients    AgencyClient[] @relation("AgencyRelation")
-  managedByAgencies AgencyClient[] @relation("ClientRelation")
-
-  // Subscription details
-  plan                  Plan      @default(FREE)
-  stripeCustomerId      String?   @unique @map("stripe_customer_id")
-  stripeSubscriptionId  String?   @unique @map("stripe_subscription_id")
-  stripePriceId         String?   @map("stripe_price_id")
-  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
-
-  // billing     Billing?
-  auditLogs   AuditLog[]
-  usage       Usage?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model WorkspaceMember {
-  id          String    @id @default(cuid())
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role        Role      @default(VIEWER)
-
-  @@unique([workspaceId, userId]) // Prevent duplicate membership
-}
-
-model Invitation {
-  id          String   @id @default(cuid())
-  token       String   @unique
-  email       String
-  role        Role     @default(VIEWER)
-  status      String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED
-  expiresAt   DateTime
-
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  inviterId   String
-  inviter     User     @relation("SentInvites", fields: [inviterId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([email, workspaceId]) // A user can only have one pending invite per workspace
-}
-
-model AgencyClient {
-  id        String   @id @default(cuid())
-  agencyId  String
-  agency    Workspace @relation("AgencyRelation", fields: [agencyId], references: [id], onDelete: Cascade)
-  clientId  String
-  client    Workspace @relation("ClientRelation", fields: [clientId], references: [id], onDelete: Cascade)
-  status    AgencyClientStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([agencyId, clientId])
-}
-
-model Order {
-  id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  productId String      // e.g., domain name like "example.com"
-  productType String    // "DOMAIN_REGISTRATION", "SSL_CERTIFICATE"
-  status    String      @default("PENDING") // PENDING, PAID, FAILED, COMPLETED
-  priceAmount  Float
-  priceCurrency String
-  nowPaymentsInvoiceId String? @unique
-  openProviderOrderId String? @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AuditLog {
-  id          String   @id @default(cuid())
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
-  actorId     String // User who performed the action
-  action      String // e.g. "PUBLISHED_SITE", "DELETED_PAGE"
-  entityType  AuditEntity
-  entityId    String
-  metadata    Json?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-}
-
-model Usage {
-  id               String @id @default(cuid())
-  workspaceId      String @unique
-  workspace        Workspace @relation(fields: [workspaceId], references: [id])
-  aiTokensUsed     Int    @default(0)
-  pagesGenerated   Int    @default(0)
-  month            DateTime @default(now()) // Reset logic relies on this
-}
-
-// Early Access Signup for Coming Soon Page
-model EarlyAccessSignup {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  signedUpAt DateTime @default(now())
-  notified  Boolean  @default(false)
-}
-
-// =========================
-// Analytics Models
-// =========================
-
-model PageView {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  pageSlug    String   // URL slug of the page
-
-  // Visitor tracking
-  visitorId   String   // Anonymous visitor ID
-  sessionId   String   // Session ID for grouping visits
-
-  // Engagement
-  duration    Int      @default(0)  // Time on page in seconds
-  scrollDepth Int      @default(0)  // % of page scrolled
-
-  // Device/Browser info
-  userAgent   String?
-  referer     String?
-  country     String?  // Geolocation (via IP)
-  city        String?
-  device      String?  // mobile, tablet, desktop
-  browser     String?
-
-  createdAt   DateTime @default(now())
-
-  @@index([projectId])
-  @@index([sessionId])
-  @@index([createdAt])
-}
-
-model ConversionEvent {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  // Event tracking
-  eventName   String   // e.g., "contact_form_submit", "newsletter_signup"
-  eventValue  String?  // Additional data
-
-  // Visitor info
-  visitorId   String
-  sessionId   String
-
-  createdAt   DateTime @default(now())
-
-  @@index([projectId])
-  @@index([eventName])
-}
-
-model AnalyticsSummary {
-  id          String   @id @default(cuid())
-  projectId   String   @unique
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  // Summary stats (updated daily)
-  totalViews  Int      @default(0)
-  totalVisitors Int    @default(0)
-  avgDuration Int      @default(0)
-  bounceRate  Float    @default(0)
-
-  // Date range
-  dateFrom    DateTime
-  dateTo      DateTime
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

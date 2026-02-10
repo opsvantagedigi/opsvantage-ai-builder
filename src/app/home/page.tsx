@@ -2,14 +2,49 @@
 import React, { useState, useEffect } from 'react';
 import { Terminal, Cpu, Globe, Shield, Activity, Timer } from "lucide-react";
 
+interface HeartbeatData {
+  status: string;
+  messages: string[];
+  timestamp: string;
+}
+
 export default function ComingSoon() {
   const [dots, setDots] = useState("");
+  const [neuralMessages, setNeuralMessages] = useState<string[]>([
+    '> MARZ: Syncing global build hash...',
+    '> Handshaking with Google Edge...',
+    '> "I am currently constructing the Hero Gateway. Please remain logged in."'
+  ]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setDots(d => d.length > 2 ? "" : d + ".");
     }, 500);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchHeartbeat = async () => {
+      try {
+        const response = await fetch('/api/marz/heartbeat');
+        const data: HeartbeatData = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+          setNeuralMessages(data.messages.map(msg => `> ${msg}`));
+        }
+      } catch (error) {
+        console.error('Failed to fetch heartbeat:', error);
+        // Keep fallback messages if API call fails
+      }
+    };
+
+    // Fetch immediately
+    fetchHeartbeat();
+
+    // Then fetch every 10 seconds
+    const heartbeatInterval = setInterval(fetchHeartbeat, 10000);
+
+    return () => clearInterval(heartbeatInterval);
   }, []);
 
   return (
@@ -61,9 +96,11 @@ export default function ComingSoon() {
                 <Activity className="w-4 h-4" /> Live Neural Feed
              </div>
              <div className="font-mono text-[10px] space-y-2 text-slate-300">
-                <p className="">{'>'} MARZ: Syncing global build hash...</p>
-                <p className="">{'>'} Handshaking with Google Edge...</p>
-                <p className="text-cyan-400 animate-pulse">{'>'} "I am currently constructing the Hero Gateway. Please remain logged in."</p>
+                {neuralMessages.map((message, index) => (
+                  <p key={index} className={index === neuralMessages.length - 1 ? "text-cyan-400 animate-pulse" : ""}>
+                    {message}
+                  </p>
+                ))}
              </div>
           </div>
         </div>
