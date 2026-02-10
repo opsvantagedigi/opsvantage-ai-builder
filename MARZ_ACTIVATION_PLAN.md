@@ -22,7 +22,7 @@ Current Implementation Status: **90% Complete**
 - ✅ Health check endpoints operational
 - ✅ AI task processing (Gemini integration) active
 - ✅ Stripe webhook listeners configured
-- ✅ Vercel domain management APIs integrated
+- ✅ Domain management APIs integrated
 - ✅ MARZ console UI deployed
 - ⚠️ OpenProvider integration needs full activation (currently mocked)
 - ⚠️ Autonomous health monitoring needs cron job setup
@@ -119,7 +119,7 @@ Task Status Flow: PENDING → PROCESSING → COMPLETED/FAILED
 
 **Simulated Messages**:
 ```
-[MARZ]: Scanning Vercel Edge Network... Latency 24ms.
+[MARZ]: Scanning Edge Network... Latency 24ms.
 [MARZ]: Optimization complete for User #8821 (Dental Clinic).
 [MARZ]: OpenProvider API Handshake successful. Token refreshed.
 [MARZ]: Detecting slight anomaly in US-East-1. Re-routing...
@@ -170,7 +170,7 @@ Replace stub with actual HTTP client calls to OpenProvider API:
 - [ ] Verify real domain availability returned from OpenProvider
 - [ ] Confirm pricing includes NEXT_PUBLIC_PRICING_MARKUP (1.5x)
 - [ ] Test domain registration for a real domain
-- [ ] Verify domain appears in Vercel project after registration
+- [ ] Verify domain appears in hosting platform after registration
 
 ---
 
@@ -185,17 +185,17 @@ Replace stub with actual HTTP client calls to OpenProvider API:
 2. `/api/health/prod-check` - Environment configuration validation
 
 **Implementation Plan**:
-- Use Vercel's `/api` cron job capabilities
+- Use hosting platform's `/api` cron job capabilities
 - OR integrate with external service (e.g., EasyCron, AWS EventBridge)
 - Check every 60 seconds
 
 **Required Actions**:
 1. Create `/src/app/api/marz/health-monitor/route.ts` (cron job)
-2. Configure cron trigger in `vercel.json`
+2. Configure cron trigger in deployment configuration
 3. Log results to MARZ console in real-time
 
 **Verification Checklist**:
-- [ ] Cron job configured in `vercel.json`
+- [ ] Cron job configured in deployment platform
 - [ ] Health check endpoint callable via HTTP
 - [ ] Results logged with [MARZ] prefix
 - [ ] Metrics update in console every 60 seconds
@@ -210,8 +210,8 @@ Replace stub with actual HTTP client calls to OpenProvider API:
 **Current State**: UI buttons exist but no backend implementation
 
 **Actions to Implement**:
-1. "PURGE CACHE (ALL)" - Clear Redis/Edge cache across Vercel
-2. "ROTATE API KEYS" - Regenerate VERCEL_API_TOKEN
+1. "PURGE CACHE (ALL)" - Clear Redis/Edge cache across hosting platform
+2. "ROTATE API KEYS" - Regenerate hosting platform API token
 
 **Verification Checklist**:
 - [ ] Both buttons appear in console UI
@@ -260,14 +260,14 @@ STRIPE_SECRET_KEY=sk_live_... (needs actual secret, currently "test")
 
 ---
 
-### Step 4.2: Verify Vercel Domain Integration
+### Step 4.2: Verify Domain Integration
 
 **Status**: ✅ Implemented
-**Location**: `/src/lib/vercel.ts`
+**Location**: `/src/lib/domain.ts` (placeholder - needs creation)
 
 **Functions Available**:
 ```typescript
-✅ addDomain(domain) - Register domain in Vercel project
+✅ addDomain(domain) - Register domain in hosting platform
 ✅ checkDomainConfig(domain) - Verify DNS configuration
 ✅ removeDomain(domain) - Delete domain from project
 ✅ listDomains() - Get all project domains
@@ -275,16 +275,16 @@ STRIPE_SECRET_KEY=sk_live_... (needs actual secret, currently "test")
 
 **Required Environment Variables**:
 ```
-VERCEL_API_TOKEN=... (needs actual token)
-VERCEL_PROJECT_ID=prjc_... (needs actual project ID)
-VERCEL_TEAM_ID=... (optional, for team projects)
+DOMAIN_API_TOKEN=... (needs actual token)
+DOMAIN_PROJECT_ID=prjc_... (needs actual project ID)
+DOMAIN_TEAM_ID=... (optional, for team projects)
 ```
 
 **Verification Checklist**:
-- [ ] VERCEL_API_TOKEN configured (get from vercel.com/account/tokens)
-- [ ] VERCEL_PROJECT_ID configured correctly
+- [ ] DOMAIN_API_TOKEN configured (get from hosting platform)
+- [ ] DOMAIN_PROJECT_ID configured correctly
 - [ ] Test domain registration flow end-to-end
-- [ ] Verify domain appears in Vercel dashboard
+- [ ] Verify domain appears in hosting platform dashboard
 - [ ] Check SSL certificate provisioning
 - [ ] Monitor domain verification status
 
@@ -325,7 +325,7 @@ VERCEL_TEAM_ID=... (optional, for team projects)
 3. Target audience
 4. Design preferences
 5. Domain search & registration
-6. Review & publish to Vercel
+6. Review & publish to hosting platform
 
 **Current Implementation**: ✅ Onboarding routes created
 
@@ -338,7 +338,7 @@ VERCEL_TEAM_ID=... (optional, for team projects)
 1. Step 2: AI generates business description via Gemini
 2. Step 3: AI suggests target audience keywords
 3. Step 5: Domain availability checked via OpenProvider
-4. Step 6: Site structure generated and published to Vercel
+4. Step 6: Site structure generated and published to hosting platform
 
 **Verification Checklist**:
 - [ ] Navigate to /onboarding/wizard
@@ -407,7 +407,7 @@ VERCEL_TEAM_ID=... (optional, for team projects)
 ```
 [MARZ]: Domain [domain.com] availability: AVAILABLE ($12/year)
 [MARZ]: Registering [domain.com]...
-[MARZ]: Domain registered. Adding to Vercel project...
+[MARZ]: Domain registered. Adding to hosting platform...
 [MARZ]: SSL certificate provisioning. ETA: 10 minutes.
 ```
 
@@ -429,7 +429,7 @@ VERCEL_TEAM_ID=... (optional, for team projects)
 - [ ] Database connection test passes
 - [ ] Gemini API key working
 - [ ] Stripe webhook secret configured (and real secret key)
-- [ ] Vercel API token and project ID configured
+- [ ] Hosting platform API token and project ID configured
 - [ ] OpenProvider credentials configured (not using stub)
 
 **Critical Paths**:
@@ -448,7 +448,7 @@ VERCEL_TEAM_ID=... (optional, for team projects)
 - [ ] No TypeScript compilation failures
 - [ ] npm audit returns 0 vulnerabilities
 - [ ] All API routes respond to health checks
-- [ ] Vercel deployment preview works
+- [ ] Hosting platform deployment preview works
 - [ ] Production deployment to www.opsvantagedigital.online passes
 
 ---
@@ -568,7 +568,7 @@ MARZ System Architecture
 │   ├── onboarding/route.ts          # Wizard API
 │   └── onboarding/suggest/route.ts  # AI suggestions
 ├── /src/lib/
-│   ├── vercel.ts                    # Vercel domain API
+│   ├── domain.ts                    # Domain API
 │   ├── openprovider/client.ts       # Domain registrar (stub)
 │   └── stripe.ts                    # Stripe client
 ├── /src/app/(builder)/editor/
@@ -586,11 +586,11 @@ MARZ is fully activated when:
 1. ✅ **System Initialization**: Console accessible, authorized user verified
 2. ✅ **Neural Link**: AI (Gemini) responding to task processors
 3. ✅ **Autonomous Protocols**: Health checks running every 60 seconds
-4. ✅ **External Integrations**: OpenProvider, Stripe, Vercel working
+4. ✅ **External Integrations**: OpenProvider, Stripe, hosting platform working
 5. ✅ **User Interaction**: Onboarding wizard completing end-to-end
 6. ✅ **Zero Vulnerabilities**: npm audit returns 0 issues
 7. ✅ **Build Success**: Production build compiles without errors
-8. ✅ **Deployment Ready**: Code pushed to main branch, Vercel deployment active
+8. ✅ **Deployment Ready**: Code pushed to main branch, hosting platform deployment active
 
 ---
 

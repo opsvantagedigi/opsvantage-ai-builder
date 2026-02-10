@@ -48,7 +48,7 @@ You should see:
 
 4. **Expected Response** (from real Gemini AI):
    ```
-   [MARZ]: System Operational. Vercel connectivity verified. Database: Connected.
+   [MARZ]: System Operational. Hosting platform connectivity verified. Database: Connected.
    Stripe integration active. OpenProvider domain registry: Synced.
    All critical systems nominal. Ready for user directives.
    ```
@@ -104,7 +104,7 @@ User: "Register myawesome.com for me"
 MARZ: "Domain registration requires the following steps:
 1. Check availability via OpenProvider API
 2. If available, call createDomain() method
-3. Configure DNS to Vercel nameservers
+3. Configure DNS to hosting platform nameservers
 4. Wait 24-48 hours for propagation
 5. Monitor SSL certificate provisioning
 
@@ -118,8 +118,8 @@ MARZ: "Checking domain availability..."
 MARZ: "myawesome.com is available for $12.99/year"
 "Registering domain..."
 [MARZ actually calls openProvider.createDomain({ ... })]
-MARZ: "Domain registered! Adding to Vercel project..."
-[MARZ actually calls vercel.addDomain('myawesome.com')]
+MARZ: "Domain registered! Adding to hosting platform..."
+[MARZ actually calls hostingPlatform.addDomain('myawesome.com')]
 MARZ: "Domain live! Site now accessible at https://myawesome.com"
 ```
 
@@ -147,8 +147,8 @@ const tools = [
     }
   },
   {
-    name: "deploy_to_vercel",
-    description: "Deploy a site to Vercel",
+    name: "deploy_to_hosting_platform",
+    description: "Deploy a site to hosting platform",
     parameters: {
       domain: "string",
       projectId: "string"
@@ -184,8 +184,8 @@ if (response.candidates[0].content.parts[0].functionCall) {
       const registration = await openProvider.createDomain({...});
       break;
 
-    case "deploy_to_vercel":
-      const deployment = await vercel.addDomain({...});
+    case "deploy_to_hosting_platform":
+      const deployment = await hostingPlatform.addDomain({...});
       break;
   }
 }
@@ -203,8 +203,8 @@ Once implemented:
    ✅ update_nameservers(domain, nameservers)
 
 2. Deployment
-   ✅ deploy_to_vercel(domain, project_id)
-   ✅ list_vercel_domains(project_id)
+   ✅ deploy_to_hosting_platform(domain, project_id)
+   ✅ list_hosting_platform_domains(project_id)
    ✅ check_ssl_status(domain)
    ✅ configure_dns(domain, records)
 
@@ -240,14 +240,14 @@ Once implemented:
 ### Week 2
 - [ ] Tool Use: Define functions for Gemini to call
 - [ ] Domain Tools: OpenProvider integration with tool calling
-- [ ] Vercel Tools: Domain deployment automation
+- [ ] Hosting platform Tools: Domain deployment automation
 - [ ] Testing: Full end-to-end workflows
 
 ### Week 3
 - [ ] Billing Tools: Stripe automation
 - [ ] Monitoring Tools: Health checks with tool execution
 - [ ] User Tools: Team management automation
-- [ ] Production: Deploy to Vercel with full Tool Use
+- [ ] Production: Deploy to hosting platform with full Tool Use
 
 ### Week 4
 - [ ] Enhancement: Advanced tool combinations
@@ -296,25 +296,25 @@ Turn 4: "Can you suggest optimizations?" ← Should know all history
 
 Once you've verified locally:
 
-1. **Deploy to Vercel:**
+1. **Deploy to hosting platform:**
    ```bash
    git push origin main
-   # Vercel auto-deploys
+   # Hosting platform auto-deploys
    ```
 
 2. **Set Production Credentials:**
-   - Go to Vercel Dashboard
+   - Go to hosting platform Dashboard
    - Project → Settings → Environment Variables
    - Add: GOOGLE_API_KEY
    - Redeploy
 
 3. **Test Production:**
-   - Visit: https://your-app.vercel.app/admin/marz-console
+   - Visit: https://your-app.your-platform.com/admin/marz-console
    - Type a command
    - MARZ should respond from production Gemini
 
 4. **Monitor:**
-   - Vercel Logs → See MARZ operations
+   - Hosting platform Logs → See MARZ operations
    - Check [MARZ] prefixed log messages
 
 ---
@@ -367,7 +367,7 @@ MARZ System Status:
 ├─ Error Handling: ✅ Graceful degradation
 ├─ Authentication: ✅ NextAuth protected
 ├─ Logging: ✅ Full audit trail
-└─ Deployment: ✅ Ready for Vercel
+└─ Deployment: ✅ Ready for hosting platform
 
 Next Phase: Tool Use Implementation
 Goal: Give MARZ the ability to actually execute commands
@@ -387,8 +387,8 @@ Status: Planning phase (Technical design complete)
    - [ ] Document results
 
 2. **THIS WEEK:**
-   - [ ] Deploy to Vercel
-   - [ ] Set GOOGLE_API_KEY in Vercel environment variables
+   - [ ] Deploy to hosting platform
+   - [ ] Set GOOGLE_API_KEY in hosting platform environment variables
    - [ ] Test production console
 
 3. **NEXT WEEK:**

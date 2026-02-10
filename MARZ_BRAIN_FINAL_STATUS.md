@@ -45,7 +45,7 @@
 - 0 TypeScript errors
 - 0 npm vulnerabilities
 - Deployed to GitHub
-- Ready for Vercel production
+- Ready for hosting platform production
 
 ---
 
@@ -234,8 +234,8 @@ Result: ✅ Error handling working
    - ✅ Did it understand context?
 
 ### 🟠 Priority 2: This Week
-1. Deploy to Vercel
-2. Set GOOGLE_API_KEY in Vercel environment variables
+1. Deploy to hosting platform
+2. Set GOOGLE_API_KEY in hosting platform environment variables
 3. Test production console
 4. Share with team members
 
@@ -256,7 +256,7 @@ Week 4: System fully operational and autonomous
 
 Tool Use = MARZ can call functions:
 - register_domain()
-- deploy_to_vercel()
+- deploy_to_hosting_platform()
 - process_stripe_payment()
 - run_diagnostics()
 - manage_team_access()
@@ -281,7 +281,7 @@ When Tool Use is complete, MARZ will be a full-stack autonomous agent with real 
 ### Best Practices
 - Keep conversation context small (last 5 messages)
 - Use specific, clear commands
-- Monitor Vercel logs for [MARZ] entries
+- Monitor hosting platform logs for [MARZ] entries
 - Check Google AI Studio for quota usage
 
 ---
@@ -329,7 +329,7 @@ A: MARZ gracefully degrades with error message. Check Google API console for quo
 A: Yes. You can swap Gemini for OpenAI, Claude, or any other API. Just update MarzAgent to use different client.
 
 **Q: Will MARZ work in production?**
-A: Yes. All components are production-ready. Set GOOGLE_API_KEY in Vercel environment variables and deploy.
+A: Yes. All components are production-ready. Set GOOGLE_API_KEY in hosting platform environment variables and deploy.
 
 **Q: How much does this cost?**
 A: Gemini API: $0.10/1M input tokens (extremely cheap). OpenAI GPT-4: ~10x more expensive.

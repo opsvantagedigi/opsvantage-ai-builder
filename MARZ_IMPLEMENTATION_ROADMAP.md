@@ -529,7 +529,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
-// This endpoint runs on Vercel's cron system
+// This endpoint runs on hosting platform's cron system
 export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
@@ -614,7 +614,7 @@ function calculateHealthScore(status: { dbStatus: string; configStatus: string; 
 }
 ```
 
-**Step 3.2**: Configure Vercel cron in vercel.json
+**Step 3.2**: Configure hosting platform cron in deployment config
 
 ```json
 {
@@ -658,7 +658,7 @@ useEffect(() => {
 
 **Verification Checklist**:
 - [ ] Endpoint created at /api/marz/health-monitor
-- [ ] Vercel cron configured in vercel.json
+- [ ] Hosting platform cron configured in deployment config
 - [ ] Cron runs every 60 seconds (watch logs)
 - [ ] Database health checked successfully
 - [ ] Environment config validated
@@ -680,14 +680,14 @@ STRIPE_SECRET_KEY="sk_live_YOUR_ACTUAL_SECRET_KEY_HERE"
 # Choose "Restricted API Keys" for added security
 ```
 
-**Action 2: Vercel API Configuration** (CRITICAL)
+**Action 2: Domain API Configuration** (CRITICAL)
 ```bash
 # In .env.local and .env.production, update:
-VERCEL_API_TOKEN="YOUR_VERCEL_API_TOKEN"
-VERCEL_PROJECT_ID="prjc_YOUR_PROJECT_ID"
+DOMAIN_API_TOKEN="YOUR_DOMAIN_API_TOKEN"
+DOMAIN_PROJECT_ID="prjc_YOUR_PROJECT_ID"
 
-# Get tokens from: https://vercel.com/account/tokens
-# For project ID, go to: https://vercel.com/project-name/settings
+# Get tokens from: [Hosting platform dashboard]
+# For project ID, go to: [Hosting platform project settings]
 ```
 
 **Action 3: Optional - Cron Secret**
@@ -741,10 +741,10 @@ curl -X GET https://opsvantagedigital.online/api/marz/health-monitor \
 
 2. **Environment Setup**
    ```bash
-   # Verify ALL environment variables in Vercel dashboard:
+   # Verify ALL environment variables in hosting platform dashboard:
    # - STRIPE_SECRET_KEY (live key)
-   # - VERCEL_API_TOKEN (with domain management scope)
-   # - VERCEL_PROJECT_ID (correct project ID)
+   # - DOMAIN_API_TOKEN (with domain management scope)
+   # - DOMAIN_PROJECT_ID (correct project ID)
    # - CRON_SECRET (for health monitor secure calls)
    ```
 
@@ -753,7 +753,7 @@ curl -X GET https://opsvantagedigital.online/api/marz/health-monitor \
    git add .
    git commit -m "Feat: Complete MARZ full activation implementation"
    git push origin main
-   # Vercel auto-deploys on push
+   # Hosting platform auto-deploys on push
    ```
 
 4. **Post-Deployment Verification**
@@ -785,7 +785,7 @@ MARZ is fully activated when ALL of these pass ✅
 □ Health monitor runs every 60 seconds
 □ Console shows real metrics (not simulated)
 □ Stripe webhook processes payments
-□ Vercel domains provision with SSL
+□ Hosting platform domains provision with SSL
 □ Onboarding wizard completes end-to-end
 □ Build succeeds with 0 errors/vulnerabilities
 □ Production deployment is stable
@@ -813,7 +813,7 @@ MARZ is fully activated when ALL of these pass ✅
 
 1. **This Week**:
    - [ ] Implement OpenProvider real API integration
-   - [ ] Set Vercel credentials
+   - [ ] Set hosting platform credentials
    - [ ] Set Stripe live secret key
 
 2. **Next Week**:

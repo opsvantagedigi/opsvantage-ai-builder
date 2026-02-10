@@ -13,7 +13,7 @@ MARZ is a sophisticated AI-powered autonomous agent system with **four core role
 
 1. **Brand Steward** 👑 - Manages visual identity, color theory, design consistency
 2. **Onboarding Specialist** 🎯 - Intelligently guides users through website generation
-3. **Development Wizard** ⚡ - Orchestrates full-stack deployment to Vercel
+3. **Development Wizard** ⚡ - Orchestrates full-stack deployment to hosting platform
 4. **Operations Manager** 🛡️ - Monitors system health 24/7 with autonomous diagnostics
 
 Current Status: **OPERATIONAL** with **CRITICAL PATH READY**
@@ -51,7 +51,7 @@ Current Status: **OPERATIONAL** with **CRITICAL PATH READY**
 **Status**: ✅ **FULLY OPERATIONAL**
 - **Provider**: Neon Serverless PostgreSQL
 - **ORM**: Prisma v5.13.0
-- **Connection**: Pooler-based for Vercel Edge
+- **Connection**: Pooler-based for hosting platform Edge
 - **Models**: 20+ entities including AiTask, Subscription, User, Project, Domain
 
 **Health Check**: `/api/health/db`
@@ -188,30 +188,30 @@ Update usage limits
 
 ---
 
-#### 1.6 Vercel Domain Integration
+#### 1.6 Domain Integration
 **Status**: ✅ **FULLY OPERATIONAL**
-- **API Client**: Custom wrapper around Vercel REST API
+- **API Client**: Custom wrapper around hosting platform REST API
 - **Functions**: Domain add/remove, DNS verification, SSL status
 
 **Capabilities**:
 ```javascript
-await addDomain('example.com')          // Register with Vercel
+await addDomain('example.com')          // Register with hosting platform
 await checkDomainConfig('example.com')  // Verify DNS records
 await listDomains()                     // List all project domains
 ```
 
 **Configuration Status**:
-- ❌ VERCEL_API_TOKEN: Needs configuration (currently empty in env)
-- ❌ VERCEL_PROJECT_ID: Needs configuration
-- ⚠️ VERCEL_TEAM_ID: Optional
+- ❌ DOMAIN_API_TOKEN: Needs configuration (currently empty in env)
+- ❌ DOMAIN_PROJECT_ID: Needs configuration
+- ⚠️ DOMAIN_TEAM_ID: Optional
 
 **Files**:
-- `/src/lib/vercel.ts` - Vercel API client
+- `/src/lib/domain.ts` - Domain API client
 - `/src/app/actions/publish-site.ts` - Domain integration
 
 **Test Results**:
 ```
-✅ Vercel API client structure: PASS
+✅ Domain API client structure: PASS
 ⚠️ Live API testing: BLOCKED (missing credentials)
 ```
 
@@ -270,14 +270,14 @@ async runSystemDiagnostics() {
         timestamp: new Date().toISOString(),
         latency: "24ms",  // Hardcoded!
         database: "CONNECTED",
-        vercel: "ACTIVE",  // Hardcoded!
+        hosting: "ACTIVE",  // Hardcoded!
         openProvider: "SYNCED"  // Hardcoded!
     };
 }
 ```
 
 **NEEDED IMPLEMENTATION**:
-1. Real latency measurement from Vercel edges
+1. Real latency measurement from hosting platform edges
 2. Actual health check calls to `/api/health/db` and `/api/health/prod-check`
 3. Real OpenProvider API status check
 4. Intelligent NLU for user intent analysis
@@ -334,7 +334,7 @@ async runSystemDiagnostics() {
 
 **Need to Implement**:
 1. Create `/src/app/api/marz/health-monitor/route.ts` (cron endpoint)
-2. Configure in `vercel.json` with cron schedule
+2. Configure in deployment config with cron schedule
 3. Aggregate results and log to MARZ console
 4. Alert on anomalies detected
 
@@ -356,8 +356,8 @@ async runSystemDiagnostics() {
 
 ### YELLOW (Needs Configuration)
 ```
-⚠️ Vercel API Token (needs to be set)
-⚠️ Vercel Project ID (needs to be set)
+⚠️ Domain API Token (needs to be set)
+⚠️ Domain Project ID (needs to be set)
 ⚠️ Stripe Secret Key (placeholder, needs live key)
 ⚠️ MARZ console metrics (currently simulated)
 ```
@@ -382,9 +382,9 @@ async runSystemDiagnostics() {
    - Update `STRIPE_SECRET_KEY` in `.env.production`
    - This is blocking real payment processing
 
-2. **Configure Vercel API Access**
-   - Generate API token at vercel.com/account/tokens
-   - Set `VERCEL_API_TOKEN` and `VERCEL_PROJECT_ID`
+2. **Configure Domain API Access**
+   - Generate API token at hosting platform dashboard
+   - Set `DOMAIN_API_TOKEN` and `DOMAIN_PROJECT_ID`
    - This is blocking domain provisioning
 
 ---
@@ -411,7 +411,7 @@ async runSystemDiagnostics() {
 
 1. **Implement Autonomous Health Monitoring**
    - Create cron job endpoint
-   - Configure Vercel cron schedule
+   - Configure hosting platform cron schedule
    - Real-time metric aggregation
    - Anomaly detection logic
 
@@ -461,7 +461,7 @@ async runSystemDiagnostics() {
 ✅ Environment Setup
   ✅ .env configured for development
   ✅ .env.production configured for production
-  ✅ Sensitive keys in Vercel secrets (not in git)
+  ✅ Sensitive keys in hosting platform secrets (not in git)
   ✅ All API endpoints tested
 
 ✅ Database
@@ -474,16 +474,16 @@ async runSystemDiagnostics() {
   ✅ Gemini API working
   ✅ Stripe webhooks configured
   ✅ Sanity CMS connecting
-  ✅ Vercel API accessible (when tokens added)
+  ✅ Domain API accessible (when tokens added)
 
 ⚠️ Critical Path Dependencies
   ⚠️ OpenProvider integration needs real implementation
   ⚠️ MARZ chat backend needs implementation
-  ⚠️ Vercel tokens need to be set
+  ⚠️ Domain tokens need to be set
   ⚠️ Stripe live key needs to be set
 
 ✅ Deployment
-  ✅ Vercel project created & connected
+  ✅ Hosting platform project created & connected
   ✅ Domains configured for production
   ✅ SSL certificates provisioned
   ✅ Monitoring & alerting set up
@@ -508,14 +508,14 @@ async runSystemDiagnostics() {
 **What Needs Work** (Blocking Activation):
 1. OpenProvider API integration (use real API, not mock)
 2. MARZ Operator chat backend connection
-3. Vercel API configuration
+3. Domain API configuration
 4. Stripe live secret key
 5. Autonomous cron jobs for health monitoring
 
 ### Recommendation: **PROCEED WITH ACTIVATION IN PHASES**
 
 **Phase 1 - IMMEDIATE** (This Week)
-1. Set Vercel API token and project ID
+1. Set Domain API token and project ID
 2. Set Stripe live secret key
 3. Implement real OpenProvider integration
 4. Deploy to production with critical path working
@@ -558,9 +558,9 @@ STRIPE_WEBHOOK_SECRET - Stripe webhook verification
 **Need Configuration** ⚠️
 ```
 STRIPE_SECRET_KEY - Stripe private key (currently placeholder)
-VERCEL_API_TOKEN - Vercel API access
-VERCEL_PROJECT_ID - Vercel project identifier
-VERCEL_TEAM_ID - Vercel team (optional)
+DOMAIN_API_TOKEN - Domain API access
+DOMAIN_PROJECT_ID - Domain project identifier
+DOMAIN_TEAM_ID - Domain team (optional)
 ```
 
 ### Key Files & Locations
@@ -572,7 +572,7 @@ VERCEL_TEAM_ID - Vercel team (optional)
 | AI Processor | /src/app/api/ai/process/ | ✅ Complete |
 | Chat Widget | /src/components/ai/MarzOperator.tsx | ⚠️ UI only |
 | Stripe | /src/app/api/webhooks/stripe/ | ✅ Complete |
-| Vercel | /src/lib/vercel.ts | ⚠️ No tokens |
+| Domain API | /src/lib/domain.ts | ⚠️ No tokens |
 | OpenProvider | /src/lib/openprovider/client.ts | ❌ Mocked |
 | Health Checks | /src/app/api/health/ | ✅ Complete |
 | Auth | /src/lib/auth.ts | ✅ Complete |

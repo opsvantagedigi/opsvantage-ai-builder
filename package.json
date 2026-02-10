@@ -13,7 +13,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:save-flow": "npx tsx scripts/test-save-flow.ts",
-    "test:e2e": "npx playwright test"
+    "test:e2e": "npx playwright test",
+    "gcloud:build": "npx tsx scripts/gcloud-build.ts",
+    "gcloud:deploy": "gcloud builds submit --config cloudbuild.yaml ."
   },
   "dependencies": {
     "@dnd-kit/modifiers": "^9.0.0",
@@ -33,12 +35,6 @@
     "@sanity/image-url": "^1.2.0",
     "@sanity/preview-kit": "^6.2.0",
     "@sanity/vision": "^3.49.0",
-    "@vercel/fun": "^1.3.0",
-    "@vercel/node": "^3.0.1",
-    "@vercel/og": "^0.8.6",
-    "@vercel/redwood": "^2.4.9",
-    "@vercel/routing-utils": "^4.0.0",
-    "@vercel/static-build": "^2.8.34",
     "ai": "^6.0.72",
     "cloudinary": "^2.9.0",
     "clsx": "^1.2.1",
@@ -87,12 +83,12 @@
     "dotenv": "^17.2.4",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.5.0",
+    "@google-cloud/cloudbuild": "^4.0.1",
     "jsdom": "^28.0.0",
     "postcss": "^8.4.40",
     "prisma": "^5.13.0",
     "tailwindcss": "^3.4.3",
     "typescript": "^5",
-    "vercel": "^32.0.1",
     "vitest": "^4.0.18"
   },
   "overrides": {

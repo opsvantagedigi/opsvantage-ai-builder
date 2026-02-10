@@ -25,7 +25,7 @@ Your MARZ AI Operator Agent system is **90% complete and operationally ready**.
 ⚠️ **Domain Registrar** - OpenProvider API stubbed (mock data only) → Needs live API calls
 ⚠️ **MARZ Chat Widget** - UI beautiful but backend not connected → Needs AI chat API
 ⚠️ **Health Monitoring** - Endpoints exist but no cron job to run them → Needs 60s scheduler
-⚠️ **Credentials** - Stripe, Vercel tokens need to be configured → Quick setup
+⚠️ **Credentials** - Stripe, hosting platform tokens need to be configured → Quick setup
 
 ---
 
@@ -49,7 +49,7 @@ Users don't "command" MARZ—they follow an intelligent conversation.
 MARZ orchestrates the entire technical pipeline:
 - Generate website structure from user input
 - Call OpenProvider to register domains
-- Provision SSL certificates via Vercel
+- Provision SSL certificates via hosting platform
 - Deploy sites to www.yourdomain.com
 - Configure DNS and nameservers
 - Monitor uptime and performance
@@ -89,22 +89,22 @@ This is your 24/7 ops team that costs $0/month.
 
 1. **Gather Credentials** (30 mins)
    - Stripe: Copy live API secret key from dashboard
-   - Vercel: Generate API token (vercel.com/account/tokens)
-   - Vercel: Get project ID from project settings
+   - Hosting platform: Generate API token (platform dashboard)
+   - Hosting platform: Get project ID from project settings
    - Result: 3 environment variables configured
 
 2. **Deploy Phase 1** (30 mins)
    - Run tests: `npm run build`
-   - Commit credentials to Vercel dashboard (NOT git)
+   - Commit credentials to hosting platform dashboard (NOT git)
    - Push to main branch
-   - Vercel auto-deploys in 2 minutes
+   - Hosting platform auto-deploys in 2 minutes
    - Result: Production build with credentials active
 
 3. **Quick Verification** (2 hours)
    - Test Stripe webhooks from Stripe dashboard
    - Test domain registration flow
    - Test onboarding wizard end-to-end
-   - Verify custom domain provisioning in Vercel
+   - Verify custom domain provisioning in hosting platform
    - Result: Core system tested and working
 
 ### PHASE 2: NEXT WEEK (Implementation Tasks)
@@ -125,7 +125,7 @@ This is your 24/7 ops team that costs $0/month.
 
 3. **Health Monitoring** (1-2 hours)
    - Create cron job endpoint
-   - Configure Vercel cron schedule
+   - Configure hosting platform cron schedule
    - Real-time metric aggregation
    - Result: MARZ console shows real metrics
 
@@ -193,7 +193,7 @@ Once MARZ is live, you will have:
 
 3. **Infinite Scalability** without costs
    - One MARZ agent handles infinite users
-   - Vercel handles infinite traffic
+   - Hosting platform handles infinite traffic
    - Neon handles infinite data
    - Your cost: essentially $0 until $100K revenue
 
@@ -218,7 +218,7 @@ Year 1 Total Revenue: ~$40,000
 
 ### Cost Structure
 ```
-Vercel Hosting: $20-50/month (scales with usage)
+Hosting Platform: $20-50/month (scales with usage)
 Neon Database: $20-50/month (scales with data)
 Gemini API: $0.10/1M tokens (pay per use, typically <$100/month at scale)
 Domain Registration: OpenProvider margin (50% profit)
@@ -315,7 +315,7 @@ I've created three comprehensive documents for you:
 
 ### Action 2: THIS WEEK - Gather Credentials & Deploy Phase 1
 **Time**: 4 hours
-**Output**: Stripe, Vercel, and Gemini configured and tested
+**Output**: Stripe, hosting platform, and Gemini configured and tested
 **Impact**: 70% of MARZ system live
 
 ### Action 3: NEXT WEEK - Implement Phase 2 Tasks

@@ -72,7 +72,7 @@ export const POST = withErrorHandling(async (req) => {
     const headersToLog = {
       host: req.headers.get('host'),
       ua: req.headers.get('user-agent'),
-      xVercelId: req.headers.get('x-vercel-id'),
+      xRequestId: req.headers.get('x-request-id'),
       xForwardedFor: req.headers.get('x-forwarded-for')
     }
     logger.error(`Sitemap POST failed (unexpected). Error: ${String(err)}, Request ID: ${requestId}, Headers: ${JSON.stringify(headersToLog)}`)

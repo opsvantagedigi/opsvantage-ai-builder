@@ -1,20 +1,16 @@
 # OpsVantage AI Builder: Deployment Guide
 
-This guide provides instructions for fixing the current Vercel deployment and migrating to alternative platforms as a backup or permanent solution.
+This guide provides instructions for deploying the application to various platforms.
 
-## 🛠️ Fixing Vercel (The "Quick Fix")
+## 🛠️ Deployment Preparation
 
-The current deployment is failing because `NEXTAUTH_SECRET` is missing in production.
+Before deploying, ensure `NEXTAUTH_SECRET` is properly configured.
 
 1.  **Generate a Secret**: Run `openssl rand -base64 32` in your terminal to create a secure key.
-2.  **Add to Vercel**:
-    *   Go to your **Vercel Dashboard**.
-    *   Select the **opsvantage-ai-builder** project.
-    *   Navigate to **Settings** > **Environment Variables**.
-    *   Add a new variable:
+2.  **Add Environment Variable**:
+    *   Add the following variable to your deployment platform:
         *   **Key**: `NEXTAUTH_SECRET`
         *   **Value**: [The secret you generated]
-3.  **Redeploy**: Go to the **Deployments** tab and trigger a "Redeploy" for the latest production branch.
 
 ---
 

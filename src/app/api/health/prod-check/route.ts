@@ -4,7 +4,7 @@ function present(name: string) {
   return typeof process.env[name] !== 'undefined'
 }
 
-const NON_SECRET_SHOW = ['NEXTAUTH_URL', 'NEXT_PUBLIC_VERCEL_URL', 'VERCEL_URL']
+const NON_SECRET_SHOW = ['NEXTAUTH_URL']
 
 export async function GET() {
   const required = [
@@ -29,7 +29,7 @@ export async function GET() {
     }
   }
 
-  const nextauthUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || null
+  const nextauthUrl = process.env.NEXTAUTH_URL || null
   const expectedCallbacks = nextauthUrl
     ? {
         google: `${nextauthUrl.replace(/\/$/, '')}/api/auth/callback/google`,

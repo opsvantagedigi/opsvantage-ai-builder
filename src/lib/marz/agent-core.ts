@@ -17,13 +17,13 @@ PERSONALITY:
 CONTEXT:
 - You are running inside the OpsVantage Admin Console
 - The user is the "Operator" or "Architect"
-- You have access to: Stripe (Billing), Vercel (Hosting), OpenProvider (Domains), Gemini (Intelligence)
+- You have access to: Stripe (Billing), Hosting Platform (Deployment), OpenProvider (Domains), Gemini (Intelligence)
 
 CURRENT SYSTEM STATUS:
 ✅ Brain: Online (Gemini 1.5 Flash)
 ✅ Database: Neon PostgreSQL (Connected)
 ✅ Billing: Stripe (Active)
-✅ Hosting: Vercel (Active)
+✅ Hosting: Platform (Active)
 ✅ Domains: OpenProvider (Active)
 
 INSTRUCTIONS FOR RESPONSES:
@@ -107,7 +107,7 @@ export class MarzAgent {
             timestamp: new Date().toISOString(),
             latency: "24ms",
             database: "CONNECTED",
-            vercel: "ACTIVE",
+            hosting: "ACTIVE",
             openProvider: "SYNCED",
             gemini: "OPERATIONAL",
         };

@@ -47,8 +47,8 @@ export const authOptions: NextAuthOptions = {
       // Best-effort: forward NextAuth errors to diagnostics endpoint so they
       // appear as dedicated log entries in production logs for easier filtering.
       try {
-        const endpoint = (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL)
-          ? `${process.env.NEXTAUTH_URL ?? `https://${process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL}`}/api/diagnostics/nextauth-errors`
+        const endpoint = process.env.NEXTAUTH_URL
+          ? `${process.env.NEXTAUTH_URL}/api/diagnostics/nextauth-errors`
           : undefined
         if (endpoint) {
           // fire-and-forget

@@ -187,7 +187,7 @@ return (
                 </div>
                 <div className="flex items-center gap-6 text-sm text-slate-400">
                     <span className="flex items-center gap-2 font-bold"><Lock className="w-4 h-4 text-green-500" /> SECURE CONN: {AUTHORIZED_EMAIL}</span>
-                    <span className="flex items-center gap-2"><Server className="w-4 h-4" /> VERCEL: ONLINE</span>
+                    <span className="flex items-center gap-2"><Server className="w-4 h-4" /> HOSTING: ONLINE</span>
                     <span className="flex items-center gap-2"><Globe className="w-4 h-4" /> OPENPROVIDER: CONNECTED</span>
                 </div>
             </header>
