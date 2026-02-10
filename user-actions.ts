@@ -1,20 +1,19 @@
 'use server';
 
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { verifySession } from '@/lib/verify-session';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 
 export async function getRegisteredDomainsAction() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const session = await verifySession();
+  if (!session?.sub) {
     return { error: 'User not authenticated.' };
   }
 
   try {
     const domains = await prisma.order.findMany({
       where: {
-        userId: session.user.id,
+        userId: session.sub,
         productType: 'DOMAIN_REGISTRATION',
         status: 'COMPLETED',
       },

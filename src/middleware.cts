@@ -11,7 +11,7 @@ const middleware = withAuth(
   /**
    * @param {import('next/server').NextRequest} req
    */
-  function middleware(req) {
+  function middleware(req: any) {
     // Example: Redirect admins from a generic dashboard to the admin panel.
     if (req.nextUrl.pathname.startsWith('/dashboard') && req.nextauth.token?.role === 'admin') {
       return NextResponse.redirect(new URL('/admin', req.url));
@@ -23,7 +23,7 @@ const middleware = withAuth(
       /**
        * @param {{ token: any }} param0
        */
-      authorized: ({ token }) => !!token, // `!!token` checks if the user is logged in.
+      authorized: ({ token }: any) => !!token, // `!!token` checks if the user is logged in.
     },
   }
 );

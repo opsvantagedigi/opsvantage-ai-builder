@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { verifySession } from "@/lib/verify-session"
 import { prisma } from "@/lib/prisma"
 import { sitemapResponseSchema, SitemapResponse } from "@/lib/sitemap-schema"
 import { GoogleGenerativeAI } from "@google/generative-ai"
@@ -20,12 +19,12 @@ export const POST = withErrorHandling(async (req) => {
   const requestId = req.headers.get("x-request-id") || randomUUID()
 
   try {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.email) {
+  const session = await verifySession()
+  if (!session || !session?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+  const user = await prisma.user.findUnique({ where: { email: session?.email } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
 
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { verifySession } from "@/lib/verify-session"
 import { prisma } from "@/lib/prisma"
 import saveGeneratedPage from "@/lib/save-page"
 import { withErrorHandling } from "@/lib/api-error"
@@ -8,15 +7,15 @@ import { logger } from "@/lib/logger"
 import { pageGenerationResponseSchema } from "@/lib/page-generation-schema"
 
 export const POST = withErrorHandling(async (req) => {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.email) {
+  const session = await verifySession()
+  if (!session || !session?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   const body = await req.json()
   const pagePayload = pageGenerationResponseSchema.parse(body.page)
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+  const user = await prisma.user.findUnique({ where: { email: session?.email } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id } })
   if (!member) return NextResponse.json({ error: "No workspace found" }, { status: 404 })
@@ -24,7 +23,7 @@ export const POST = withErrorHandling(async (req) => {
   if (!project) return NextResponse.json({ error: "No project found" }, { status: 404 })
 
   try {
-    const result = await saveGeneratedPage(session.user.email as string, pagePayload)
+    const result = await saveGeneratedPage(session?.email as string, pagePayload)
     return NextResponse.json({ ok: true, pageId: result.pageId, sanityId: result.sanityId })
     } catch (err: unknown) {
       const e = err as Error

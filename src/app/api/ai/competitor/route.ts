@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { verifySession } from '@/lib/verify-session';
 import { analyzeCompetitor } from '@/lib/ai/design-assistant';
 import { logActivity } from '@/lib/audit-logger';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
+    const session = await verifySession();
+    if (!session || !session?.email) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -18,7 +17,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Competitor URL is required' }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+        const user = await prisma.user.findUnique({ where: { email: session?.email } });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         // Fetch competitor content

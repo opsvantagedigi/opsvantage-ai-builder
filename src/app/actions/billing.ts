@@ -1,7 +1,8 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 import { authOptions } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
@@ -18,15 +19,34 @@ import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
  */
 export async function createBillingSessionAction(planId?: string) {
   try {
-    // 1. Authenticate
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    // 1. Authenticate - Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('next-auth.session-token')?.value || 
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+    
+    if (!token) {
       return { error: 'Unauthorized - please sign in' };
+    }
+
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(token, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      return { error: 'Unauthorized - invalid session' };
+    }
+
+    // Extract user email from the verified token
+    const userEmail = sessionPayload.payload.email as string;
+    if (!userEmail) {
+      return { error: 'Unauthorized - no user email in session' };
     }
 
     // 2. Get user from database
     const user = await db.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail },
       select: {
         id: true,
         email: true,
@@ -102,13 +122,33 @@ export async function createBillingSessionAction(planId?: string) {
  */
 export async function getCurrentSubscriptionAction() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    // Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('next-auth.session-token')?.value || 
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+    
+    if (!token) {
       return { error: 'Unauthorized' };
     }
 
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(token, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      return { error: 'Unauthorized - invalid session' };
+    }
+
+    // Extract user email from the verified token
+    const userEmail = sessionPayload.payload.email as string;
+    if (!userEmail) {
+      return { error: 'Unauthorized - no user email in session' };
+    }
+
     const user = await db.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail },
       select: {
         id: true,
         stripePriceId: true,

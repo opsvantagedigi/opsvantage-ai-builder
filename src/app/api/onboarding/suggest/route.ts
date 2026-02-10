@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { verifySession } from "@/lib/verify-session"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
@@ -25,8 +24,8 @@ const SUGGESTION_PROMPTS: Record<string, (data: unknown) => string> = {
 const suggestionResponseSchema = z.object({ suggestion: z.string().min(1) })
 
 export const POST = withErrorHandling(async (req) => {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.email) {
+  const session = await verifySession()
+  if (!session || !session?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   const { field, data } = await req.json()

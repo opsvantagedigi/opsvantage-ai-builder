@@ -3,7 +3,8 @@
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { addDomain, checkDomainConfig } from '@/lib/vercel';
-import { getServerSession } from 'next-auth';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 import { getPlanIdFromStripePrice, getUsageLimit } from '@/config/subscriptions';
 
 interface PublishResult {
@@ -32,12 +33,38 @@ export async function publishSiteAction(
   customDomain?: string
 ): Promise<PublishResult> {
   try {
-    // 1. AUTHENTICATE
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('next-auth.session-token')?.value ||
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+
+    if (!token) {
       return {
         success: false,
         error: 'Unauthorized - please sign in',
+      };
+    }
+
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(token, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      return {
+        success: false,
+        error: 'Unauthorized - invalid session',
+      };
+    }
+
+    // Extract user email and ID from the verified token
+    const userEmail = sessionPayload.payload.email as string;
+    const userId = sessionPayload.payload.sub as string;
+    if (!userEmail || !userId) {
+      return {
+        success: false,
+        error: 'Unauthorized - no user info in session',
       };
     }
 
@@ -58,13 +85,13 @@ export async function publishSiteAction(
     const hasAccess = await db.workspaceMember.findFirst({
       where: {
         user: {
-          email: session.user.email,
+          email: userEmail,
         },
         workspaceId: project.workspaceId,
       },
     });
 
-    if (!hasAccess && project.workspace.ownerId !== (session.user as any).id) {
+    if (!hasAccess && project.workspace.ownerId !== userId) {
       return {
         success: false,
         error: 'Unauthorized - you do not own this project',
@@ -81,7 +108,7 @@ export async function publishSiteAction(
 
     // 4. VALIDATE SUBSCRIPTION
     const user = await db.user.findUnique({
-      where: { id: (session.user as any).id },
+      where: { id: userId },
     });
 
     if (!user || user.subscriptionStatus !== 'active') {

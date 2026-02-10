@@ -1,7 +1,8 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { getServerSession } from 'next-auth';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 import { authOptions } from '@/lib/auth';
 import { randomBytes } from 'crypto';
 import { getPlanById } from '@/config/subscriptions';
@@ -22,17 +23,36 @@ export async function inviteMemberAction(
   role: 'EDITOR' | 'VIEWER' = 'EDITOR'
 ): Promise<InviteMemberResult> {
   try {
-    // 1. AUTHENTICATE
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('next-auth.session-token')?.value || 
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+    
+    if (!sessionToken) {
       return { success: false, error: 'Unauthorized - please sign in' };
+    }
+
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(sessionToken, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      return { success: false, error: 'Unauthorized - invalid session' };
+    }
+
+    // Extract user ID from the verified token
+    const userId = sessionPayload.payload.sub as string;
+    if (!userId) {
+      return { success: false, error: 'Unauthorized - no user ID in session' };
     }
 
     // 2. VERIFY WORKSPACE OWNERSHIP/ACCESS
     const member = await db.workspaceMember.findFirst({
       where: {
         workspaceId,
-        userId: session.user.id,
+        userId: userId,
         role: { in: ['OWNER', 'ADMIN'] }, // Only owner/admin can invite
       },
     });
@@ -114,7 +134,7 @@ export async function inviteMemberAction(
         token,
         role,
         workspaceId,
-        inviterId: session.user.id,
+        inviterId: userId,
         expiresAt,
         status: 'PENDING',
       },
@@ -222,17 +242,36 @@ export async function acceptInvitationAction(token: string): Promise<InviteMembe
  */
 export async function revokeinvitationAction(invitationId: string, workspaceId: string): Promise<InviteMemberResult> {
   try {
-    // 1. AUTHENTICATE
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('next-auth.session-token')?.value || 
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+    
+    if (!sessionToken) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(sessionToken, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      return { success: false, error: 'Unauthorized - invalid session' };
+    }
+
+    // Extract user ID from the verified token
+    const userId = sessionPayload.payload.sub as string;
+    if (!userId) {
+      return { success: false, error: 'Unauthorized - no user ID in session' };
     }
 
     // 2. VERIFY PERMISSION
     const member = await db.workspaceMember.findFirst({
       where: {
         workspaceId,
-        userId: session.user.id,
+        userId: userId,
         role: { in: ['OWNER', 'ADMIN'] },
       },
     });
@@ -268,17 +307,36 @@ export async function revokeinvitationAction(invitationId: string, workspaceId: 
  */
 export async function listPendingInvitationsAction(workspaceId: string) {
   try {
-    // 1. AUTHENTICATE
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('next-auth.session-token')?.value || 
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+    
+    if (!sessionToken) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(sessionToken, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      return { success: false, error: 'Unauthorized - invalid session' };
+    }
+
+    // Extract user ID from the verified token
+    const userId = sessionPayload.payload.sub as string;
+    if (!userId) {
+      return { success: false, error: 'Unauthorized - no user ID in session' };
     }
 
     // 2. VERIFY PERMISSION
     const member = await db.workspaceMember.findFirst({
       where: {
         workspaceId,
-        userId: session.user.id,
+        userId: userId,
         role: { in: ['OWNER', 'ADMIN'] },
       },
     });

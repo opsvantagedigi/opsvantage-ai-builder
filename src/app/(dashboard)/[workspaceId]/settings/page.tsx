@@ -1,4 +1,5 @@
-import { getServerSession } from 'next-auth';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 import { notFound, redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -17,10 +18,33 @@ export default async function SettingsPage({
     params: Promise<{ workspaceId: string }>;
 }) {
     const { workspaceId } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) redirect('/login');
+    
+    // Manually verify the session using the JWT token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('next-auth.session-token')?.value || 
+                 cookieStore.get('__Secure-next-auth.session-token')?.value;
+    
+    if (!token) {
+      redirect('/login');
+    }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    let sessionPayload;
+    try {
+      // Verify the JWT token using the NEXTAUTH_SECRET
+      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+      sessionPayload = await jwtVerify(token, secret);
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      redirect('/login');
+    }
+
+    // Extract user email from the verified token
+    const userEmail = sessionPayload.payload.email as string;
+    if (!userEmail) {
+      redirect('/login');
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: userEmail } });
     if (!user) redirect('/login');
 
     const member = await prisma.workspaceMember.findUnique({

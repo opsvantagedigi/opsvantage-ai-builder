@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { verifySession } from '@/lib/verify-session';
 import { prisma } from '@/lib/prisma';
 import { generateAnalyticsInsights } from '@/lib/ai/design-assistant';
 
 export async function POST(req: Request) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
+    const session = await verifySession();
+    if (!session || !session?.email) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { verifySession } from "@/lib/verify-session"
 import { prisma } from "@/lib/prisma"
 import { onboardingStep1Schema, onboardingPatchSchema } from "@/lib/onboarding-schema"
 import { withErrorHandling } from "@/lib/api-error"
@@ -10,15 +9,15 @@ import { checkSubscription } from "@/lib/subscription"
 // GET: Fetch onboarding state for current user (latest project)
 export const GET = withErrorHandling(async () => {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user?.email) {
+    const session = await verifySession()
+    if (!session || !session?.email) {
       logger.error(`Onboarding GET: Unauthorized. Session: ${JSON.stringify(session)}`)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    logger.info(`Onboarding GET: session. Email: ${session.user.email}`)
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    logger.info(`Onboarding GET: session. Email: ${session?.email}`)
+    const user = await prisma.user.findUnique({ where: { email: session?.email } })
     if (!user) {
-      logger.error(`Onboarding GET: User not found. Email: ${session.user.email}`)
+      logger.error(`Onboarding GET: User not found. Email: ${session?.email}`)
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
     const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
@@ -42,8 +41,8 @@ export const GET = withErrorHandling(async () => {
 
 // POST: Create onboarding record (step 1)
 export const POST = withErrorHandling(async (req) => {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.email) {
+  const session = await verifySession()
+  if (!session || !session?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   const body = await req.json()
@@ -54,9 +53,9 @@ export const POST = withErrorHandling(async (req) => {
   const { businessName, businessType, industry, description } = step1.data
   // Find or create user
   const user = await prisma.user.upsert({
-    where: { email: session.user.email },
+    where: { email: session?.email },
     update: {},
-    create: { email: session.user.email, name: session.user.email.split("@")[0] }
+    create: { email: session?.email, name: session?.email.split("@")[0] }
   })
   // Find or create workspace
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
@@ -117,8 +116,8 @@ export const POST = withErrorHandling(async (req) => {
 
 // PATCH: Update onboarding fields step-by-step
 export const PATCH = withErrorHandling(async (req) => {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.email) {
+  const session = await verifySession()
+  if (!session || !session?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   const body = await req.json()
@@ -128,7 +127,7 @@ export const PATCH = withErrorHandling(async (req) => {
     return NextResponse.json({ error: "Validation Error", details: patch.error.issues }, { status: 400 })
   }
   // Find latest onboarding for user's latest project
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+  const user = await prisma.user.findUnique({ where: { email: session?.email } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
   if (!member) return NextResponse.json({ error: "No workspace found" }, { status: 404 })

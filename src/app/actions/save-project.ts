@@ -1,7 +1,6 @@
 'use server'
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { verifySession } from '@/lib/verify-session';
 import { db } from '@/db';
 
 /**
@@ -11,8 +10,8 @@ import { db } from '@/db';
 export async function saveProjectContentAction(projectId: string, content: any) {
   try {
     // 1. AUTH CHECK
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const session = await verifySession();
+    if (!session?.email) {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -41,8 +40,8 @@ export async function saveProjectContentAction(projectId: string, content: any) 
 export async function loadProjectContentAction(projectId: string) {
   try {
     // 1. AUTH CHECK
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const session = await verifySession();
+    if (!session?.email) {
       return { success: false, error: 'Unauthorized' };
     }
 

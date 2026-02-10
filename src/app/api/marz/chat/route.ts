@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { verifySession } from "@/lib/verify-session";
 import { MarzAgent } from "@/lib/marz/agent-core";
 import { logger } from "@/lib/logger";
 
@@ -8,7 +7,7 @@ import { logger } from "@/lib/logger";
 export async function POST(req: Request) {
   try {
     // 1. Verify user is authenticated
-    const session = await getServerSession(authOptions);
+    const session = await verifySession();
     if (!session) {
       logger.warn("[MARZ Chat] Unauthorized access attempt");
       return NextResponse.json(
@@ -28,11 +27,11 @@ export async function POST(req: Request) {
     }
 
     logger.info(
-      `[MARZ Chat] Message received from ${session.user?.email}: "${message.substring(0, 50)}..."`
+      `[MARZ Chat] Message received from ${session?.email}: "${message.substring(0, 50)}..."`
     );
 
     // 3. Initialize MARZ Agent with user context
-    const agent = new MarzAgent(session.user?.email || "unknown");
+    const agent = new MarzAgent(session?.email || "unknown");
 
     // 4. Process message with MARZ
     const response = await agent.processMessage(
@@ -41,14 +40,14 @@ export async function POST(req: Request) {
     );
 
     logger.info(
-      `[MARZ Chat] Response sent to ${session.user?.email}: "${response.content.substring(0, 50)}..."`
+      `[MARZ Chat] Response sent to ${session?.email}: "${response.content.substring(0, 50)}..."`
     );
 
     // 5. Return response
     return NextResponse.json({
       ...response,
-      userId: session.user?.id,
-      userEmail: session.user?.email,
+      userId: session?.sub,
+      userEmail: session?.email,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

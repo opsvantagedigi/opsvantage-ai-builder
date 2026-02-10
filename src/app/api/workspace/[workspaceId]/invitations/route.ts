@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { verifySession } from '@/lib/verify-session';
 import { db } from '@/lib/db';
 import { randomBytes } from 'crypto';
 import { getPlanById } from '@/config/subscriptions';
@@ -15,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { workspaceId } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await verifySession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -24,7 +23,7 @@ export async function GET(
     const member = await db.workspaceMember.findFirst({
       where: {
         workspaceId,
-        userId: session.user.id,
+        userId: session?.sub,
         role: { in: ['OWNER', 'ADMIN'] },
       },
     });
@@ -75,7 +74,7 @@ export async function POST(
 ) {
   try {
     const { workspaceId } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await verifySession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -93,7 +92,7 @@ export async function POST(
     const member = await db.workspaceMember.findFirst({
       where: {
         workspaceId,
-        userId: session.user.id,
+        userId: session?.sub,
         role: { in: ['OWNER', 'ADMIN'] },
       },
     });
@@ -192,7 +191,7 @@ export async function POST(
         token,
         role,
         workspaceId,
-        inviterId: session.user.id,
+        inviterId: session?.sub,
         expiresAt,
         status: 'PENDING',
       },
