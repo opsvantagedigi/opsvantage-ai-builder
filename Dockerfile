@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# Add this line to fix the Prisma OpenSSL error
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy package files
