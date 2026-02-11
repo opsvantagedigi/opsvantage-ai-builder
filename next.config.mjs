@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   typescript: {
     // Allow production builds to complete even if type errors exist
     ignoreBuildErrors: true,
@@ -16,12 +17,11 @@ const nextConfig = {
       };
     }
 
-    // Map React compiler-runtime imports to the JSX runtime for React 18
     config.resolve.alias = {
       ...config.resolve.alias,
-      // Normalize portabletext React-specific subpaths without masking the toolkit itself
-      '@portabletext/toolkit/react': '@portabletext/react',
-      '@portabletext/block-components/react': '@portabletext/react',
+      // Normalize portabletext React-specific subpaths without masking the toolkit itself.
+      "@portabletext/toolkit/react": "@portabletext/react",
+      "@portabletext/block-components/react": "@portabletext/react",
     };
 
     return config;

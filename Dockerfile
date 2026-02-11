@@ -1,26 +1,27 @@
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
-# Add this line to fix the Prisma OpenSSL error
-RUN apk add --no-cache openssl
-
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy package files
-COPY package*.json ./
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
 
-# The "Nuclear" fix for the Windows/Linux conflict
-RUN npm install --no-package-lock --include=optional --legacy-peer-deps
-
-# Copy the rest of the application
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Generate Prisma client
 RUN npx prisma generate
-
 RUN npm run build
 
-# Expose port
-EXPOSE 3000
-
-# Start the application
-CMD ["npm", "start"]
+FROM base AS runner
+ENV NODE_ENV=production
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --legacy-peer-deps
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
+EXPOSE 8080
+CMD ["sh", "-c", "npm start -- -p ${PORT:-8080}"]
