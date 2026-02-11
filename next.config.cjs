@@ -26,9 +26,20 @@ const nextConfig = {
       react: 'react',
       'react/jsx-runtime': 'react/jsx-runtime',
       'react/jsx-dev-runtime': 'react/jsx-dev-runtime',
+      // Add alias to handle the module resolution issue with next/link
+      'next/link': 'next/link',
+      'next/router': 'next/router',
+      'next/navigation': 'next/navigation',
     };
     
+    // Add a rule to handle the compiler-runtime issue
+    config.resolve.conditionNames = ['require', 'node', 'import'];
+    
     return config;
+  },
+  experimental: {
+    // Enable webpack 5 to handle module resolution better
+    webpackBuildWorker: false,
   },
   // ... your other config
 }

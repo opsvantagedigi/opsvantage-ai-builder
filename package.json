@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build --webpack && npm run postbuild",
+    "build": "prisma generate && next build && npm run postbuild",
     "postbuild": "node scripts/generate-nft.mjs",
     "start": "next start",
     "lint": "eslint",
@@ -45,7 +45,7 @@
     "lru-cache": "^11.2.5",
     "lucide-react": "^0.563.0",
     "next-auth": "^4.24.13",
-    "next": "^14.2.23",
+    "next": "14.2.35",
     "next-sanity": "^12.1.0",
     "path-to-regexp": "^8.3.0",
     "pino": "^10.3.0",
