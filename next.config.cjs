@@ -20,20 +20,15 @@ const nextConfig = {
       };
     }
     
-    // Configure alias for React to ensure proper exports
+    // Configure alias to handle the React compiler-runtime issue
     config.resolve.alias = {
       ...config.resolve.alias,
-      react: 'react',
-      'react/jsx-runtime': 'react/jsx-runtime',
-      'react/jsx-dev-runtime': 'react/jsx-dev-runtime',
-      // Add alias to handle the module resolution issue with next/link
-      'next/link': 'next/link',
-      'next/router': 'next/router',
-      'next/navigation': 'next/navigation',
+      // Explicitly map the problematic import to the correct module
+      'react/compiler-runtime': 'react/jsx-runtime',
+      '@portabletext/editor$': '@portabletext/editor/lib/index.js',
+      '@portabletext/toolkit$': '@portabletext/toolkit/lib/index.js',
+      '@portabletext/types$': '@portabletext/types/lib/index.js',
     };
-    
-    // Add a rule to handle the compiler-runtime issue
-    config.resolve.conditionNames = ['require', 'node', 'import'];
     
     return config;
   },
