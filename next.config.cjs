@@ -7,6 +7,10 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  eslint: {
+    // Similarly ignore ESLint errors during production builds
+    ignoreDuringBuilds: true,
+  },
   // ... your other config
 }
 

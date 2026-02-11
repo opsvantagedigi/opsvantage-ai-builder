@@ -17,8 +17,7 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Force Webpack at the CLI level to stop Turbopack from taking over
-RUN npx next build --webpack
+RUN npm run build
 
 # Expose port
 EXPOSE 3000
