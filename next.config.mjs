@@ -1,9 +1,3 @@
-import { fileURLToPath } from "node:url";
-
-const reactCompilerRuntimeShim = fileURLToPath(
-  new URL("./src/lib/shims/react-compiler-runtime.ts", import.meta.url),
-);
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -22,16 +16,7 @@ const nextConfig = {
       };
     }
 
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      // Resolve packages compiled with the React compiler against a local shim for React 18.
-      "react/compiler-runtime$": reactCompilerRuntimeShim,
-    };
-
     return config;
-  },
-  experimental: {
-    webpackBuildWorker: false,
   },
 };
 
