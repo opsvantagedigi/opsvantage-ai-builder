@@ -35,7 +35,7 @@ interface SiteData {
  * 🌍 PUBLIC STAGE: Renders live websites from published projects
  *
  * This page receives rewritten requests from middleware:
- * - nexus.opsvantage.online → /sites/nexus
+ * - nexus.opsvantagedigital.online → /sites/nexus
  * - my-bakery.com → /sites/my-bakery.com
  *
  * Features:

@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { getPlanIdFromStripePrice, getUsageLimit } from '@/config/subscriptions';
+import { SITE_DOMAIN } from '@/lib/site-config';
 
 interface PublishResult {
   success: boolean;
@@ -165,7 +166,7 @@ export async function publishSiteAction(
     } else {
       // Generate subdomain URL if no custom domain
       const subdomain = project.subdomain || project.id;
-      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'opsvantage.online';
+      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || SITE_DOMAIN;
       liveUrl = `https://${subdomain}.${rootDomain}`;
     }
 

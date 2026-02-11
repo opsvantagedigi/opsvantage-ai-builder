@@ -24,29 +24,44 @@ export function MyDomainsList() {
       }
       setLoading(false);
     }
-    fetchDomains();
+
+    void fetchDomains();
   }, []);
 
   return (
-    <div className="p-8 bg-slate-900/50 border border-slate-800 rounded-2xl mt-12 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-6">My Registered Domains</h2>
-      {loading && <p className="text-slate-400">Loading your domains...</p>}
-      {error && <p className="text-red-400">Error: {error}</p>}
+    <section className="surface-card">
+      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Registered Domains</h2>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Track domain purchases and registration dates for your account.</p>
+
+      {loading && <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">Loading domains...</p>}
+      {error && (
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300">
+          {error}
+        </p>
+      )}
+
       {!loading && !error && (
-        <div className="space-y-4">
+        <div className="mt-4 space-y-3">
           {domains.length > 0 ? (
             domains.map((domain) => (
-              <div key={domain.productId} className="flex justify-between items-center p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="flex items-center gap-3">
-                  <Globe className="text-cyan-400" size={20} />
-                  <span className="font-mono text-lg text-white">{domain.productId}</span>
+              <div
+                key={domain.productId}
+                className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 md:flex-row md:items-center md:justify-between"
+              >
+                <div className="inline-flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-cyan-700 dark:text-cyan-300" />
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{domain.productId}</span>
                 </div>
-                <span className="text-sm text-slate-400">Registered on: {new Date(domain.createdAt).toLocaleDateString()}</span>
+                <span className="text-xs text-slate-600 dark:text-slate-300">
+                  Registered on {new Date(domain.createdAt).toLocaleDateString()}
+                </span>
               </div>
             ))
-          ) : <p className="text-slate-500 text-center py-4">You haven&apos;t registered any domains yet.</p>}
+          ) : (
+            <p className="text-sm text-slate-600 dark:text-slate-300">No registered domains found for this account yet.</p>
+          )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

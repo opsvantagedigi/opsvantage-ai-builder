@@ -116,7 +116,7 @@ const OnboardingFlow = () => {
         try {
             await saveData({ ...formData, status: 'COMPLETED' });
             if (projectId) {
-                router.push(`/generate/${projectId}`);
+                router.push(`/dashboard/${projectId}/builder`);
             } else {
                 setError("Could not find a project ID to start generation.");
             }

@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Check, CreditCard, Loader2, ArrowRight } from 'lucide-react';
 import { createBillingSessionAction, getCurrentSubscriptionAction } from '@/app/actions/billing';
 import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { DashboardShell } from '@/components/layout/DashboardShell';
 
 interface UserSubscription {
   plan: string | null;
@@ -32,170 +33,115 @@ export default function BillingPage() {
       }
       setIsLoading(false);
     };
-    loadSubscription();
+
+    void loadSubscription();
   }, []);
 
   const handleSelectPlan = async (planId: string) => {
+    setIsProcessing(true);
     if (subscription?.plan === planId) {
-      // Already on this plan, open portal
-      setIsProcessing(true);
       await createBillingSessionAction();
     } else {
-      // Switch to this plan
-      setIsProcessing(true);
       await createBillingSessionAction(planId);
     }
+    setIsProcessing(false);
   };
 
   if (isLoading) {
     return (
-      <div className="p-8 min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-      </div>
+      <DashboardShell title="Subscription & Billing" description="Manage plans, usage limits, and billing operations.">
+        <div className="flex min-h-[300px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+        </div>
+      </DashboardShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Subscription & Billing</h1>
-          <p className="text-slate-400">
-            Manage your plan, usage, and billing information
-          </p>
-        </div>
-
-        {/* Current Plan & Usage */}
+    <DashboardShell title="Subscription & Billing" description="Manage your plan, usage limits, and payment workflows.">
+      <div className="space-y-8">
         {subscription && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-2xl p-6 space-y-6"
+            className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 p-6 dark:border-cyan-900/50 dark:from-cyan-950/40 dark:to-blue-950/40"
           >
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-sm text-slate-400 mb-1">Current Plan</p>
-                <h2 className="text-3xl font-bold">{subscription.planName}</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300">Current Plan</p>
+                <h2 className="mt-1 text-3xl font-semibold text-slate-900 dark:text-slate-100">{subscription.planName}</h2>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-400 mb-1">Status</p>
-                <div className="flex items-center gap-2 justify-end">
+              <div className="text-left md:text-right">
+                <p className="text-sm text-slate-600 dark:text-slate-300">Status</p>
+                <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
                   <span
                     className={cn(
-                      'w-2 h-2 rounded-full',
-                      subscription.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                      'h-2.5 w-2.5 rounded-full',
+                      subscription.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500',
                     )}
                   />
-                  <span className="capitalize font-semibold">
-                    {subscription.status || 'None'}
-                  </span>
-                </div>
+                  {subscription.status || 'none'}
+                </p>
               </div>
             </div>
 
-            {/* Usage Meters */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* AI Generations */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-300">AI Generations</span>
-                  <span className="text-cyan-400 font-semibold">
-                    {subscription.usage.aiGenerations.used}/{subscription.usage.aiGenerations.limit}
-                  </span>
-                </div>
-                <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${
-                        (subscription.usage.aiGenerations.used /
-                          subscription.usage.aiGenerations.limit) *
-                        100
-                      }%`,
-                    }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-              </div>
-
-              {/* Sites Published */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-300">Sites Published</span>
-                  <span className="text-cyan-400 font-semibold">
-                    {subscription.usage.sites.used}/{subscription.usage.sites.limit}
-                  </span>
-                </div>
-                <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${
-                        (subscription.usage.sites.used / subscription.usage.sites.limit) *
-                        100
-                      }%`,
-                    }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-              </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <UsageMeter
+                label="AI Generations"
+                used={subscription.usage.aiGenerations.used}
+                limit={subscription.usage.aiGenerations.limit}
+                gradient="from-cyan-500 to-blue-500"
+              />
+              <UsageMeter
+                label="Sites Published"
+                used={subscription.usage.sites.used}
+                limit={subscription.usage.sites.limit}
+                gradient="from-emerald-500 to-teal-500"
+              />
             </div>
 
             {subscription.currentPeriodEnd && (
-              <div className="pt-4 border-t border-slate-700">
-                <p className="text-sm text-slate-400">
-                  Renews on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                </p>
-              </div>
+              <p className="mt-5 text-sm text-slate-600 dark:text-slate-300">
+                Renews on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+              </p>
             )}
-          </motion.div>
+          </motion.section>
         )}
 
-        {/* Plan Selection */}
-        <div>
-          <h3 className="text-xl font-bold mb-6">Choose Your Plan</h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            {SUBSCRIPTION_PLANS.map((plan, idx) => (
-              <motion.div
+        <section>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Choose your plan</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {SUBSCRIPTION_PLANS.map((plan, index) => (
+              <motion.article
                 key={plan.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: index * 0.05 }}
                 className={cn(
-                  'relative rounded-2xl border-2 p-6 space-y-6 transition-all',
+                  'relative flex h-full flex-col rounded-2xl border p-6',
                   subscription?.plan === plan.id
-                    ? 'bg-blue-900/20 border-blue-500 shadow-lg shadow-blue-500/20'
-                    : 'bg-slate-900/50 border-slate-700 hover:border-slate-600'
+                    ? 'border-cyan-500 bg-cyan-50 dark:border-cyan-500 dark:bg-cyan-950/30'
+                    : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900',
                 )}
               >
                 {plan.isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-1 rounded-full text-sm font-bold">
-                      Popular
-                    </span>
-                  </div>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white dark:bg-cyan-500 dark:text-slate-950">
+                    Popular
+                  </span>
                 )}
 
-                <div>
-                  <h4 className="text-2xl font-bold">{plan.name}</h4>
-                  <p className="text-slate-400 text-sm mt-1 mb-4">
-                    {plan.description}
-                  </p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">${plan.price}</span>
-                    <span className="text-slate-400">/month</span>
-                  </div>
-                </div>
+                <h4 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{plan.name}</h4>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{plan.description}</p>
+                <p className="mt-4 text-3xl font-semibold text-slate-900 dark:text-slate-100">
+                  ${plan.price}
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">/month</span>
+                </p>
 
-                {/* Features */}
-                <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{feature}</span>
+                <ul className="mt-5 space-y-2">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                      <Check className="mt-0.5 h-4 w-4 text-emerald-500" />
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -204,30 +150,63 @@ export default function BillingPage() {
                   onClick={() => handleSelectPlan(plan.id)}
                   disabled={isProcessing}
                   className={cn(
-                    'w-full font-semibold gap-2',
+                    'mt-6 w-full gap-2 !normal-case !tracking-normal',
                     subscription?.plan === plan.id
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-white text-black hover:bg-slate-100'
+                      ? 'bg-slate-900 text-white hover:bg-slate-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400'
+                      : 'bg-white text-slate-900 ring-1 ring-slate-300 hover:bg-slate-100 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white',
                   )}
                 >
                   {isProcessing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : subscription?.plan === plan.id ? (
                     <>
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard className="h-4 w-4" />
                       Manage Plan
                     </>
                   ) : (
                     <>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="h-4 w-4" />
                       Upgrade
                     </>
                   )}
                 </Button>
-              </motion.div>
+              </motion.article>
             ))}
           </div>
-        </div>
+        </section>
+      </div>
+    </DashboardShell>
+  );
+}
+
+function UsageMeter({
+  label,
+  used,
+  limit,
+  gradient,
+}: {
+  label: string;
+  used: number;
+  limit: number;
+  gradient: string;
+}) {
+  const width = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+
+  return (
+    <div>
+      <p className="mb-2 flex items-center justify-between text-sm text-slate-700 dark:text-slate-200">
+        <span>{label}</span>
+        <span className="font-semibold">
+          {used}/{limit}
+        </span>
+      </p>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+        <motion.div
+          className={`h-full bg-gradient-to-r ${gradient}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${width}%` }}
+          transition={{ duration: 0.4 }}
+        />
       </div>
     </div>
   );

@@ -19,6 +19,13 @@ const staticRoutes = [
   "/tools/slogan-ai",
   "/onboarding",
   "/onboarding/wizard",
+  "/legal",
+  "/privacy",
+  "/terms",
+  "/security",
+  "/legal/privacy",
+  "/legal/terms",
+  "/legal/security",
   "/login",
   "/register",
 ];

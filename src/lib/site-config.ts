@@ -29,3 +29,10 @@ export const TOOL_LINKS = [
   { href: "/tools/slogan-ai", label: "Slogan Generator" },
   { href: "/onboarding/wizard", label: "Launch Wizard" },
 ];
+
+export const LEGAL_LINKS = [
+  { href: "/legal", label: "Legal Center" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
+  { href: "/security", label: "Security" },
+];

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { Header } from "@/components/layout/Header";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { Footer } from "@/components/layout/Footer";
 
 const HIDDEN_PREFIXES = ["/dashboard", "/admin", "/studio", "/generate", "/sites"];
@@ -31,7 +31,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      <Header />
+      <PublicHeader />
       <div className="flex min-h-[calc(100vh-4rem)] flex-col">
         <div className="flex-1">{children}</div>
         <Footer />

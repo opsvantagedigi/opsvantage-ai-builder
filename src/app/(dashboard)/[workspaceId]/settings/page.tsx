@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { notFound, redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BrandingSettings } from '@/components/dashboard/BrandingSettings';
 import { AuditLogList } from '@/components/dashboard/AuditLogList';
@@ -9,137 +8,145 @@ import { CompetitorAnalysis } from '@/components/dashboard/CompetitorAnalysis';
 import { AnalyticsInsights } from '@/components/dashboard/AnalyticsInsights';
 import { TeamManager } from '@/components/dashboard/TeamManager';
 import { BillingManager } from '@/components/dashboard/BillingManager';
+import { DashboardShell } from '@/components/layout/DashboardShell';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage({
-    params,
+  params,
 }: {
-    params: Promise<{ workspaceId: string }>;
+  params: Promise<{ workspaceId: string }>;
 }) {
-    const { workspaceId } = await params;
-    
-    // Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('next-auth.session-token')?.value || 
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-    
-    if (!token) {
-      redirect('/login');
-    }
+  const { workspaceId } = await params;
 
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(token, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      redirect('/login');
-    }
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get('next-auth.session-token')?.value ||
+    cookieStore.get('__Secure-next-auth.session-token')?.value;
 
-    // Extract user email from the verified token
-    const userEmail = sessionPayload.payload.email as string;
-    if (!userEmail) {
-      redirect('/login');
-    }
+  if (!token) {
+    redirect('/login');
+  }
 
-    const user = await prisma.user.findUnique({ where: { email: userEmail } });
-    if (!user) redirect('/login');
+  let sessionPayload;
+  try {
+    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+    sessionPayload = await jwtVerify(token, secret);
+  } catch (error) {
+    console.error('Session verification failed:', error);
+    redirect('/login');
+  }
 
-    const member = await prisma.workspaceMember.findUnique({
-        where: {
-            workspaceId_userId: {
-                workspaceId,
-                userId: user.id,
-            },
-        },
-    });
+  const userEmail = sessionPayload.payload.email as string;
+  if (!userEmail) {
+    redirect('/login');
+  }
 
-    if (!member || (member.role !== 'OWNER' && member.role !== 'ADMIN')) {
-        return (
-            <div className="p-8">
-                <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
-                <p>You do not have permission to view this page.</p>
-            </div>
-        );
-    }
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  if (!user) {
+    redirect('/login');
+  }
 
-    const workspace = await prisma.workspace.findUnique({
-        where: { id: workspaceId },
-        include: {
-            auditLogs: {
-                take: 50,
-                orderBy: { createdAt: 'desc' },
-            }
-        }
-    });
+  const member = await prisma.workspaceMember.findUnique({
+    where: {
+      workspaceId_userId: {
+        workspaceId,
+        userId: user.id,
+      },
+    },
+  });
 
-    if (!workspace) notFound();
-
+  if (!member || (member.role !== 'OWNER' && member.role !== 'ADMIN')) {
     return (
-        <div className="container mx-auto py-8 px-4 max-w-5xl">
-            <h1 className="text-3xl font-bold mb-8">Workspace Settings</h1>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 space-y-12">
-                    {/* Branding Section */}
-                    <section id="branding">
-                        <BrandingSettings
-                            workspaceId={workspaceId}
-                            initialData={{
-                                brandingLogo: (workspace as any).brandingLogo,
-                                brandingColors: (workspace as any).brandingColors,
-                                customDashboardDomain: (workspace as any).customDashboardDomain,
-                            }}
-                        />
-                    </section>
-
-                    {/* Competitor Analysis Section */}
-                    <section id="competitor-analysis">
-                        <CompetitorAnalysis workspaceId={workspaceId} />
-                    </section>
-
-                    {/* Analytics Insights Section */}
-                    <section id="analytics-insights">
-                        <AnalyticsInsights workspaceId={workspaceId} />
-                    </section>
-
-                    {/* Team Section */}
-                    <section id="team">
-                        <TeamManager workspaceId={workspaceId} currentUserId={user.email!} />
-                    </section>
-
-                    {/* Billing Section - OWNER only */}
-                    {member.role === 'OWNER' && (
-                        <section id="billing-mgmt">
-                            <BillingManager workspaceId={workspaceId} />
-                        </section>
-                    )}
-
-                    {/* Audit Logs Section */}
-                    <section id="audit-logs">
-                        <h2 className="text-xl font-semibold mb-4">Audit Logs</h2>
-                        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                            <AuditLogList logs={(workspace as any).auditLogs} />
-                        </div>
-                    </section>
-                </div>
-
-                {/* Sidebar Nav */}
-                <div className="hidden md:block">
-                    <nav className="sticky top-8 space-y-1">
-                        <a href="#branding" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Branding</a>
-                        <a href="#competitor-analysis" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Competitor Analysis</a>
-                        <a href="#analytics-insights" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">AI Optimization</a>
-                        <a href="#team" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Team</a>
-                        {member.role === 'OWNER' && (
-                            <a href="#billing-mgmt" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Billing</a>
-                        )}
-                        <a href="#audit-logs" className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md">Audit Logs</a>
-                    </nav>
-                </div>
-            </div>
+      <DashboardShell title="Workspace Settings" description="Administrative access is required for this workspace.">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300">
+          <h2 className="text-xl font-semibold">Access denied</h2>
+          <p className="mt-2 text-sm">You do not have permission to view this workspace settings page.</p>
         </div>
+      </DashboardShell>
     );
+  }
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    include: {
+      auditLogs: {
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
+
+  if (!workspace) {
+    notFound();
+  }
+
+  return (
+    <DashboardShell title="Workspace Settings" description="Configure branding, governance, and AI optimization controls for this workspace.">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="space-y-8 md:col-span-2">
+          <section id="branding" className="surface-card !p-0 overflow-hidden">
+            <BrandingSettings
+              workspaceId={workspaceId}
+              initialData={{
+                brandingLogo: (workspace as any).brandingLogo,
+                brandingColors: (workspace as any).brandingColors,
+                customDashboardDomain: (workspace as any).customDashboardDomain,
+              }}
+            />
+          </section>
+
+          <section id="competitor-analysis" className="surface-card !p-0 overflow-hidden">
+            <CompetitorAnalysis workspaceId={workspaceId} />
+          </section>
+
+          <section id="analytics-insights" className="surface-card !p-0 overflow-hidden">
+            <AnalyticsInsights workspaceId={workspaceId} />
+          </section>
+
+          <section id="team" className="surface-card !p-0 overflow-hidden">
+            <TeamManager workspaceId={workspaceId} currentUserId={user.email!} />
+          </section>
+
+          {member.role === 'OWNER' && (
+            <section id="billing-mgmt" className="surface-card !p-0 overflow-hidden">
+              <BillingManager workspaceId={workspaceId} />
+            </section>
+          )}
+
+          <section id="audit-logs" className="surface-card !p-0 overflow-hidden">
+            <div className="border-b border-slate-200 p-6 dark:border-slate-800">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Audit Logs</h2>
+            </div>
+            <AuditLogList logs={(workspace as any).auditLogs} />
+          </section>
+        </div>
+
+        <aside className="hidden md:block">
+          <nav className="sticky top-24 space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <a href="#branding" className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+              Branding
+            </a>
+            <a href="#competitor-analysis" className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+              Competitor Analysis
+            </a>
+            <a href="#analytics-insights" className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+              AI Optimization
+            </a>
+            <a href="#team" className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+              Team
+            </a>
+            {member.role === 'OWNER' && (
+              <a href="#billing-mgmt" className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+                Billing
+              </a>
+            )}
+            <a href="#audit-logs" className="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+              Audit Logs
+            </a>
+          </nav>
+        </aside>
+      </div>
+    </DashboardShell>
+  );
 }

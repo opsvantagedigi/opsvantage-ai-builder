@@ -1,172 +1,167 @@
 'use client'
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { checkDomainAvailabilityAction } from '@/app/actions/domain-actions';
-import { Loader2, CheckCircle, XCircle, Search, Globe, ShieldCheck, Sparkles } from 'lucide-react';
-import { Button } from '../ui/button';
+import { CheckCircle2, Globe, Loader2, Search, ShieldCheck, XCircle } from 'lucide-react';
+
+type DomainResult = {
+  domain: string;
+  status: 'free' | 'taken' | string;
+  isPremium?: boolean;
+  price?: {
+    amount: number;
+    currency: string;
+  };
+};
 
 export function DomainSearchInput() {
-    const [query, setQuery] = useState('');
-    const [result, setResult] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState<DomainResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleSearch = async () => {
-        if (!query.includes('.')) {
-            setError("Invalid format. MARZ requires a TLD (e.g., .com, .nz)");
-            return;
-        }
+  const handleSearch = async () => {
+    if (!query.includes('.')) {
+      setError('Enter a full domain including extension (example.com).');
+      return;
+    }
 
-        setLoading(true);
-        setResult(null);
-        setError(null);
+    setLoading(true);
+    setResult(null);
+    setError(null);
 
-        try {
-            // Simulate MARZ Thinking Delay for high-end feel
-            await new Promise(r => setTimeout(r, 1200));
+    try {
+      const data = await checkDomainAvailabilityAction(query.trim().toLowerCase());
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
 
-            const data = await checkDomainAvailabilityAction(query);
+      setResult(data as DomainResult);
+    } catch {
+      setError('Domain lookup failed. Please retry in a moment.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (data.error) {
-                setError(data.error);
-            } else {
-                setResult(data);
-            }
-        } catch (err) {
-            setError("Critical handshake error. System re-routing...");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const showAvailable = result?.status === 'free';
 
-    return (
-        <div className="w-full max-w-2xl mx-auto">
-            {/* 1. THE SEARCH BAR (Glassmorphism 2.0) */}
-            <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-cyan-500/20 rounded-[22px] blur-xl opacity-0 group-focus-within:opacity-100 transition duration-1000"></div>
-                <div className="relative flex items-center bg-slate-950/80 backdrop-blur-2xl rounded-2xl border border-white/10 p-2 shadow-2xl transition-all group-focus-within:border-cyan-500/30">
-                    <Globe className={`w-5 h-5 ml-4 transition-colors ${loading ? 'text-cyan-400 animate-pulse' : 'text-slate-500'}`} />
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => {
-                            setQuery(e.target.value.toLowerCase());
-                            if (error) setError(null);
-                        }}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                        placeholder="Search your future identity (e.g. vision-ai.com)..."
-                        className="w-full h-12 bg-transparent border-none outline-none pl-4 text-white placeholder:text-slate-700 font-bold"
-                    />
-                    <Button
-                        onClick={handleSearch}
-                        disabled={loading}
-                        className={`h-12 px-8 rounded-xl transition-premium flex items-center gap-2 ${loading
-                            ? 'bg-slate-900 text-slate-500'
-                            : 'bg-white text-black hover:bg-slate-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.1)]'
-                            }`}
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span className="text-[10px] font-black tracking-widest uppercase">Analyzing</span>
-                            </>
-                        ) : (
-                            <>
-                                <Search className="w-4 h-4" />
-                                <span className="text-[10px] font-black tracking-widest uppercase">Verify</span>
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 md:flex-row">
+          <label htmlFor="domain-search" className="sr-only">
+            Domain search
+          </label>
+          <div className="relative flex-1">
+            <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+            <input
+              id="domain-search"
+              type="text"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                if (error) {
+                  setError(null);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  void handleSearch();
+                }
+              }}
+              placeholder="Search a domain (example.com)"
+              className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-cyan-900/50"
+            />
+          </div>
 
-            {/* 2. ERROR STATE */}
-            <AnimatePresence>
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="mt-3 px-4 text-xs font-bold text-red-400/80 flex items-center gap-2 uppercase tracking-tighter"
-                    >
-                        <XCircle className="w-3.5 h-3.5" />
-                        {error}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* 3. THE RESULTS PANEL (Neural Reveal) */}
-            <AnimatePresence>
-                {result && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                        className="mt-6"
-                    >
-                        <div className="glass-luminous rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between border border-white/5 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-cyan-500/10 transition-colors" />
-
-                            <div className="flex items-center gap-6">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${result.status === 'free'
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
-                                    : 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
-                                    }`}>
-                                    {result.status === 'free' ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-xl font-display font-black text-white tracking-tight">{result.domain}</h3>
-                                        {result.isPremium && (
-                                            <span className="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-400 text-[8px] font-black uppercase tracking-widest border border-yellow-500/30">Premium</span>
-                                        )}
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                                        {result.status === 'free' ? (
-                                            <>
-                                                <Sparkles className="w-3 h-3 text-cyan-500" />
-                                                Validated for Digital Architecture
-                                            </>
-                                        ) : (
-                                            'Synchronized node unavailable'
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {result.status === 'free' && result.price && (
-                                <div className="flex items-center gap-8 mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 border-white/5 w-full md:w-auto justify-between md:justify-end">
-                                    <div className="text-right">
-                                        <div className="text-3xl font-display font-black text-white tracking-tighter">
-                                            ${result.price.amount}
-                                        </div>
-                                        <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">
-                                            {result.price.currency} / ANNUAL Uplink
-                                        </div>
-                                    </div>
-                                    <Button className="h-14 px-10 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:scale-105 transition-premium shadow-[0_10px_30px_rgba(37,99,235,0.3)] group-hover:shadow-[0_10px_40px_rgba(37,99,235,0.5)] active:scale-95">
-                                        Secure Entry
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* 4. TRUST BADGES (Neural Sync) */}
-            {!result && !loading && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.5 }}
-                    className="mt-8 flex flex-wrap justify-center gap-8 text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]"
-                >
-                    <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-slate-700" /> ICANN Accredited Node</span>
-                    <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-slate-700" /> Instant DNS Propagation</span>
-                    <span className="flex items-center gap-2"><Sparkles className="w-4 h-4 text-slate-700" /> Enterprise SSL Provisioned</span>
-                </motion.div>
+          <button
+            type="button"
+            onClick={() => void handleSearch()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking
+              </>
+            ) : (
+              <>
+                <Search className="h-4 w-4" />
+                Check Domain
+              </>
             )}
+          </button>
         </div>
-    );
+      </div>
+
+      {error && (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300">
+          {error}
+        </p>
+      )}
+
+      <AnimatePresence>
+        {result && (
+          <motion.article
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <span
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border ${
+                    showAvailable
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-300'
+                      : 'border-red-200 bg-red-50 text-red-600 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300'
+                  }`}
+                >
+                  {showAvailable ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                </span>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                    {showAvailable ? 'Available' : 'Unavailable'}
+                  </p>
+                  <h3 className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">{result.domain}</h3>
+                  {result.isPremium && (
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-600 dark:text-amber-300">
+                      Premium domain
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {showAvailable && result.price && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Estimated annual price</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {result.price.currency} {result.price.amount}
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.article>
+        )}
+      </AnimatePresence>
+
+      {!result && !loading && (
+        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300">
+          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-700 dark:bg-slate-900">
+            <ShieldCheck className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-300" />
+            ICANN-accredited search path
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-700 dark:bg-slate-900">
+            <Globe className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-300" />
+            Domain + SSL workflow support
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }

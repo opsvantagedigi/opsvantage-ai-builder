@@ -1,12 +1,5 @@
 import Link from "next/link";
-import { PRODUCT_LINKS, RESOURCE_LINKS, TOOL_LINKS } from "@/lib/site-config";
-
-const legalLinks = [
-  { href: "/docs", label: "Documentation" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/enterprise", label: "Enterprise" },
-  { href: "/onboarding", label: "Launch a Project" },
-];
+import { LEGAL_LINKS, PRODUCT_LINKS, RESOURCE_LINKS, SITE_DOMAIN, TOOL_LINKS } from "@/lib/site-config";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -27,6 +20,7 @@ export function Footer() {
             Autonomous AI website operations for founders, teams, and agencies. Build, launch, host, secure, and optimize
             from one operating system.
           </p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{SITE_DOMAIN}</p>
         </div>
 
         <FooterColumn title="Platform" links={PRODUCT_LINKS} />
@@ -38,7 +32,7 @@ export function Footer() {
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 text-xs text-slate-500 md:flex-row md:items-center md:justify-between md:px-6 dark:text-slate-400">
           <p>© {year} OpsVantage Digital Pty Ltd. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-4">
-            {legalLinks.map((link) => (
+            {LEGAL_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="transition hover:text-slate-900 dark:hover:text-slate-100">
                 {link.label}
               </Link>

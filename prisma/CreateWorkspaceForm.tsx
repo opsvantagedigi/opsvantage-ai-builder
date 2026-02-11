@@ -3,26 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-/**
- * A form component for creating a new workspace.
- * It calls the `/api/workspaces` endpoint.
- */
 export function CreateWorkspaceForm() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
     setError(null);
 
     if (!name.trim()) {
       setError('Workspace name cannot be empty.');
-      setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
 
     try {
       const response = await fetch('/api/workspaces', {
@@ -30,55 +26,62 @@ export function CreateWorkspaceForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: name.trim() }),
       });
 
+      const payload = (await response.json()) as { error?: string };
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create workspace.');
+        throw new Error(payload.error || 'Failed to create workspace.');
       }
 
-      const newWorkspace = await response.json();
-
-      // On success, refresh the current route to reflect the new data.
-      // In a real app, you might redirect to the new workspace:
-      // router.push(`/dashboard/${newWorkspace.slug}`);
-      router.refresh();
-
-      // Optionally, clear the form and show a success message (e.g., with a toast notification).
       setName('');
-    } catch (err: any) {
-      setError(err.message);
+      router.refresh();
+    } catch (caughtError) {
+      const message = caughtError instanceof Error ? caughtError.message : 'Failed to create workspace.';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="p-6 border rounded-lg max-w-lg mx-auto my-10 bg-white shadow">
-      <h2 className="text-xl font-semibold mb-4">Create a New Workspace</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="workspaceName" className="block text-sm font-medium text-gray-700 mb-1">
+    <section className="surface-card">
+      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Create a Workspace</h2>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+        Workspaces separate projects, team permissions, and billing boundaries.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div>
+          <label htmlFor="workspaceName" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Workspace Name
           </label>
           <input
             id="workspaceName"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Acme Inc."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Acme Growth Team"
             disabled={isLoading}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-cyan-900/50"
           />
         </div>
 
-        {error && <p className="mb-4 text-sm text-red-600">Error: {error}</p>}
+        {error && (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300">
+            {error}
+          </p>
+        )}
 
-        <button type="submit" disabled={isLoading} className="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
-          {isLoading ? 'Creating...' : 'Create Workspace'}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="button-primary w-full disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isLoading ? 'Creating workspace...' : 'Create Workspace'}
         </button>
       </form>
-    </div>
+    </section>
   );
 }
