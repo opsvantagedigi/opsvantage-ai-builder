@@ -17,9 +17,7 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# We use npx to ensure the container finds the local 'next' binary
-# Force the use of Webpack to avoid Turbopack configuration conflicts
-RUN npx next build --webpack
+RUN npm run build
 
 # Expose port
 EXPOSE 3000

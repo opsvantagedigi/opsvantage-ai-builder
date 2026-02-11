@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build && npm run postbuild",
+    "build": "prisma generate && next build --webpack && npm run postbuild",
     "postbuild": "node scripts/generate-nft.mjs",
     "start": "next start",
     "lint": "eslint",
