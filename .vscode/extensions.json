@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "github.copilot-chat",
-        "csstools.postcss"
+        "csstools.postcss",
+        "googlecloudtools.cloudcode"
     ]
 }
