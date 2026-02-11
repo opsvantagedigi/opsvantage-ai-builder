@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # The "Nuclear" fix for the Windows/Linux conflict
-RUN npm install --no-package-lock --include=optional
+RUN npm install --no-package-lock --include=optional --legacy-peer-deps
 
 # Copy the rest of the application
 COPY . .
