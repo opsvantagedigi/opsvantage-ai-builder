@@ -19,17 +19,31 @@ const nextConfig = {
         fs: false,
       };
     }
-    
+
     // Configure alias to handle the React compiler-runtime issue
     config.resolve.alias = {
       ...config.resolve.alias,
-      // Explicitly map the problematic import to the correct module
+      // Map the problematic compiler-runtime import to the correct path
       'react/compiler-runtime': 'react/jsx-runtime',
-      '@portabletext/editor$': '@portabletext/editor/lib/index.js',
-      '@portabletext/toolkit$': '@portabletext/toolkit/lib/index.js',
-      '@portabletext/types$': '@portabletext/types/lib/index.js',
+      // Handle portable text modules that are causing issues
+      '@portabletext/toolkit': '@portabletext/toolkit/react',
+      '@portabletext/block-components': '@portabletext/block-components/react',
     };
     
+    // Add a rule to handle problematic modules by replacing import strings
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      test: /\.js$/,
+      loader: function(source) {
+        // Replace problematic import statements in the source
+        return source.replace(
+          /['"]react\/compiler-runtime['"]/g,
+          '"react/jsx-runtime"'
+        );
+      },
+      include: /node_modules\/(@portabletext|sanity)/,
+    });
+
     return config;
   },
   experimental: {
