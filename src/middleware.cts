@@ -33,5 +33,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)"],
+  matcher: ["/((?!api/|_next/|_static|[\\w-]+\\.\\w+).*)"],
 };
