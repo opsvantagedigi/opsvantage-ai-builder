@@ -1,4 +1,4 @@
-eimport { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
