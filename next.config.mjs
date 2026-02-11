@@ -1,6 +1,11 @@
+import { fileURLToPath } from "node:url";
+
+const reactCompilerRuntimeShim = fileURLToPath(
+  new URL("./src/lib/shims/react-compiler-runtime.ts", import.meta.url),
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  distDir: process.env.NEXT_DIST_DIR || ".next",
   typescript: {
     // Allow production builds to complete even if type errors exist
     ignoreBuildErrors: true,
@@ -19,9 +24,8 @@ const nextConfig = {
 
     config.resolve.alias = {
       ...config.resolve.alias,
-      // Normalize portabletext React-specific subpaths without masking the toolkit itself.
-      "@portabletext/toolkit/react": "@portabletext/react",
-      "@portabletext/block-components/react": "@portabletext/react",
+      // Resolve packages compiled with the React compiler against a local shim for React 18.
+      "react/compiler-runtime$": reactCompilerRuntimeShim,
     };
 
     return config;
