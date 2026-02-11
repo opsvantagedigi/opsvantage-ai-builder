@@ -1,85 +1,129 @@
-"use client";
+import Link from "next/link";
+import { BookOpenText, BotMessageSquare, FileCheck2, Layers3, ServerCog } from "lucide-react";
 
-import Link from 'next/link';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { Book, FileText, Activity, ArrowLeft, ChevronRight } from 'lucide-react';
+const docsSections = [
+  {
+    icon: BookOpenText,
+    title: "Platform Overview",
+    description: "Understand how OpsVantage connects AI planning, page generation, publishing, and operations.",
+    href: "/docs#platform-overview",
+  },
+  {
+    icon: Layers3,
+    title: "Implementation Guides",
+    description: "Step-by-step setup for projects, workspaces, domains, and launch governance.",
+    href: "/docs#implementation-guides",
+  },
+  {
+    icon: ServerCog,
+    title: "Deployment Playbooks",
+    description: "Cloud Run deployment, environment controls, and production checks for reliable releases.",
+    href: "/docs#deployment-playbooks",
+  },
+  {
+    icon: BotMessageSquare,
+    title: "AI Workflow Patterns",
+    description: "Practical frameworks for prompts, content quality review, and iterative optimization.",
+    href: "/docs#ai-workflow-patterns",
+  },
+];
 
 export default function DocsPage() {
-    return (
-        <div className="mesh-gradient min-h-screen flex flex-col selection:bg-blue-500/30 overflow-hidden">
-            <Header />
-
-            <main className="grow pt-40 pb-24 px-6">
-                <div className="max-w-4xl mx-auto">
-                    <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-12 group">
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-sm font-bold uppercase tracking-widest">Back to Universe</span>
-                    </Link>
-
-                    <header className="mb-24">
-                        <h1 className="text-6xl md:text-8xl font-display font-black text-white mb-8 tracking-tighter">
-                            Neural <span className="text-gradient-deep">Knowledge.</span>
-                        </h1>
-                        <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
-                            Everything you need to build, deploy, and scale with OpsVantage AI. Explore our technical blueprints and strategic guides.
-                        </p>
-                    </header>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <DocCard
-                            icon={<Book className="w-6 h-6 text-blue-400" />}
-                            title="Getting Started"
-                            desc="The essential guide to launching your first AI-generated project."
-                            href="https://github.com/opsvantagedigi/opsvantage-ai-builder/blob/main/getting-started.md"
-                        />
-                        <DocCard
-                            icon={<FileText className="w-6 h-6 text-emerald-400" />}
-                            title="Deployment Guide"
-                            desc="Advanced strategies for edge deployment and domain management."
-                            href="https://github.com/opsvantagedigi/opsvantage-ai-builder/blob/main/docs/deployment_guide.md"
-                        />
-                        <DocCard
-                            icon={<Activity className="w-6 h-6 text-purple-400" />}
-                            title="API Reference"
-                            desc="Deep dive into our neural endpoints and integration patterns."
-                            href="/onboarding"
-                        />
-                        <DocCard
-                            icon={<FileText className="w-6 h-6 text-orange-400" />}
-                            title="Brand Identity"
-                            desc="Maintaining visual precision with our design system."
-                            href="/onboarding"
-                        />
-                    </div>
-
-                    <div className="mt-24 p-12 glass rounded-[32px] border border-white/5 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-blue-600/20 transition-colors" />
-                        <h3 className="text-2xl font-display font-bold text-white mb-4 tracking-tight">Need technical support?</h3>
-                        <p className="text-slate-400 mb-8 max-w-lg">Our neural engineers are standing by to help you solve complex deployment architecture challenges.</p>
-                        <Link href="/onboarding" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-premium">
-                            Contact Ops Support <ChevronRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-                </div>
-            </main>
-
-            <Footer />
+  return (
+    <div className="mesh-gradient py-10 md:py-14">
+      <section className="section-shell">
+        <div className="surface-glass p-8 md:p-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Documentation</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-slate-100">
+            Build With Clarity. Operate With Confidence.
+          </h1>
+          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
+            This documentation hub is designed for founders, operators, and technical teams running website operations on
+            OpsVantage Digital.
+          </p>
         </div>
-    );
+      </section>
+
+      <section className="section-shell py-8" id="platform-overview">
+        <div className="grid gap-4 md:grid-cols-2">
+          {docsSections.map((section) => {
+            const Icon = section.icon;
+            return (
+              <article key={section.title} className="surface-card">
+                <Icon className="h-5 w-5 text-cyan-700 dark:text-cyan-300" />
+                <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{section.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{section.description}</p>
+                <Link href={section.href} className="mt-4 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200">
+                  Read section
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="section-shell py-8" id="implementation-guides">
+        <article className="surface-card p-8 md:p-10">
+          <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl dark:text-slate-100">Core Guides</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <GuideCard
+              title="Workspace Setup"
+              description="Define teams, permissions, and delivery workflows before your first production launch."
+            />
+            <GuideCard
+              title="Content + Design Workflow"
+              description="Use AI generation with review checkpoints for quality, consistency, and brand fidelity."
+            />
+            <GuideCard
+              title="Publishing + Operations"
+              description="Connect domains, issue certificates, deploy updates, and monitor post-launch performance."
+            />
+          </div>
+        </article>
+      </section>
+
+      <section className="section-shell py-8" id="deployment-playbooks">
+        <article className="surface-glass p-8 md:p-10">
+          <div className="flex items-start gap-3">
+            <FileCheck2 className="mt-1 h-5 w-5 text-cyan-700 dark:text-cyan-300" />
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl dark:text-slate-100">Production Readiness Checklist</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Confirm domain mapping, SSL, environment variables, and webhook health before every production release.
+              </p>
+              <div className="mt-5">
+                <Link href="/onboarding" className="button-primary">
+                  Open Launch Checklist
+                </Link>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section className="section-shell py-8 pb-16" id="ai-workflow-patterns">
+        <article className="surface-card p-8 md:p-10">
+          <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl dark:text-slate-100">AI Workflow Patterns</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Use a repeatable cycle for high-quality website output: define intent, generate drafts, run structured review,
+            and publish with measurable acceptance criteria.
+          </p>
+          <ul className="mt-4 space-y-2">
+            <li className="text-sm text-slate-700 dark:text-slate-200">1. Scope prompt inputs with business outcomes and audience segments.</li>
+            <li className="text-sm text-slate-700 dark:text-slate-200">2. Validate copy for clarity, compliance, and conversion readiness.</li>
+            <li className="text-sm text-slate-700 dark:text-slate-200">3. Version, publish, and monitor performance feedback loops.</li>
+          </ul>
+        </article>
+      </section>
+    </div>
+  );
 }
 
-function DocCard({ icon, title, desc, href }: { icon: React.ReactNode, title: string, desc: string, href: string }) {
-    return (
-        <Link href={href} className="glass p-8 rounded-3xl border border-white/5 hover:border-blue-500/30 hover:bg-white/5 transition-premium group">
-            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-blue-600/20 transition-colors">
-                {icon}
-            </div>
-            <h3 className="text-xl font-display font-bold text-white mb-2 tracking-tight group-hover:text-blue-400 transition-colors">{title}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">{desc}</p>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-500">
-                Read Spec <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-            </div>
-        </Link>
-    );
+function GuideCard({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-700">
+      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
+    </div>
+  );
 }

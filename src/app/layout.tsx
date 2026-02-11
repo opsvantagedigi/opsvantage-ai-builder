@@ -1,15 +1,42 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Manrope, Space_Grotesk } from "next/font/google";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import { SiteShell } from "@/components/layout/SiteShell";
+import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-manrope",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
 });
 
 export const metadata: Metadata = {
-  title: "OpsVantage Digital - AI Website Builder",
-  description: "Build, deploy, and scale AI-powered websites with advanced analytics, team collaboration, and API access. Coming March 13, 2026.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "OpsVantage Digital | Autonomous AI Website Builder",
+    template: "%s | OpsVantage Digital",
+  },
+  description:
+    "OpsVantage Digital is an autonomous AI website builder for high-performance brands. Design, deploy, host, secure, and scale from one platform.",
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    title: "OpsVantage Digital | Autonomous AI Website Builder",
+    description:
+      "Build and operate enterprise-grade websites with AI workflows, managed infrastructure, integrated domains, and security automation.",
+    siteName: "OpsVantage Digital",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OpsVantage Digital | Autonomous AI Website Builder",
+    description:
+      "Build and operate enterprise-grade websites with AI workflows, managed infrastructure, integrated domains, and security automation.",
+  },
 };
 
 export default function RootLayout({
@@ -18,11 +45,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} antialiased`}
-      >
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
+        <ThemeProvider>
+          <SiteShell>{children}</SiteShell>
+        </ThemeProvider>
       </body>
     </html>
   );

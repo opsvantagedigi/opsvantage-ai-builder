@@ -1,114 +1,96 @@
 "use client";
 
-import Link from 'next/link';
-import { ChevronDown, Sparkles, Layout, Zap, Globe, Shield, ArrowRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { MARKETING_NAV, SITE_DOMAIN } from "@/lib/site-config";
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center">
-      {/* Top Bar (Promo) */}
-      <div className="w-full bg-blue-600/90 backdrop-blur-md py-2 px-4 flex items-center justify-center gap-3 text-white text-[10px] md:text-xs font-bold tracking-widest uppercase selection:bg-white/20">
-        <Sparkles className="w-3 h-3 text-blue-200" />
-        <span className="font-display">OpsVantage AI v2.0 is now live!</span>
-        <Link href="/onboarding" className="flex items-center gap-1 hover:underline group font-bold">
-          Get Started <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-        </Link>
-      </div>
-
-      {/* Main Navigation */}
-      <nav
-        className={`w-full max-w-350 mx-auto transition-all duration-500 rounded-b-2xl md:rounded-2xl mt-0 md:mt-4 ${isScrolled
-          ? 'md:max-w-7xl glass-heavy shadow-2xl py-3 px-8 mx-4'
-          : 'glass py-5 px-8 mx-4'
-          }`}
-      >
-        <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)] group-hover:rotate-12 transition-all overflow-hidden bg-white/5">
-              <img src="/logo.png" alt="OpsVantage Logo" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-xl font-bold font-display tracking-tight text-white">
-              Ops<span className="text-blue-400">Vantage</span>
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+        <Link href="/" className="group inline-flex items-center gap-3" onClick={() => setMenuOpen(false)}>
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold tracking-wide text-white shadow-sm dark:bg-cyan-400 dark:text-slate-950">
+            OV
+          </span>
+          <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100">
+            OpsVantage Digital
+            <span className="ml-2 hidden text-xs font-medium text-slate-500 md:inline dark:text-slate-400">
+              {SITE_DOMAIN}
             </span>
+          </span>
+        </Link>
+
+        <nav className="hidden items-center gap-6 md:flex">
+          {MARKETING_NAV.map((item) => {
+            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`text-sm font-medium transition ${
+                  isActive
+                    ? "text-cyan-600 dark:text-cyan-400"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="hidden items-center gap-3 md:flex">
+          <ThemeToggle />
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400"
+          >
+            Start Free
           </Link>
-
-          <div className="hidden lg:flex items-center space-x-8">
-            {/* Products Dropdown */}
-            <div className="relative group/menu">
-              <button className="flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors py-2">
-                Products <ChevronDown className="w-4 h-4 group-hover/menu:rotate-180 transition-transform" />
-              </button>
-              <div className="absolute top-full -left-4 w-72 pt-4 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-300 translate-y-2 group-hover/menu:translate-y-0">
-                <div className="glass-heavy p-4 rounded-2xl shadow-2xl border border-white/10 flex flex-col gap-2">
-                  <DropdownLink
-                    icon={<Layout className="w-4 h-4" />}
-                    title="AI Architect"
-                    desc="Visual engine demo"
-                    href="/ai-architect"
-                  />
-                  <DropdownLink
-                    icon={<Globe className="w-4 h-4" />}
-                    title="Domain Portal"
-                    desc="Search and manage domains"
-                    href="/services/domains"
-                  />
-                  <DropdownLink
-                    icon={<Shield className="w-4 h-4" />}
-                    title="Neural Security"
-                    desc="SSL & edge protection"
-                    href="/services/ssl-security"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Link href="/pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Pricing
-            </Link>
-
-            <Link href="/docs" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Docs
-            </Link>
-          </div>
-
-          <div className="flex items-center space-x-6">
-            <Link href="/login" className="hidden sm:block text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Log In
-            </Link>
-            <Link
-              href="/onboarding"
-              className="px-6 py-2.5 bg-blue-600 font-display text-white rounded-xl hover:bg-blue-500 transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] font-bold text-sm"
-            >
-              Get Started
-            </Link>
-          </div>
         </div>
-      </nav>
-    </header>
-  );
-}
 
-function DropdownLink({ icon, title, desc, href }: { icon: React.ReactNode, title: string, desc: string, href: string }) {
-  return (
-    <Link href={href} className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group/item">
-      <div className="mt-0.5 p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover/item:bg-blue-500 group-hover/item:text-white transition-all">
-        {icon}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((prev) => !prev)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 md:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          aria-label="Toggle navigation"
+        >
+          {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        </button>
       </div>
-      <div className="flex flex-col">
-        <span className="text-sm font-bold text-white tracking-tight">{title}</span>
-        <span className="text-[10px] text-slate-400 font-medium">{desc}</span>
-      </div>
-    </Link>
+
+      {menuOpen && (
+        <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden dark:border-slate-800 dark:bg-slate-950">
+          <nav className="flex flex-col gap-3">
+            {MARKETING_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <div className="mt-2 flex items-center justify-between">
+              <ThemeToggle />
+              <Link
+                href="/onboarding"
+                onClick={() => setMenuOpen(false)}
+                className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-cyan-500 dark:text-slate-950"
+              >
+                Start Free
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
   );
 }

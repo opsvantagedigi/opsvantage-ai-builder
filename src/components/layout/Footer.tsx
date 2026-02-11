@@ -1,79 +1,48 @@
-import Link from 'next/link';
-import { Zap, Github, Twitter, Linkedin, Facebook, ArrowRight } from 'lucide-react';
+import Link from "next/link";
+import { PRODUCT_LINKS, RESOURCE_LINKS, TOOL_LINKS } from "@/lib/site-config";
+
+const legalLinks = [
+  { href: "/docs", label: "Documentation" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/enterprise", label: "Enterprise" },
+  { href: "/onboarding", label: "Launch a Project" },
+];
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  const year = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-black border-t border-white/5 pt-24 pb-12 px-6 lg:px-8 overflow-hidden z-10 transition-premium">
-      <div className="absolute inset-0 mesh-gradient opacity-10 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
-          {/* Brand Column */}
-          <div className="lg:col-span-2 space-y-8">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)] group-hover:rotate-6 transition-all overflow-hidden bg-white/5">
-                <img src="/logo.png" alt="OpsVantage Logo" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-2xl font-black font-display tracking-tight text-white">
-                Ops<span className="text-blue-400">Vantage</span>
-              </span>
-            </Link>
-            <p className="text-slate-400 text-lg leading-relaxed max-w-sm font-medium">
-              The neural operating system for modern digital agencies. Automate strategy, design, and growth with AI precision.
-            </p>
-            <div className="flex items-center gap-6">
-              <SocialLink icon={<Twitter className="w-5 h-5" />} href="https://twitter.com/opsvantage" />
-              <SocialLink icon={<Github className="w-5 h-5" />} href="https://github.com/opsvantagedigi" />
-              <SocialLink icon={<Linkedin className="w-5 h-5" />} href="https://linkedin.com/company/opsvantage" />
-            </div>
-          </div>
-
-          {/* Sitemaps */}
-          <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Platform</h4>
-            <ul className="space-y-4">
-              <FooterLink href="/ai-architect" text="AI Architect" />
-              <FooterLink href="/services/domains" text="Domain Portal" />
-              <FooterLink href="/enterprise" text="Enterprise" />
-              <FooterLink href="/pricing" text="Pricing" />
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Resources</h4>
-            <ul className="space-y-4">
-              <FooterLink href="/docs" text="Documentation" />
-              <FooterLink href="/showcase" text="Live Showcase" />
-              <FooterLink href="/onboarding" text="Case Studies" />
-              <FooterLink href="/onboarding" text="Changelog" />
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-8">Autonomous Tools</h4>
-            <ul className="space-y-4">
-              <FooterLink href="/tools/business-name-generator" text="Name Generator" />
-              <FooterLink href="/tools/logo-maker" text="Logo Synthesis" />
-              <FooterLink href="/tools/slogan-ai" text="Slogan AI" />
-              <FooterLink href="/onboarding/wizard" text="Neural Wizard" />
-            </ul>
-          </div>
+    <footer className="border-t border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
+        <div className="space-y-4 md:col-span-1">
+          <Link href="/" className="inline-flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold tracking-wide text-white dark:bg-cyan-400 dark:text-slate-950">
+              OV
+            </span>
+            <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100">
+              OpsVantage Digital
+            </span>
+          </Link>
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Autonomous AI website operations for founders, teams, and agencies. Build, launch, host, secure, and optimize
+            from one operating system.
+          </p>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-12 border-t border-white/5 flex flex-col md:row items-center justify-between gap-6">
-          <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-            <span>&copy; {currentYear} OPSVANTAGE DIGITAL</span>
-            <span className="hidden md:block w-1 h-1 rounded-full bg-slate-800" />
-            <span className="hidden md:block italic">ALL SYSTEMS OPERATIONAL</span>
-          </div>
-          <div className="flex items-center gap-2 group cursor-pointer">
-            <span className="text-xs font-black text-blue-400 uppercase tracking-widest group-hover:mr-2 transition-all">Back to top</span>
-            <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center -rotate-90 group-hover:bg-white group-hover:text-black transition-premium">
-              <ArrowRight className="w-4 h-4" />
-            </div>
+        <FooterColumn title="Platform" links={PRODUCT_LINKS} />
+        <FooterColumn title="Resources" links={RESOURCE_LINKS} />
+        <FooterColumn title="Tools" links={TOOL_LINKS} />
+      </div>
+
+      <div className="border-t border-slate-200 dark:border-slate-800">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 text-xs text-slate-500 md:flex-row md:items-center md:justify-between md:px-6 dark:text-slate-400">
+          <p>© {year} OpsVantage Digital Pty Ltd. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-4">
+            {legalLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="transition hover:text-slate-900 dark:hover:text-slate-100">
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
@@ -81,20 +50,19 @@ export function Footer() {
   );
 }
 
-function FooterLink({ href, text }: { href: string, text: string }) {
+function FooterColumn({ title, links }: { title: string; links: Array<{ href: string; label: string }> }) {
   return (
-    <li>
-      <Link href={href} className="text-slate-400 hover:text-white hover:translate-x-1 transition-all duration-300 inline-block font-medium text-sm">
-        {text}
-      </Link>
-    </li>
-  );
-}
-
-function SocialLink({ icon, href }: { icon: React.ReactNode, href: string }) {
-  return (
-    <Link href={href} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-400 hover:-translate-y-1 transition-all duration-300">
-      {icon}
-    </Link>
+    <div>
+      <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{title}</h3>
+      <ul className="space-y-3">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link href={link.href} className="text-sm text-slate-700 transition hover:text-slate-950 dark:text-slate-200 dark:hover:text-white">
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

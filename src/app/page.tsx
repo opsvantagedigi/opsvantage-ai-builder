@@ -1,94 +1,117 @@
-'use client';
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, Cpu, Gauge, Globe2, ShieldCheck, Sparkles } from "lucide-react";
 
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+const coreCapabilities = [
+  {
+    icon: Cpu,
+    title: "AI Architecture",
+    description:
+      "Translate business requirements into structured page maps, conversion flows, and component-ready briefs.",
+  },
+  {
+    icon: Globe2,
+    title: "Domain + Hosting",
+    description:
+      "Secure domains, provision SSL, and deploy globally from one operations console.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure by Default",
+    description:
+      "Role-based access, controlled publishing workflows, and managed infrastructure guardrails.",
+  },
+  {
+    icon: Gauge,
+    title: "Operational Analytics",
+    description:
+      "Track delivery velocity, performance signals, and optimization opportunities across launches.",
+  },
+];
 
-const features = [
-  'AI-Powered Content Generation',
-  'Drag-and-Drop Visual Editor',
-  'Automated SEO Optimization',
-  'Custom Domains & SSL',
-  'Blazing-Fast Hosting',
-  'Agency & Client Management',
+const outcomes = [
+  "Reduce website planning and production cycles",
+  "Standardize brand consistency across all pages",
+  "Improve conversion readiness before first launch",
+  "Scale digital operations without adding workflow complexity",
 ];
 
 export default function LandingPage() {
   return (
-    <div className="bg-slate-950 text-white min-h-screen flex flex-col overflow-x-hidden">
-      <Header />
+    <div className="mesh-gradient">
+      <section className="hero-shell">
+        <div className="surface-glass p-8 md:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-300">
+            <Sparkles className="h-3.5 w-3.5" />
+            Autonomous AI Website Builder
+          </div>
 
-      <main className="grow">
-        {/* Hero Section */}
-        <section className="relative pt-48 pb-32 text-center">
-          <div className="absolute inset-0 bg-grid-slate-800/40 mask-[linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
-          <div className="relative max-w-4xl mx-auto px-4">
-            <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent mb-6">
-              Build Your Website with the Power of AI
-            </h1>
-            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
-              Go from a simple idea to a fully functional, SEO-optimized website in minutes. Let our AI do the heavy lifting, so you can focus on your business.
-            </p>
-            <Link
-              href="/onboarding"
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-500 transition-transform hover:scale-105"
-            >
-              Generate Your Website for Free
+          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-slate-900 md:text-6xl dark:text-slate-100">
+            Build Enterprise-Grade Websites Faster with
+            <span className="text-gradient-vibrant"> OpsVantage Digital</span>
+          </h1>
+
+          <p className="mt-6 max-w-3xl text-base leading-7 text-slate-600 md:text-lg dark:text-slate-300">
+            OpsVantage helps founders and teams design, launch, and operate high-performance websites with one integrated
+            platform. From AI planning to domain, hosting, and security, every step is connected.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/onboarding" className="button-primary">
+              Start Building
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            <Link href="/pricing" className="button-secondary">
+              View Pricing
             </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Mini Domain Search Section */}
-        <section className="pb-20 -mt-16 relative z-10">
-          <div className="max-w-2xl mx-auto px-4">
-            <div className="p-6 bg-slate-900/60 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-lg">
-              <h3 className="text-xl font-semibold text-center mb-4">Claim Your Digital Identity</h3>
-              {/* Domain search form logic should be implemented or imported here, or remove if not needed */}
-            </div>
+      <section className="section-shell pb-8">
+        <div className="grid gap-4 md:grid-cols-4">
+          {coreCapabilities.map((capability) => {
+            const Icon = capability.icon;
+            return (
+              <article key={capability.title} className="surface-card">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-cyan-300">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h2 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{capability.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{capability.description}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="section-shell py-8">
+        <div className="surface-card p-8 md:p-10">
+          <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl dark:text-slate-100">Why Teams Choose OpsVantage</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {outcomes.map((outcome) => (
+              <div key={outcome} className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+                <p className="text-sm leading-6 text-slate-700 dark:text-slate-200">{outcome}</p>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-20 px-4">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-4">Everything You Need to Succeed Online</h2>
-              <p className="text-slate-400 text-lg">
-                From initial design to going live, our platform provides a complete solution.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature) => (
-                <div key={feature} className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
-                  <div className="flex items-start">
-                    <CheckCircle2 className="w-6 h-6 text-green-400 mr-4 mt-1 shrink-0" />
-                    <h3 className="text-lg font-semibold text-white">{feature}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-4">Ready to Launch Your Dream Website?</h2>
-            <p className="text-slate-400 text-lg mb-8">
-              No credit card required. Start building for free and experience the future of web design.
+      <section className="section-shell py-8 pb-16">
+        <div className="surface-glass flex flex-col items-start justify-between gap-6 p-8 md:flex-row md:items-center md:p-10">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Launch Ready</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">Turn Strategy into a Live Website</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Use guided onboarding to generate your architecture, then publish with domain and security workflows built in.
             </p>
-            <Link
-              href="/onboarding"
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-500 transition-transform hover:scale-105"
-            >
-              Start Building Now
-            </Link>
           </div>
-        </section>
-      </main>
-
-      <Footer />
+          <Link href="/onboarding" className="button-primary">
+            Open Launch Wizard
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

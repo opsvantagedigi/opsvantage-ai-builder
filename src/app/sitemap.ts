@@ -1,41 +1,35 @@
-import { MetadataRoute } from 'next';
-import { headers } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-config";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const headersList = await headers();
-  const host = headersList.get('host');
+const staticRoutes = [
+  "/",
+  "/home",
+  "/coming-soon",
+  "/pricing",
+  "/docs",
+  "/ai-architect",
+  "/enterprise",
+  "/showcase",
+  "/services/domains",
+  "/services/cloud-hosting",
+  "/services/professional-email",
+  "/services/ssl-security",
+  "/tools/business-name-generator",
+  "/tools/logo-maker",
+  "/tools/slogan-ai",
+  "/onboarding",
+  "/onboarding/wizard",
+  "/login",
+  "/register",
+];
 
-  if (!host) {
-    return [];
-  }
+export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    throw new Error('NEXT_PUBLIC_APP_URL is not defined');
-  }
-
-  // Find the project associated with the current hostname
-  const project = await prisma.project.findFirst({
-    where: {
-      OR: [
-        { domains: { some: { hostname: host } } },
-        { subdomain: host.split('.')[0] }, // Simple subdomain check
-      ],
-    },
-    include: {
-      pages: {
-        select: { slug: true, updatedAt: true },
-      },
-    },
-  });
-
-  if (!project) {
-    return [];
-  }
-
-  return project.pages.map((page) => ({
-    url: `${appUrl}/${page.slug === 'home' ? '' : page.slug}`,
-    lastModified: page.updatedAt,
+  return staticRoutes.map((route, index) => ({
+    url: `${SITE_URL}${route}`,
+    lastModified: now,
+    changeFrequency: route === "/" ? "daily" : "weekly",
+    priority: index === 0 ? 1 : 0.7,
   }));
 }

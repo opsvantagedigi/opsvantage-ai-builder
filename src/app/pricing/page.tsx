@@ -1,111 +1,101 @@
-// The original dummy component has been replaced with the actual pricing page implementation.
-import { CheckCircle2 } from 'lucide-react';
+import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 
 const tiers = [
   {
-    name: 'Free',
-    price: '$0',
+    name: "Starter",
+    price: "$29",
+    cadence: "/month",
+    summary: "For solo founders validating one offer.",
     features: [
-      '1 Project',
-      'OpsVantage Subdomain',
-      '50 AI Generations/month',
-      'Community Support',
+      "1 production website",
+      "Core AI generation workflows",
+      "Managed hosting + SSL",
+      "Email support",
     ],
-    cta: 'Current Plan',
-    isCurrent: true,
+    cta: { label: "Start Starter", href: "/onboarding" },
   },
   {
-    name: 'Pro',
-    price: '$29',
+    name: "Pro",
+    price: "$79",
+    cadence: "/month",
+    summary: "For operators growing multiple funnels and pages.",
     features: [
-      '5 Projects',
-      'Connect Custom Domain',
-      'Unlimited AI Generations',
-      'Email & Chat Support',
-      'Advanced Analytics',
+      "5 production websites",
+      "Advanced AI workflows",
+      "Custom domain management",
+      "Team collaboration",
+      "Priority support",
     ],
-    cta: 'Upgrade to Pro',
-    isCurrent: false,
+    cta: { label: "Start Pro", href: "/onboarding" },
+    highlight: true,
   },
   {
-    name: 'Agency',
-    price: '$99',
+    name: "Agency",
+    price: "$249",
+    cadence: "/month",
+    summary: "For agencies managing many client environments.",
     features: [
-      'Unlimited Projects',
-      'Client Management Dashboard',
-      'White-Labeling Options',
-      'Priority Support',
-      'Team Collaboration',
+      "20 production websites",
+      "Multi-workspace governance",
+      "Client-ready handoff workflows",
+      "Usage analytics",
+      "Dedicated onboarding support",
     ],
-    cta: 'Upgrade to Agency',
-    isCurrent: false,
+    cta: { label: "Talk to Sales", href: "/enterprise" },
   },
 ];
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <header className="text-center mb-16">
-          <h1 className="text-5xl font-bold bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-            Find the Right Plan for You
+    <div className="mesh-gradient py-10 md:py-14">
+      <section className="section-shell">
+        <div className="surface-glass p-8 md:p-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Pricing</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-slate-100">
+            Plans for High-Performance Website Operations
           </h1>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            Start for free and scale as you grow. All plans include our powerful AI generation engine and enterprise-grade infrastructure.
+          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
+            Every plan includes core platform capabilities: AI architecture, managed deployment, domain support, and
+            production-grade infrastructure.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <section className="section-shell py-8 pb-12">
+        <div className="grid gap-4 md:grid-cols-3">
           {tiers.map((tier) => (
-            <div
+            <article
               key={tier.name}
-              className={`p-8 rounded-2xl border ${
-                tier.name === 'Pro'
-                  ? 'border-blue-500'
-                  : 'border-slate-800'
-              } bg-slate-900/50 flex flex-col`}
+              className={`surface-card flex h-full flex-col ${tier.highlight ? "ring-2 ring-cyan-500 dark:ring-cyan-400" : ""}`}
             >
-              <h2 className="text-2xl font-semibold mb-2">{tier.name}</h2>
-              <p className="text-4xl font-bold mb-6">
-                {tier.price}
-                {tier.name !== 'Free' && <span className="text-base font-normal text-slate-400">/ month</span>}
-              </p>
+              <div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{tier.name}</p>
+                <p className="mt-2 text-4xl font-semibold text-slate-900 dark:text-slate-100">
+                  {tier.price}
+                  <span className="text-base font-medium text-slate-500 dark:text-slate-400">{tier.cadence}</span>
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{tier.summary}</p>
+              </div>
 
-              <ul className="space-y-4 mb-8 grow">
+              <ul className="mt-6 space-y-3">
                 {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-400" />
-                    <span className="text-slate-300">{feature}</span>
+                  <li key={feature} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
 
-              <button
-                disabled={tier.isCurrent}
-                className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                  tier.isCurrent
-                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                    : tier.name === 'Pro'
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                    : 'bg-slate-600 hover:bg-slate-500 text-white'
-                }`}
-              >
-                {tier.cta}
-              </button>
-            </div>
+              <div className="mt-8">
+                <Link href={tier.cta.href} className={tier.highlight ? "button-primary w-full" : "button-secondary w-full"}>
+                  {tier.cta.label}
+                </Link>
+              </div>
+            </article>
           ))}
         </div>
-
-        <div className="text-center mt-16">
-          <h3 className="text-2xl font-semibold mb-4">Need more?</h3>
-          <p className="text-slate-400">
-            We offer custom enterprise plans for large-scale deployments.
-            <a href="#" className="text-blue-400 hover:underline ml-2">
-              Contact Sales
-            </a>
-          </p>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }

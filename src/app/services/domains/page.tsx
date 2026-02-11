@@ -1,93 +1,60 @@
-'use client'
+import { DomainSearchInput } from "@/components/features/domain-search";
+import { Globe2, ShieldCheck, Workflow } from "lucide-react";
 
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { DomainSearchInput } from '../../../components/features/domain-search';
-import { Globe, Sparkles, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+const domainBenefits = [
+  {
+    icon: Globe2,
+    title: "Broad TLD Coverage",
+    description: "Search across mainstream and niche domain extensions for your brand strategy.",
+  },
+  {
+    icon: Workflow,
+    title: "Guided Provisioning",
+    description: "Move from availability check to secure setup with DNS and SSL readiness in one flow.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Managed Security Posture",
+    description: "Apply privacy and certificate configuration standards during onboarding.",
+  },
+];
 
 export default function DomainsPage() {
-    return (
-        <div className="mesh-gradient min-h-screen flex flex-col selection:bg-cyan-500/30 overflow-hidden">
-            <Header />
-
-            <main className="grow pt-48 pb-24 px-6 relative z-10">
-                <div className="max-w-7xl mx-auto space-y-24">
-
-                    {/* Header Section */}
-                    <header className="max-w-4xl">
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8 }}
-                        >
-                            <h1 className="text-6xl md:text-[8rem] font-display font-black text-white mb-8 tracking-tighter leading-none">
-                                Domain <span className="text-gradient-cyan">Intelligence.</span>
-                            </h1>
-                            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed max-w-2xl italic">
-                                Reserve your corner of the digital universe. Real-time availability, wholesale whitelabel pricing, and instant provisioning.
-                            </p>
-                        </motion.div>
-                    </header>
-
-                    {/* Integrated Search Console */}
-                    <motion.section
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 0.8 }}
-                        className="relative"
-                    >
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[300px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
-                        <DomainSearchInput />
-                    </motion.section>
-
-                    {/* Features Grid */}
-                    <motion.section
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.8 }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-white/5"
-                    >
-                        <FeatureItem
-                            icon={<Globe className="w-5 h-5 text-blue-400" />}
-                            title="Global TLD Grid"
-                            desc="Access to 1000+ extensions from .com to niche territorial suffixes."
-                        />
-                        <FeatureItem
-                            icon={<Sparkles className="w-5 h-5 text-cyan-400" />}
-                            title="Instant Uplink"
-                            desc="MARZ propagates your DNS architecture across the global edge in seconds."
-                        />
-                        <FeatureItem
-                            icon={<ShieldCheck className="w-5 h-5 text-emerald-400" />}
-                            title="Privacy Cloak"
-                            desc="WHOIS protection and domain guard standard on all ecosystem nodes."
-                        />
-                    </motion.section>
-                </div>
-            </main>
-
-            {/* Decorative Neural Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none opacity-20">
-                <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[140px] rounded-full" />
-                <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[140px] rounded-full" />
-            </div>
-
-            <Footer />
+  return (
+    <div className="mesh-gradient py-10 md:py-14">
+      <section className="section-shell">
+        <div className="surface-glass p-8 md:p-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Domain Management</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-slate-100">
+            Secure the Right Domain for Your Brand
+          </h1>
+          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
+            Search, validate, and prepare your domain setup with integrated operations guidance. OpsVantage helps teams
+            reduce setup complexity while keeping launch quality high.
+          </p>
         </div>
-    );
-}
+      </section>
 
-function FeatureItem({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
-    return (
-        <div className="space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                {icon}
-            </div>
-            <h3 className="text-sm font-black text-white uppercase tracking-widest">{title}</h3>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tighter italic">
-                {desc}
-            </p>
+      <section className="section-shell py-8">
+        <div className="surface-card p-6 md:p-8">
+          <DomainSearchInput />
         </div>
-    );
+      </section>
+
+      <section className="section-shell py-8 pb-16">
+        <div className="grid gap-4 md:grid-cols-3">
+          {domainBenefits.map((benefit) => {
+            const Icon = benefit.icon;
+            return (
+              <article key={benefit.title} className="surface-card">
+                <Icon className="h-5 w-5 text-cyan-700 dark:text-cyan-300" />
+                <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{benefit.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{benefit.description}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
 }
