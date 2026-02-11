@@ -17,8 +17,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the application
-RUN npm run build
+# We use npx to ensure the container finds the local 'next' binary
+RUN npx next build
 
 # Expose port
 EXPOSE 3000
