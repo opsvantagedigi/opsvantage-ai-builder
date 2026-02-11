@@ -39,7 +39,8 @@
     "prisma/**/*",
     "src/**/*",
     "types/**/*",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
