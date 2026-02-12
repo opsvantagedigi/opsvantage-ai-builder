@@ -33,8 +33,6 @@ function formatCurrency(value: number) {
 
 export default function NeuralDashboardClient({ initialThoughts }: { initialThoughts: Thought[] }) {
   const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [thoughts, setThoughts] = useState<Thought[]>(initialThoughts);
   const [nzdSaved, setNzdSaved] = useState(0);
@@ -50,10 +48,12 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
   const launchSnapshotRef = useRef<boolean>(false);
   const hasRedirectedRef = useRef(false);
 
+  React.useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!mounted) return;
 
-    let mounted = true;
+    let isActive = true;
 
     const loadTelemetry = async () => {
       try {
@@ -69,7 +69,7 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
 
         if (!response.ok) return;
         const payload = (await response.json()) as Telemetry;
-        if (!mounted) return;
+        if (!isActive) return;
         const telemetrySnapshot = JSON.stringify(payload);
         if (telemetrySnapshotRef.current !== telemetrySnapshot) {
           telemetrySnapshotRef.current = telemetrySnapshot;
@@ -104,7 +104,7 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
           }
         }
       } finally {
-        if (mounted) {
+        if (isActive) {
           setLoading(false);
         }
       }
@@ -116,7 +116,7 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
     }, 15000);
 
     return () => {
-      mounted = false;
+      isActive = false;
       clearInterval(interval);
     };
   }, [mounted]);

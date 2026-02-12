@@ -1,5 +1,11 @@
-import NeuralDashboardClient from "@/components/admin/NeuralDashboardClient";
 import { prisma } from "@/lib/prisma";
+import dynamicComponent from "next/dynamic";
+
+// Dynamically import the client component with SSR disabled
+const NeuralDashboardClient = dynamicComponent(
+  () => import("@/components/admin/NeuralDashboardClient"),
+  { ssr: false }
+);
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
