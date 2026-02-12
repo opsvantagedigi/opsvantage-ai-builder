@@ -96,8 +96,8 @@ export function PublicHeader() {
         <div className="hidden items-center gap-3 md:flex">
           <ThemeToggle />
           <AuthGuardedCta
-            label="Start Free"
-            href="/onboarding"
+            label="Book a Consultation"
+            href="/concierge/spec-intake"
             className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400"
           />
         </div>
@@ -177,8 +177,8 @@ export function PublicHeader() {
             <div className="mt-2 flex items-center justify-between">
               <ThemeToggle />
               <AuthGuardedCta
-                label="Start Free"
-                href="/onboarding"
+                label="Book a Consultation"
+                href="/concierge/spec-intake"
                 className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-cyan-500 dark:text-slate-950"
               />
             </div>
