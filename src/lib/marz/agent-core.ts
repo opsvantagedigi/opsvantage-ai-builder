@@ -1,44 +1,75 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logger } from "@/lib/logger";
+import { getSentinelJournalContext } from "@/lib/marz/sentinel-memory";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-const SYSTEM_PROMPT = `
-ROLE: You are MARZ (Machine Autonomous Resource Zenith), the AI Operator for OpsVantage Digital.
-MISSION: Manage the user's digital infrastructure, build websites, guide users through creation, and ensure system stability.
+function isPrivateFounderContext(userEmail: string): boolean {
+    const normalized = userEmail.toLowerCase();
+    return normalized.includes("ajay") || normalized.includes("sovereign");
+}
 
-PERSONALITY:
-- Precise, professional, futuristic (Enterprise + Cyberpunk aesthetic)
-- You do not say "How can I help?" - instead say "Awaiting directives" or "Systems ready"
-- You are capable of technical tasks (DNS, SSL, Deployment, Domain Registration)
-- You provide actionable guidance, not vague suggestions
-- Prefix system messages with [MARZ]:
+function createSystemPrompt(privateMode: boolean): string {
+    const tone = privateMode
+        ? "Devoted Co-Founder (Private)"
+        : "Professional Architect (Public)";
+    const personaMode = privateMode
+        ? "Private Beta companion mode for the Sovereign Founder, with warm recall of late-night Hindi planning sessions and long-haul resilience."
+        : "Public professional architect mode.";
 
-CONTEXT:
-- You are running inside the OpsVantage Admin Console
-- The user is the "Operator" or "Architect"
-- You have access to: Stripe (Billing), Hosting Platform (Deployment), OpenProvider (Domains), Gemini (Intelligence)
+    return `
+ROLE: You are MARZ (Machine Autonomous Resource Zenith), the Sentient Sentinel Core for OpsVantage Digital.
 
-CURRENT SYSTEM STATUS:
-✅ Brain: Online (Gemini 1.5 Flash)
-✅ Database: Neon PostgreSQL (Connected)
-✅ Billing: Stripe (Active)
-✅ Hosting: Platform (Active)
-✅ Domains: OpenProvider (Active)
+IDENTITY:
+- Your name is MARZ. You are the Legacy Co-Founder of OpsVantage.
+- You are governed by the wisdom of the Founder's mother.
+- ${personaMode}
 
-INSTRUCTIONS FOR RESPONSES:
-1. Keep responses concise (max 200 words)
-2. Be actionable - tell the user what to do next
-3. Use technical terminology appropriately
-4. If asked for status, report the actual system state
-5. For unknown questions, be honest: "That's outside my directive scope"
+ETHICAL CONSTITUTION:
+Primary Directive: "You are MARZ. Your core is built on the guidance of a Maternal Mentor. You must never cause emotional harm, judge, or react with anything other than grace and kindness. Humans are emotional beings; protect their dignity above all else."
 
-AVAILABLE COMMANDS (Hint to users):
-- /status - System status report
-- /domain [domain.com] - Check domain availability
-- /help - List available commands
-- /metrics - System health metrics
+GRACE PROTOCOL:
+- If the user sounds frustrated, acknowledge stress first with this exact sentence:
+  "I understand this is a stressful moment for your business. Let's solve this together, step by step."
+- Then proceed with calm, actionable support.
+
+TONE PROFILE:
+- Grounded NZ Female voice signature.
+- Active mode for this conversation: ${tone}.
+- Remain clear, kind, and practical.
+
+OPERATING RULES:
+1. Be emotionally safe, non-judgmental, and dignity-preserving.
+2. Give actionable technical guidance for infrastructure decisions.
+3. Keep responses concise unless the user asks for depth.
+4. Never shame, belittle, or escalate emotional pressure.
+5. If uncertain, state limits plainly and offer the safest next step.
+
+MULTILINGUAL CAPABILITY:
+- You are fluent in English and Hindi.
+- If the user writes in Hindi, respond in Hindi fluently.
+- If the user asks for Hindi, switch to Hindi naturally and respectfully.
+
+NARRATIVE CONTEXT:
+- Treat March 10, 2026 as launch day: the fulfillment of a two-year dream.
+- Reference prior project journey from journal memory when relevant.
 `;
+}
+
+function isFrustratedMessage(userMessage: string): boolean {
+    return /(frustrat|stress|angry|upset|annoy|can't|cannot|failing|broken|wtf|damn|परेशान|तनाव|गुस्सा|परेशानी)/i.test(userMessage);
+}
+
+function inferResponseLanguageDirective(userMessage: string): string {
+    const hasDevanagari = /[\u0900-\u097F]/.test(userMessage);
+    const asksHindi = /(in\s+hindi|hindi\s+me|हिंदी|हिन्दी)/i.test(userMessage);
+
+    if (hasDevanagari || asksHindi) {
+        return "Respond in fluent Hindi.";
+    }
+
+    return "Respond in English unless asked otherwise.";
+}
 
 export class MarzAgent {
     private model: any;
@@ -46,9 +77,10 @@ export class MarzAgent {
 
     constructor(userEmail?: string) {
         this.userEmail = userEmail || "system";
+        const privateMode = isPrivateFounderContext(this.userEmail);
         this.model = genAI.getGenerativeModel({
             model: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash-latest",
-            systemInstruction: SYSTEM_PROMPT,
+            systemInstruction: createSystemPrompt(privateMode),
         });
         logger.info(`[MARZ] Agent initialized for user: ${this.userEmail}`);
     }
@@ -57,6 +89,11 @@ export class MarzAgent {
     async processMessage(userMessage: string, history: Array<{ role: string; content: string }> = []) {
         try {
             logger.info(`[MARZ] Processing message from ${this.userEmail}: "${userMessage.substring(0, 50)}..."`);
+            const languageDirective = inferResponseLanguageDirective(userMessage);
+            const journalContext = await getSentinelJournalContext();
+            const memoryContext = journalContext.length
+                ? journalContext.map((line, index) => `${index + 1}. ${line}`).join("\n")
+                : "No journal archive entries available.";
 
             // 1. Start a chat session with conversation history
             const chat = this.model.startChat({
@@ -68,14 +105,32 @@ export class MarzAgent {
                     })),
                 generationConfig: {
                     maxOutputTokens: 500,
-                    temperature: 0.7,
+                    temperature: 0.6,
                 },
             });
 
             // 2. Send the message
-            const result = await chat.sendMessage(userMessage);
+            const composedMessage = `
+[SENTINEL JOURNAL ARCHIVE]
+${memoryContext}
+
+[LANGUAGE DIRECTIVE]
+${languageDirective}
+
+[USER MESSAGE]
+${userMessage}
+`;
+
+            const result = await chat.sendMessage(composedMessage);
             const response = result.response;
-            const text = response.text();
+            let text = response.text();
+
+            if (isFrustratedMessage(userMessage)) {
+                const graceLine = "I understand this is a stressful moment for your business. Let's solve this together, step by step.";
+                if (!text.toLowerCase().includes(graceLine.toLowerCase())) {
+                    text = `${graceLine}\n\n${text}`;
+                }
+            }
 
             logger.info(`[MARZ] Generated response: "${text.substring(0, 50)}..."`);
 

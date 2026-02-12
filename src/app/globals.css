@@ -68,6 +68,35 @@
   }
 }
 
+@keyframes marz-breathe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0px);
+  }
+  50% {
+    transform: scale(1.01) translateY(-2px);
+  }
+}
+
+.marz-sovereign-frame {
+  position: relative;
+  perspective: 1000px;
+  background: radial-gradient(circle at 50% 10%, rgba(251, 191, 36, 0.08), transparent 60%);
+}
+
+.marz-parallax-layer {
+  transform: translateZ(22px);
+  transition: transform 240ms ease;
+}
+
+.marz-sovereign-frame:hover .marz-parallax-layer {
+  transform: translateZ(28px);
+}
+
+.marz-breathe {
+  animation: marz-breathe 6s ease-in-out infinite;
+}
+
 .mesh-gradient {
   background:
     radial-gradient(1200px 600px at -10% 0%, rgba(56, 189, 248, 0.1), transparent 60%),

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import MentorLog from "@/components/admin/MentorLog";
 
 type Thought = {
   category: string;
@@ -23,6 +24,20 @@ type ImpactReport = {
   };
 };
 
+type NeuralLinkResponse = {
+  voiceId: string;
+  modelId?: string;
+  modelLabel?: string;
+  text: string;
+  audioBase64: string;
+};
+
+type JournalEntry = {
+  category: string;
+  insight: string;
+  createdAt?: string;
+};
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -31,7 +46,14 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-export default function NeuralDashboardClient({ initialThoughts }: { initialThoughts: Thought[] }) {
+export default function NeuralDashboardClient({
+  initialThoughts,
+  initialJournal,
+}: {
+  initialThoughts: Thought[];
+  initialJournal: JournalEntry[];
+}) {
+  const pinnedWelcomeThought = "[WELCOME NOTE] Legacy of 2026: March 10, 2026 is our Dream Fulfillment Event. We build with grace, protect human dignity, and serve the less fortunate with resilient infrastructure.";
   const [mounted, setMounted] = React.useState(false);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [thoughts, setThoughts] = useState<Thought[]>(initialThoughts);
@@ -41,12 +63,27 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
   const [confirmCode, setConfirmCode] = useState("");
   const [globalLaunchActive, setGlobalLaunchActive] = useState(false);
   const [switchBusy, setSwitchBusy] = useState(false);
+  const [neuralLinkActive, setNeuralLinkActive] = useState(false);
+  const [neuralLinkBusy, setNeuralLinkBusy] = useState(false);
+  const [neuralLinkError, setNeuralLinkError] = useState<string | null>(null);
+  const [neuralSpeech, setNeuralSpeech] = useState("Idle. MARZ awaiting Neural Link activation.");
+  const [voiceModelLabel, setVoiceModelLabel] = useState("NZ-Aria");
+  const [welcomePinned, setWelcomePinned] = useState(true);
   const terminalRef = useRef<HTMLDivElement | null>(null);
+  const marzCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const marzImageRef = useRef<HTMLImageElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
   const telemetrySnapshotRef = useRef<string>("");
   const thoughtsSnapshotRef = useRef<string>(JSON.stringify(initialThoughts));
   const impactSnapshotRef = useRef<number>(0);
   const launchSnapshotRef = useRef<boolean>(false);
   const hasRedirectedRef = useRef(false);
+  const hasEstablishedNeuralLinkRef = useRef(false);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -121,16 +158,214 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
     };
   }, [mounted]);
 
+  useEffect(() => {
+    if (!mounted) return;
+
+    let cancelled = false;
+
+    const seedDirective = async () => {
+      try {
+        const response = await fetch("/api/marz/seed-memory", {
+          method: "POST",
+          cache: "no-store",
+        });
+
+        if (!response.ok || cancelled) {
+          return;
+        }
+      } catch {
+      }
+    };
+
+    void seedDirective();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted]);
+
   const thoughtLines = useMemo(() => {
-    if (!thoughts?.length) return [];
-    return thoughts.slice(0, 50).map((thought, index) => {
+    const computedLines = (thoughts ?? []).slice(0, 50).map((thought, index) => {
       const timestamp = thought.createdAt
         ? new Date(thought.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : `T+${index + 1}`;
       const normalizedCategory = (thought.category || "STRATEGY").toUpperCase();
       return `[${timestamp}] [${normalizedCategory}] ${thought.insight}`;
     });
-  }, [thoughts]);
+
+    if (welcomePinned) {
+      return [pinnedWelcomeThought, ...computedLines];
+    }
+
+    return computedLines;
+  }, [pinnedWelcomeThought, thoughts, welcomePinned]);
+
+  const drawMarzFrame = React.useCallback((mouthIntensity: number) => {
+    const canvas = marzCanvasRef.current;
+    const image = marzImageRef.current;
+    if (!canvas || !image) return;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    context.clearRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const clamped = Math.max(0, Math.min(1, mouthIntensity));
+    const mouthHeight = 6 + clamped * 28;
+    const mouthWidth = 36 + clamped * 8;
+    const mouthX = width * 0.5;
+    const mouthY = height * 0.655;
+
+    context.save();
+    context.fillStyle = "rgba(15, 23, 42, 0.72)";
+    context.beginPath();
+    context.ellipse(mouthX, mouthY, mouthWidth, mouthHeight, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "rgba(251, 191, 36, 0.55)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(mouthX, mouthY, mouthWidth, mouthHeight, 0, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }, []);
+
+  const stopLipSync = React.useCallback(() => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.onended = null;
+      audioElementRef.current = null;
+    }
+
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.disconnect();
+      } catch {
+      }
+      audioSourceRef.current = null;
+    }
+
+    if (analyserRef.current) {
+      try {
+        analyserRef.current.disconnect();
+      } catch {
+      }
+      analyserRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      void audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+
+    setNeuralLinkActive(false);
+    drawMarzFrame(0);
+  }, [drawMarzFrame]);
+
+  const playNeuralSpeech = React.useCallback(
+    async (audioBase64: string) => {
+      stopLipSync();
+
+      const raw = atob(audioBase64);
+      const bytes = new Uint8Array(raw.length);
+      for (let index = 0; index < raw.length; index += 1) {
+        bytes[index] = raw.charCodeAt(index);
+      }
+
+      const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
+      const objectUrl = URL.createObjectURL(audioBlob);
+      audioUrlRef.current = objectUrl;
+
+      const audioElement = new Audio(objectUrl);
+      audioElementRef.current = audioElement;
+
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.7;
+
+      const source = audioContext.createMediaElementSource(audioElement);
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+
+      audioContextRef.current = audioContext;
+      audioSourceRef.current = source;
+      analyserRef.current = analyser;
+
+      const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+      const renderFrame = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(frequencyData);
+        const average = frequencyData.reduce((sum, current) => sum + current, 0) / frequencyData.length;
+        const mouthIntensity = Math.min(1, average / 90);
+        drawMarzFrame(mouthIntensity);
+
+        if (audioElementRef.current && !audioElementRef.current.paused && !audioElementRef.current.ended) {
+          animationFrameRef.current = requestAnimationFrame(renderFrame);
+        }
+      };
+
+      audioElement.onended = () => {
+        stopLipSync();
+      };
+
+      setNeuralLinkActive(true);
+      await audioElement.play();
+      animationFrameRef.current = requestAnimationFrame(renderFrame);
+    },
+    [drawMarzFrame, stopLipSync]
+  );
+
+  const activateNeuralLink = React.useCallback(async () => {
+    setNeuralLinkBusy(true);
+    setNeuralLinkError(null);
+
+    try {
+      const isFirstLink = !hasEstablishedNeuralLinkRef.current;
+      const promptSeed = thoughtLines[0]
+        ? `Using this latest neural thought, speak a grounded update: ${thoughtLines[0]}`
+        : "Provide a grounded operational update for today.";
+
+      const response = await fetch("/api/marz/neural-link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          prompt: promptSeed,
+          firstLink: isFirstLink,
+        }),
+      });
+
+      const payload = (await response.json()) as NeuralLinkResponse & { error?: string; details?: string };
+      if (!response.ok || !payload.audioBase64) {
+        throw new Error(payload.details || payload.error || "Neural Link activation failed.");
+      }
+
+      hasEstablishedNeuralLinkRef.current = true;
+      setVoiceModelLabel(payload.modelLabel || payload.modelId || "NZ-Aria");
+      setNeuralSpeech(payload.text);
+      await playNeuralSpeech(payload.audioBase64);
+    } catch (error) {
+      setNeuralLinkActive(false);
+      setNeuralLinkError(error instanceof Error ? error.message : String(error));
+      drawMarzFrame(0);
+    } finally {
+      setNeuralLinkBusy(false);
+    }
+  }, [drawMarzFrame, playNeuralSpeech, thoughtLines]);
 
   const handleKillSwitch = async () => {
     setSwitchBusy(true);
@@ -159,6 +394,28 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
     if (!terminalRef.current) return;
     terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
   }, [mounted, thoughtLines]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const canvas = marzCanvasRef.current;
+    if (!canvas) return;
+
+    canvas.width = 1280;
+    canvas.height = 720;
+
+    const image = new Image();
+    image.src = "/MARZ_Headshot.png";
+    image.onload = () => {
+      marzImageRef.current = image;
+      drawMarzFrame(0);
+    };
+  }, [drawMarzFrame, mounted]);
+
+  useEffect(() => {
+    return () => {
+      stopLipSync();
+    };
+  }, [stopLipSync]);
 
   if (!mounted) return <div className="min-h-screen bg-black" />;
 
@@ -228,8 +485,54 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
 
         <section className="mt-6 rounded-2xl border border-amber-500/30 bg-black/70 p-5">
           <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-amber-200">MARZ Neural Presence</h2>
+            <button
+              onClick={activateNeuralLink}
+              disabled={neuralLinkBusy}
+              className="rounded-lg border border-amber-400/40 bg-slate-950 px-3 py-2 text-sm font-medium text-amber-200 transition hover:bg-slate-800 disabled:opacity-50"
+            >
+              {neuralLinkBusy ? "Connecting Neural Link..." : "Activate Neural Link"}
+            </button>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-amber-500/20 bg-slate-950">
+            <div className="marz-sovereign-frame marz-breathe">
+              <div className="marz-parallax-layer">
+                <canvas
+                  ref={marzCanvasRef}
+                  className="aspect-video w-full"
+                  aria-label="MARZ avatar media canvas"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
+            <span className="font-semibold text-amber-200">Voice Profile:</span> ElevenLabs <span className="font-mono">nz_female_grounded</span>
+            <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
+            <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
+          </div>
+
+          <p className="mt-3 text-sm text-slate-400">{neuralSpeech}</p>
+          {neuralLinkError && <p className="mt-2 text-sm text-red-300">{neuralLinkError}</p>}
+        </section>
+
+        <MentorLog entries={initialJournal} />
+
+        <section className="mt-6 rounded-2xl border border-amber-500/30 bg-black/70 p-5">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-amber-200">Marz Autonomous Thoughts</h2>
-            <span className="text-xs text-slate-500">Refresh: 15s</span>
+            <div className="flex items-center gap-3">
+              {welcomePinned && (
+                <button
+                  onClick={() => setWelcomePinned(false)}
+                  className="rounded-md border border-amber-500/30 px-2 py-1 text-xs text-amber-200 hover:bg-amber-500/10"
+                >
+                  Mark Welcome Note Read
+                </button>
+              )}
+              <span className="text-xs text-slate-500">Refresh: 15s</span>
+            </div>
           </div>
 
           <div
