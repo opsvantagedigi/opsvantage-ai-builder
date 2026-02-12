@@ -6,9 +6,9 @@ import { MarzAgent } from "@/lib/marz/agent-core";
 import { getInitialVoicePayload } from "@/lib/marz-logic";
 import { ensureSentinelMemory } from "@/lib/marz/sentinel-memory";
 
-const VOICE_ID = "nz_female_grounded";
+const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Rachel - Standard ElevenLabs voice
 const ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
-const ELEVENLABS_MODEL_LABEL = "NZ-Aria";
+const ELEVENLABS_MODEL_LABEL = "Rachel-V2";
 const DEFAULT_PROMPT =
   "Deliver a concise ops update in a grounded New Zealand tone inspired by a calm, motherly advisor. Keep it under 70 words.";
 

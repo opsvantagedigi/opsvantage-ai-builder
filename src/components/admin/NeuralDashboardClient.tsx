@@ -616,7 +616,7 @@ export default function NeuralDashboardClient({
           </div>
 
           <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
-            <span className="font-semibold text-amber-200">Voice Profile:</span> ElevenLabs <span className="font-mono">nz_female_grounded</span>
+            <span className="font-semibold text-amber-200">Voice Profile:</span> ElevenLabs <span className="font-mono">Rachel</span>
             <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
             <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
           </div>
