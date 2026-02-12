@@ -1,11 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mesh-gradient py-10 md:py-14">
+          <section className="section-shell">
+            <div className="mx-auto max-w-lg surface-glass p-8 md:p-10">
+              <p className="text-sm text-slate-600 dark:text-slate-300">Loading sign-in…</p>
+            </div>
+          </section>
+        </div>
+      }
+    >
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
