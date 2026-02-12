@@ -1,5 +1,8 @@
+import ComingSoon from "../components/ComingSoon";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Cpu, Gauge, Globe2, ShieldCheck, Sparkles } from "lucide-react";
+
+const LAUNCH_DATE = "2026-03-10T00:00:00Z";
 
 const coreCapabilities = [
   {
@@ -35,7 +38,18 @@ const outcomes = [
   "Scale digital operations without adding workflow complexity",
 ];
 
-export default function LandingPage() {
+export default function Page() {
+  const launchMode = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? "BETA").toUpperCase();
+  const isRelease = launchMode === "RELEASE" || new Date() >= new Date(LAUNCH_DATE);
+
+  if (!isRelease) {
+    return <ComingSoon launchDate={LAUNCH_DATE} />;
+  }
+
+  return <FullLanding />;
+}
+
+function FullLanding() {
   return (
     <div className="mesh-gradient">
       <section className="hero-shell">

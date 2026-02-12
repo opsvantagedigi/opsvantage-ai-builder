@@ -1,5 +1,5 @@
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export interface SessionPayload {
   email: string;
@@ -8,34 +8,24 @@ export interface SessionPayload {
 }
 
 /**
- * Verify the NextAuth session from cookies and return the session payload
- * This is used instead of getServerSession for Edge-compatible session verification
+ * Resolve the NextAuth server session and normalize it to a lightweight payload.
  */
 export async function verifySession(): Promise<SessionPayload | null> {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get('next-auth.session-token')?.value ||
-      cookieStore.get('__Secure-next-auth.session-token')?.value;
-
-    if (!token) {
+    const session = await getServerSession(authOptions);
+    const email = session?.user?.email;
+    const userId = (session?.user as { id?: string } | undefined)?.id;
+    if (!email || !userId) {
       return null;
     }
 
-    try {
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      const sessionPayload = await jwtVerify(token, secret);
-      return {
-        email: (sessionPayload.payload.email as string) || '',
-        sub: (sessionPayload.payload.sub as string) || '',
-        ...sessionPayload.payload,
-      };
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return null;
-    }
+    return {
+      email,
+      sub: userId,
+      ...session.user,
+    };
   } catch (error) {
-    console.error('Error checking session:', error);
+    console.error('Error resolving server session:', error);
     return null;
   }
 }

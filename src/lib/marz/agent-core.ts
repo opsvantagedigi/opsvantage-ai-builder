@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logger } from "@/lib/logger";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 const SYSTEM_PROMPT = `
 ROLE: You are MARZ (Machine Autonomous Resource Zenith), the AI Operator for OpsVantage Digital.
@@ -47,7 +47,7 @@ export class MarzAgent {
     constructor(userEmail?: string) {
         this.userEmail = userEmail || "system";
         this.model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash-latest",
             systemInstruction: SYSTEM_PROMPT,
         });
         logger.info(`[MARZ] Agent initialized for user: ${this.userEmail}`);

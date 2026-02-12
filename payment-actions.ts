@@ -4,7 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { nowPayments } from '@/lib/nowpayments/client';
 import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
+import { verifySession } from '@/lib/verify-session';
 
 interface PaymentDetails {
   domain: string;
@@ -15,7 +16,9 @@ interface PaymentDetails {
 }
 
 export async function createPaymentAction(details: PaymentDetails, userId: string) {
-  if (!userId) {
+  // Verify session using the standardized method
+  const session = await verifySession();
+  if (!session || session.sub !== userId) {
     return { error: 'User not authenticated.' };
   }
 

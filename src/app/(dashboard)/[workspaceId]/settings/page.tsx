@@ -1,6 +1,5 @@
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { notFound, redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { BrandingSettings } from '@/components/dashboard/BrandingSettings';
 import { AuditLogList } from '@/components/dashboard/AuditLogList';
@@ -9,6 +8,7 @@ import { AnalyticsInsights } from '@/components/dashboard/AnalyticsInsights';
 import { TeamManager } from '@/components/dashboard/TeamManager';
 import { BillingManager } from '@/components/dashboard/BillingManager';
 import { DashboardShell } from '@/components/layout/DashboardShell';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,26 +18,8 @@ export default async function SettingsPage({
   params: Promise<{ workspaceId: string }>;
 }) {
   const { workspaceId } = await params;
-
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get('next-auth.session-token')?.value ||
-    cookieStore.get('__Secure-next-auth.session-token')?.value;
-
-  if (!token) {
-    redirect('/login');
-  }
-
-  let sessionPayload;
-  try {
-    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-    sessionPayload = await jwtVerify(token, secret);
-  } catch (error) {
-    console.error('Session verification failed:', error);
-    redirect('/login');
-  }
-
-  const userEmail = sessionPayload.payload.email as string;
+  const session = await getServerSession(authOptions);
+  const userEmail = session?.user?.email;
   if (!userEmail) {
     redirect('/login');
   }

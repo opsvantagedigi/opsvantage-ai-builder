@@ -4,6 +4,10 @@ import { withErrorHandling } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
 async function handler(req: Request) {
+  if (process.env.NEXT_PHASE === "phase-production-build" || process.env.SKIP_DB_CHECK_DURING_BUILD === "true") {
+    return NextResponse.json({ status: "SKIPPED_DURING_BUILD" });
+  }
+
   // Check Prisma connection
   try {
     await prisma.$queryRaw`SELECT 1`;

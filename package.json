@@ -51,6 +51,7 @@
     "react-dom": "18.3.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
+    "resend": "^3.5.0",
     "sanity": "3.25.0",
     "semver": "^7.6.2",
     "stripe": "^20.3.1",

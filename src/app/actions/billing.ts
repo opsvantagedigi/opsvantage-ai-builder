@@ -1,12 +1,12 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import stripe from '@/lib/stripe';
 import { db } from '@/lib/db';
 import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
+import { SITE_URL } from '@/lib/site-config';
 
 /**
  * 💳 BILLING ACTION: Create Stripe Checkout or Portal Session
@@ -19,29 +19,10 @@ import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
  */
 export async function createBillingSessionAction(planId?: string) {
   try {
-    // 1. Authenticate - Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('next-auth.session-token')?.value || 
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-    
-    if (!token) {
-      return { error: 'Unauthorized - please sign in' };
-    }
-
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(token, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return { error: 'Unauthorized - invalid session' };
-    }
-
-    // Extract user email from the verified token
-    const userEmail = sessionPayload.payload.email as string;
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.email;
     if (!userEmail) {
-      return { error: 'Unauthorized - no user email in session' };
+      return { error: 'Unauthorized - please sign in' };
     }
 
     // 2. Get user from database
@@ -59,7 +40,8 @@ export async function createBillingSessionAction(planId?: string) {
       return { error: 'User not found' };
     }
 
-    const billingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || SITE_URL;
+    const billingUrl = `${appUrl}/dashboard/billing`;
 
     // 3. IF USER IS ALREADY A CUSTOMER -> OPEN PORTAL
     if (user.stripeCustomerId) {
@@ -122,29 +104,10 @@ export async function createBillingSessionAction(planId?: string) {
  */
 export async function getCurrentSubscriptionAction() {
   try {
-    // Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('next-auth.session-token')?.value || 
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-    
-    if (!token) {
-      return { error: 'Unauthorized' };
-    }
-
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(token, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return { error: 'Unauthorized - invalid session' };
-    }
-
-    // Extract user email from the verified token
-    const userEmail = sessionPayload.payload.email as string;
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.email;
     if (!userEmail) {
-      return { error: 'Unauthorized - no user email in session' };
+      return { error: 'Unauthorized' };
     }
 
     const user = await db.user.findUnique({

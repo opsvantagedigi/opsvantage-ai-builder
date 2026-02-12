@@ -4,7 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { openProvider } from '@/lib/openprovider/client';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
+import { verifySession } from '@/lib/verify-session';
 
 export type CustomerData = {
   email: string;
@@ -14,7 +15,9 @@ export type CustomerData = {
 };
 
 export async function createCustomerHandleAction(data: CustomerData, userId: string) {
-  if (!userId) {
+  // Verify session using the standardized method
+  const session = await verifySession();
+  if (!session || session.sub !== userId) {
     return { error: 'User not authenticated.' };
   }
 

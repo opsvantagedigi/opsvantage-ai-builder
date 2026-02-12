@@ -83,23 +83,22 @@ model Subscription {
 }
 
 model Project {
-  id              String      @id @default(cuid())
-  name            String
-  subdomain       String?     @unique
-  sanityDataset   String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  workspaceId     String
-  vercelProjectId String?
-  content         Json?
-  customDomain    String?     @unique
-  published       Boolean     @default(false)
-  publishedAt     DateTime?
-  aiTasks         AiTask[]
-  domains         Domain[]
-  onboarding      Onboarding?
-  pages           Page[]
-  workspace       Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  name          String
+  subdomain     String?     @unique
+  sanityDataset String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  workspaceId   String
+  content       Json?
+  customDomain  String?     @unique
+  published     Boolean     @default(false)
+  publishedAt   DateTime?
+  aiTasks       AiTask[]
+  domains       Domain[]
+  onboarding    Onboarding?
+  pages         Page[]
+  workspace     Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model Domain {
@@ -281,6 +280,14 @@ model Usage {
   pagesGenerated Int       @default(0)
   month          DateTime  @default(now())
   workspace      Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model LaunchLead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now())
+  notified  Boolean  @default(false)
 }
 
 model EarlyAccessSignup {

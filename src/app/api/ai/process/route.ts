@@ -50,7 +50,7 @@ async function handler(req: Request) {
   try {
     // 3. Prepare Gemini client
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash-latest" })
 
     // 4. Build prompt
     const prompt = `

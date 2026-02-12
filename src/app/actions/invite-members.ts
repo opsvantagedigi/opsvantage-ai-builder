@@ -1,8 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { randomBytes } from 'crypto';
 import { getPlanById } from '@/config/subscriptions';
@@ -14,6 +13,11 @@ interface InviteMemberResult {
   message?: string;
 }
 
+async function requireSessionUserId() {
+  const session = await getServerSession(authOptions);
+  return (session?.user as { id?: string } | undefined)?.id || null;
+}
+
 /**
  * Send invitation to team member (Agency plan only, max 5 members)
  */
@@ -23,29 +27,9 @@ export async function inviteMemberAction(
   role: 'EDITOR' | 'VIEWER' = 'EDITOR'
 ): Promise<InviteMemberResult> {
   try {
-    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('next-auth.session-token')?.value || 
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-    
-    if (!sessionToken) {
-      return { success: false, error: 'Unauthorized - please sign in' };
-    }
-
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(sessionToken, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return { success: false, error: 'Unauthorized - invalid session' };
-    }
-
-    // Extract user ID from the verified token
-    const userId = sessionPayload.payload.sub as string;
+    const userId = await requireSessionUserId();
     if (!userId) {
-      return { success: false, error: 'Unauthorized - no user ID in session' };
+      return { success: false, error: 'Unauthorized - please sign in' };
     }
 
     // 2. VERIFY WORKSPACE OWNERSHIP/ACCESS
@@ -242,29 +226,9 @@ export async function acceptInvitationAction(token: string): Promise<InviteMembe
  */
 export async function revokeinvitationAction(invitationId: string, workspaceId: string): Promise<InviteMemberResult> {
   try {
-    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('next-auth.session-token')?.value || 
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-    
-    if (!sessionToken) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(sessionToken, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return { success: false, error: 'Unauthorized - invalid session' };
-    }
-
-    // Extract user ID from the verified token
-    const userId = sessionPayload.payload.sub as string;
+    const userId = await requireSessionUserId();
     if (!userId) {
-      return { success: false, error: 'Unauthorized - no user ID in session' };
+      return { success: false, error: 'Unauthorized' };
     }
 
     // 2. VERIFY PERMISSION
@@ -307,29 +271,9 @@ export async function revokeinvitationAction(invitationId: string, workspaceId: 
  */
 export async function listPendingInvitationsAction(workspaceId: string) {
   try {
-    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('next-auth.session-token')?.value || 
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-    
-    if (!sessionToken) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(sessionToken, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return { success: false, error: 'Unauthorized - invalid session' };
-    }
-
-    // Extract user ID from the verified token
-    const userId = sessionPayload.payload.sub as string;
+    const userId = await requireSessionUserId();
     if (!userId) {
-      return { success: false, error: 'Unauthorized - no user ID in session' };
+      return { success: false, error: 'Unauthorized' };
     }
 
     // 2. VERIFY PERMISSION

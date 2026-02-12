@@ -2,10 +2,9 @@
 
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
 import { getPlanIdFromStripePrice, getUsageLimit } from '@/config/subscriptions';
-import { SITE_DOMAIN } from '@/lib/site-config';
+import { SITE_DOMAIN, SITE_URL } from '@/lib/site-config';
 
 interface PublishResult {
   success: boolean;
@@ -33,38 +32,12 @@ export async function publishSiteAction(
   customDomain?: string
 ): Promise<PublishResult> {
   try {
-    // 1. AUTHENTICATE - Manually verify the session using the JWT token from cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('next-auth.session-token')?.value ||
-                 cookieStore.get('__Secure-next-auth.session-token')?.value;
-
-    if (!token) {
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.email;
+    if (!userEmail) {
       return {
         success: false,
         error: 'Unauthorized - please sign in',
-      };
-    }
-
-    let sessionPayload;
-    try {
-      // Verify the JWT token using the NEXTAUTH_SECRET
-      const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-      sessionPayload = await jwtVerify(token, secret);
-    } catch (error) {
-      console.error('Session verification failed:', error);
-      return {
-        success: false,
-        error: 'Unauthorized - invalid session',
-      };
-    }
-
-    // Extract user email and ID from the verified token
-    const userEmail = sessionPayload.payload.email as string;
-    const userId = sessionPayload.payload.sub as string;
-    if (!userEmail || !userId) {
-      return {
-        success: false,
-        error: 'Unauthorized - no user info in session',
       };
     }
 
@@ -91,7 +64,19 @@ export async function publishSiteAction(
       },
     });
 
-    if (!hasAccess && project.workspace.ownerId !== userId) {
+    // 4. VALIDATE SUBSCRIPTION + USER STATE
+    const user = await db.user.findUnique({
+      where: { email: userEmail },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Unauthorized - user not found',
+      };
+    }
+
+    if (!hasAccess && project.workspace.ownerId !== user.id) {
       return {
         success: false,
         error: 'Unauthorized - you do not own this project',
@@ -105,11 +90,6 @@ export async function publishSiteAction(
         error: 'Cannot publish empty project - add sections first',
       };
     }
-
-    // 4. VALIDATE SUBSCRIPTION
-    const user = await db.user.findUnique({
-      where: { id: userId },
-    });
 
     if (!user || user.subscriptionStatus !== 'active') {
       return {
@@ -166,7 +146,10 @@ export async function publishSiteAction(
     } else {
       // Generate subdomain URL if no custom domain
       const subdomain = project.subdomain || project.id;
-      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || SITE_DOMAIN;
+      const appHost = process.env.NEXT_PUBLIC_APP_URL
+        ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname
+        : new URL(SITE_URL).hostname;
+      const rootDomain = appHost || SITE_DOMAIN;
       liveUrl = `https://${subdomain}.${rootDomain}`;
     }
 

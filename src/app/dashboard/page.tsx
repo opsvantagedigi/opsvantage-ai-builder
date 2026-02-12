@@ -1,31 +1,16 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
 import { CreateWorkspaceForm } from '../../../prisma/CreateWorkspaceForm';
 import { WorkspaceList } from '../../../WorkspaceList';
 import { MyDomainsList } from '../../../MyDomainsList';
 import { DashboardShell } from '@/components/layout/DashboardShell';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get('next-auth.session-token')?.value ||
-    cookieStore.get('__Secure-next-auth.session-token')?.value;
-
-  if (!token) {
-    redirect('/login');
-  }
-
-  try {
-    const secret = process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret';
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    if (!verified.payload.sub) {
-      redirect('/login');
-    }
-  } catch (error) {
-    console.error('Session verification error:', error);
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
     redirect('/login');
   }
 

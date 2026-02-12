@@ -11,6 +11,7 @@ RUN npm ci --legacy-peer-deps
 FROM base AS builder
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder?sslmode=require}
+ENV SKIP_DB_CHECK_DURING_BUILD=true
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate

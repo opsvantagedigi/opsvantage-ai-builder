@@ -4,31 +4,18 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
+import { verifySession } from '@/lib/verify-session';
 import { checkSubscription } from '@/lib/subscription';
 
 export async function addCustomDomainAction(projectId: string, domain: string) {
-  // Manually verify the session using the JWT token from cookies
-  const cookieStore = await cookies();
-  const token = cookieStore.get('next-auth.session-token')?.value || 
-               cookieStore.get('__Secure-next-auth.session-token')?.value;
-  
-  if (!token) {
-    return { error: 'User not authenticated: No session token.' };
+  // Verify session using the standardized method
+  const session = await verifySession();
+  if (!session) {
+    return { error: 'User not authenticated: No session found.' };
   }
 
-  let sessionPayload;
-  try {
-    // Verify the JWT token using the NEXTAUTH_SECRET
-    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-    sessionPayload = await jwtVerify(token, secret);
-  } catch (error) {
-    console.error('Session verification failed:', error);
-    return { error: 'User not authenticated: Invalid session.' };
-  }
-
-  // Extract user ID from the verified token
-  const userId = sessionPayload.payload.sub as string;
+  const userId = session.sub;
   if (!userId) {
     return { error: 'User not authenticated: No user ID in session.' };
   }

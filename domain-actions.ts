@@ -5,11 +5,13 @@ import { openProvider } from '@/lib/openprovider/client';
 import { prisma } from '@/lib/prisma';
 import { nowPayments } from '@/lib/nowpayments/client';
 import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
+import { verifySession } from '@/lib/verify-session';
 
 const MARKUP = parseFloat(process.env.NEXT_PUBLIC_PRICING_MARKUP || "1.2");
 
 export async function checkDomainAvailabilityAction(fullDomain: string) {
+  // This function doesn't require authentication
   const parts = fullDomain.split('.');
   const ext = parts.pop();
   const name = parts.join('.');
@@ -20,14 +22,14 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
     if (res.code !== 0) throw new Error(res.desc);
 
     const result = res.data.results[0];
-    
+
     if (result.price?.reseller) {
       const retailPrice = (result.price.reseller.price * MARKUP).toFixed(2);
-      return { 
-        status: result.status, 
-        domain: result.domain, 
+      return {
+        status: result.status,
+        domain: result.domain,
         price: { currency: result.price.reseller.currency, amount: retailPrice },
-        isPremium: result.is_premium 
+        isPremium: result.is_premium
       };
     }
     return { status: result.status, domain: result.domain };
@@ -39,7 +41,9 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
 }
 
 export async function registerDomainAction(domain: string, price: { amount: string, currency: string }, userId: string) {
-  if (!userId) {
+  // Verify session using the standardized method
+  const session = await verifySession();
+  if (!session || session.sub !== userId) {
     return { error: 'You must be logged in to register a domain.' };
   }
 
