@@ -28,7 +28,14 @@ export function hashFingerprint(input: string | null | undefined) {
 }
 
 export async function getOfferClaimsCount(offerId: FoundersOfferId) {
-  return prisma.foundersClaim.count({ where: { offerId } });
+  try {
+    return await prisma.foundersClaim.count({ where: { offerId } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return 0;
+    }
+    throw error;
+  }
 }
 
 export async function getOfferStatus(offerId: FoundersOfferId) {

@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -30,6 +31,38 @@ async function checkOpenProviderHealth() {
   }
 }
 
+async function getMarzThoughtRows() {
+  const delegate = (prisma as any).marzMemory;
+  if (!delegate || typeof delegate.findMany !== "function") {
+    return [] as Array<{ insight: string; category: string; createdAt: Date }>;
+  }
+
+  try {
+    return await delegate.findMany({
+      select: { insight: true, category: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return [] as Array<{ insight: string; category: string; createdAt: Date }>;
+    }
+    throw error;
+  }
+}
+
+async function getEstimatedSavings() {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ total: number | null }>>(
+      `SELECT COALESCE(SUM("savedAmount"), 0) AS total FROM "FoundersClaim"`
+    );
+    const total = Number(rows[0]?.total ?? 0);
+    return Number(total.toFixed(2));
+  } catch (error) {
+    return 0;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const rate = applyRateLimit(req, { keyPrefix: "api:admin:telemetry", limit: 60, windowMs: 60_000 });
   if (!rate.allowed) {
@@ -50,14 +83,10 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const [wholesaleStatus, savingsAggregate, marzRows, apiStatus] = await Promise.all([
+  const [wholesaleStatus, totalEstimatedCustomerSavings, marzRows, apiStatus] = await Promise.all([
     getOfferStatus("wholesale-ghost"),
-    prisma.foundersClaim.aggregate({ _sum: { savedAmount: true } }),
-    prisma.marzMemory.findMany({
-      select: { insight: true, category: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }),
+    getEstimatedSavings(),
+    getMarzThoughtRows(),
     checkOpenProviderHealth(),
   ]);
 
@@ -71,7 +100,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     generatedAt: new Date().toISOString(),
     sovereign25SlotsRemaining: wholesaleStatus.remaining ?? 0,
-    totalEstimatedCustomerSavings: Number((savingsAggregate._sum.savedAmount ?? 0).toFixed(2)),
+    totalEstimatedCustomerSavings,
     openProviderStatus: apiStatus,
     marzThoughts:
       marzRows.length > 0

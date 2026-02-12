@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import type { FoundersOfferId } from "@/lib/claims-counter";
@@ -45,10 +46,17 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const rows = await prisma.foundersClaim.groupBy({
-    by: ["offerId"],
-    _count: { offerId: true },
-  });
+  let rows: Array<{ offerId: string; _count: { offerId: number } }> = [];
+  try {
+    rows = await prisma.foundersClaim.groupBy({
+      by: ["offerId"],
+      _count: { offerId: true },
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) {
+      throw error;
+    }
+  }
 
   const offers = rows
     .map((r) => {
