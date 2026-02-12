@@ -4,7 +4,7 @@ export const SITE_URL = `https://${SITE_DOMAIN}`;
 export const MARKETING_NAV = [
   { href: "/", label: "Home" },
   { href: "/ai-architect", label: "AI Architect" },
-  { href: "/services/domains", label: "Services" },
+  { href: "/services", label: "Services" },
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
 ];

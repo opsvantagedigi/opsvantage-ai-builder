@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { openProvider } from "@/lib/openprovider/client";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
   const rate = applyRateLimit(request, { keyPrefix: "api:infrastructure", limit: 40, windowMs: 60_000 });
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ items: [] }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load service data.";
-    console.error("Error fetching service data:", error);
+    logger.error("Error fetching service data", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported service action." }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to process request.";
-    console.error("Error processing POST request:", error);
+    logger.error("Error processing POST request", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

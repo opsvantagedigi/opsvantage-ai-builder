@@ -14,7 +14,7 @@ function slugify(value: string) {
 export async function GET() {
   const session = await verifySession();
   if (!session?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
   }
 
   const user = await prisma.user.findUnique({ where: { email: session.email } });
@@ -51,7 +51,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await verifySession();
   if (!session?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
   }
 
   const body = (await req.json()) as { name?: string };

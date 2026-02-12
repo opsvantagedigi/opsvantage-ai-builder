@@ -6,7 +6,7 @@ import { logActivity } from '@/lib/audit-logger';
 export async function GET(req: Request, { params }: { params: Promise<{ workspaceId: string }> }) {
     const session = await verifySession();
     if (!session || !session?.email) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
     }
 
     try {
@@ -51,7 +51,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
 export async function DELETE(req: Request, { params }: { params: Promise<{ workspaceId: string }> }) {
     const session = await verifySession();
     if (!session || !session?.email) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
     }
 
     try {

@@ -63,6 +63,13 @@ export const openProvider = {
     );
   },
 
+  async getLicenseItems() {
+    return requestOpenProvider<{ results: Array<Record<string, unknown>>; total?: number }>(
+      "/licenses/items?limit=50&offset=0",
+      { method: "GET" }
+    );
+  },
+
   async listLicenses() {
     return requestOpenProvider<{ results: Array<Record<string, unknown>>; total?: number }>(
       "/licenses?limit=20&offset=0",

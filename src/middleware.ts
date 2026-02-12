@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const LAUNCH_DATE = new Date("2026-03-10T00:00:00Z");
+const PREVIEW_COOKIE = "ov_preview";
 
 export async function middleware(req: NextRequest) {
   const now = new Date();
-  const { pathname, origin } = req.nextUrl;
+  const { pathname, origin, searchParams } = req.nextUrl;
   const launchMode = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? "BETA").toUpperCase();
 
   const allowPrefixes = ["/api", "/_next"];
@@ -17,9 +18,25 @@ export async function middleware(req: NextRequest) {
   }
 
   const isPreLaunch = now < LAUNCH_DATE;
-  const isReleaseOverride = launchMode === "RELEASE";
+  const isReleaseOverride = launchMode === "RELEASE" || launchMode === "PRODUCTION" || launchMode === "PUBLIC";
 
-  if (isPreLaunch && !isReleaseOverride) {
+  const hasPreviewParam = searchParams.get("preview") === "true";
+  const hasPreviewCookie = req.cookies.get(PREVIEW_COOKIE)?.value === "1";
+  const allowPrelaunchBypass = hasPreviewParam || hasPreviewCookie;
+
+  if (hasPreviewParam && !hasPreviewCookie) {
+    const res = NextResponse.next();
+    res.cookies.set(PREVIEW_COOKIE, "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+    return res;
+  }
+
+  if (isPreLaunch && !isReleaseOverride && !allowPrelaunchBypass) {
     return NextResponse.redirect(`${origin}/`);
   }
 

@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
+import { Loader2, ArrowRight, CheckCircle, Sparkles, Trophy } from "lucide-react";
 
 type ServiceKey = "domains" | "ssl" | "server" | "security";
 
-type NeedsState = Record<ServiceKey, boolean>;
+type NeedsState = Record<ServiceKey, boolean> & { 
+  scale?: "personal" | "business" | "enterprise"; 
+  primaryConcern?: "speed" | "security" | "scalability";
+};
 
 // Define the state for the current step in the wizard
 type WizardStep = "intro" | "projectType" | "needsAssessment" | "addOns" | "services" | "review";
@@ -40,7 +43,7 @@ const serviceOptions: { key: ServiceKey; label: string; description: string; ins
 export function InfrastructureWizard() {
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [projectType, setProjectType] = useState("saas");
-  const [needs, setNeeds] = useState<NeedsState>({ domains: true, ssl: true, server: false, security: false });
+  const [needs, setNeeds] = useState<NeedsState>({ domains: true, ssl: true, server: false, security: false, scale: "business", primaryConcern: "security" });
   const [selectedService, setSelectedService] = useState<ServiceKey>("domains");
   const [domainOrEmail, setDomainOrEmail] = useState("");
   const [serviceData, setServiceData] = useState<Array<Record<string, unknown>>>([]);
@@ -196,6 +199,56 @@ export function InfrastructureWizard() {
                   </div>
                 </div>
               ))}
+            </div>
+            
+            <div className="pt-4">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">The Blueprint Question:</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-3">What is the scale of your project?</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { value: "personal", label: "Personal", desc: "Side projects, portfolios" },
+                  { value: "business", label: "Business", desc: "Small business, startup" },
+                  { value: "enterprise", label: "Enterprise", desc: "Large corporation" },
+                ].map((option) => (
+                  <div 
+                    key={option.value}
+                    className={`rounded-lg border p-3 cursor-pointer transition-all ${
+                      needs.scale === option.value 
+                        ? "border-cyan-500 bg-cyan-50/50 dark:bg-cyan-500/10" 
+                        : "border-slate-200 dark:border-slate-700 hover:border-cyan-300"
+                    }`}
+                    onClick={() => setNeeds(prev => ({...prev, scale: option.value}))}
+                  >
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{option.label}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{option.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="pt-4">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Additional Insights:</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-3">What is your primary concern?</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { value: "speed", label: "Speed", desc: "Fast loading times" },
+                  { value: "security", label: "Security", desc: "Maximum protection" },
+                  { value: "scalability", label: "Scalability", desc: "Future growth" },
+                ].map((option) => (
+                  <div 
+                    key={option.value}
+                    className={`rounded-lg border p-3 cursor-pointer transition-all ${
+                      needs.primaryConcern === option.value 
+                        ? "border-cyan-500 bg-cyan-50/50 dark:bg-cyan-500/10" 
+                        : "border-slate-200 dark:border-slate-700 hover:border-cyan-300"
+                    }`}
+                    onClick={() => setNeeds(prev => ({...prev, primaryConcern: option.value}))}
+                  >
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{option.label}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{option.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
             
             <div className="flex justify-between pt-4">
@@ -486,6 +539,25 @@ export function InfrastructureWizard() {
               ) : (
                 <p className="text-center py-4 text-slate-500 dark:text-slate-400">No items in your stack yet. Add services to see the cost breakdown.</p>
               )}
+            </div>
+            
+            {/* Neural Wheel Promotion */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-700 dark:bg-amber-900/10">
+              <div className="flex items-start">
+                <Trophy className="mr-3 mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                <div>
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">Founders 25 Exclusive Offer!</h4>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    Unlock additional savings with our AI Architect Blueprint quiz. Discover personalized launch offers tailored to your project scale.
+                  </p>
+                  <button 
+                    onClick={() => window.open('/neural-wheel', '_blank')}
+                    className="mt-2 inline-flex items-center rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
+                  >
+                    Take Blueprint Quiz <ArrowRight className="ml-1 h-3 w-3" />
+                  </button>
+                </div>
+              </div>
             </div>
             
             <div className="flex justify-between pt-4">
