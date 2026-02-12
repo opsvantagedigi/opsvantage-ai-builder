@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Thought = {
@@ -31,6 +32,10 @@ function formatCurrency(value: number) {
 }
 
 export default function NeuralDashboardClient({ initialThoughts }: { initialThoughts: Thought[] }) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  if (!mounted) return <div className="min-h-screen bg-black" />;
+
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [thoughts, setThoughts] = useState<Thought[]>(initialThoughts);
   const [nzdSaved, setNzdSaved] = useState(0);

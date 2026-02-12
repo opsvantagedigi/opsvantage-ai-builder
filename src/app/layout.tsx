@@ -46,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
         <ThemeProvider>
           <SiteShell>{children}</SiteShell>
         </ThemeProvider>

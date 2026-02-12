@@ -10,6 +10,11 @@ export async function middleware(req: NextRequest) {
   const { pathname, origin, searchParams } = req.nextUrl;
   const launchMode = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? "BETA").toUpperCase();
 
+  const launchModeBypassPaths = ["/sovereign-access", "/admin/dashboard", "/api/admin/telemetry"];
+  if (launchModeBypassPaths.some((path) => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
   const adminToken = req.cookies.get("zenith_admin_token")?.value;
   const isSovereignAdmin = Boolean(adminToken);
 
