@@ -37,6 +37,12 @@ export function Footer() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/security"
+              className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
+            >
+              ISO 27001 Aligned
+            </Link>
           </div>
         </div>
       </div>
