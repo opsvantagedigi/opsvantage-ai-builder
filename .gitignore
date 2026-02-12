@@ -53,4 +53,4 @@ tmpclaude-*
 
 .vercel
 .env*.local
-"playwright-report/" 
+/playwright-report/
