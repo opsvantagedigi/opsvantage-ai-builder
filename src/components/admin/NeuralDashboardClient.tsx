@@ -34,7 +34,6 @@ function formatCurrency(value: number) {
 export default function NeuralDashboardClient({ initialThoughts }: { initialThoughts: Thought[] }) {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="min-h-screen bg-black" />;
 
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [thoughts, setThoughts] = useState<Thought[]>(initialThoughts);
@@ -45,31 +44,64 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
   const [globalLaunchActive, setGlobalLaunchActive] = useState(false);
   const [switchBusy, setSwitchBusy] = useState(false);
   const terminalRef = useRef<HTMLDivElement | null>(null);
+  const telemetrySnapshotRef = useRef<string>("");
+  const thoughtsSnapshotRef = useRef<string>(JSON.stringify(initialThoughts));
+  const impactSnapshotRef = useRef<number>(0);
+  const launchSnapshotRef = useRef<boolean>(false);
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
+    if (!mounted) return;
+
     let mounted = true;
 
     const loadTelemetry = async () => {
       try {
         const response = await fetch("/api/admin/telemetry", { cache: "no-store" });
+        if (response.status === 401 && !hasRedirectedRef.current) {
+          const authProbe = await fetch("/api/admin/impact-report", { cache: "no-store" });
+          if (authProbe.status === 401) {
+            hasRedirectedRef.current = true;
+            window.location.replace("/sovereign-access");
+            return;
+          }
+        }
+
         if (!response.ok) return;
         const payload = (await response.json()) as Telemetry;
         if (!mounted) return;
-        setTelemetry(payload);
-        setThoughts(payload.marzThoughts);
+        const telemetrySnapshot = JSON.stringify(payload);
+        if (telemetrySnapshotRef.current !== telemetrySnapshot) {
+          telemetrySnapshotRef.current = telemetrySnapshot;
+          setTelemetry(payload);
+        }
+
+        const thoughtsSnapshot = JSON.stringify(payload.marzThoughts);
+        if (thoughtsSnapshotRef.current !== thoughtsSnapshot) {
+          thoughtsSnapshotRef.current = thoughtsSnapshot;
+          setThoughts(payload.marzThoughts);
+        }
 
         const impactResponse = await fetch("/api/admin/impact-report", { cache: "no-store" });
         if (impactResponse.ok) {
           const impactPayload = (await impactResponse.json()) as ImpactReport;
           const usd = impactPayload?.totals?.totalSavingsUsd ?? 0;
           const nzd = usd * 1.62;
-          setNzdSaved(Number(nzd.toFixed(2)));
+          const rounded = Number(nzd.toFixed(2));
+          if (impactSnapshotRef.current !== rounded) {
+            impactSnapshotRef.current = rounded;
+            setNzdSaved(rounded);
+          }
         }
 
         const switchResponse = await fetch("/api/admin/kill-switch", { cache: "no-store" });
         if (switchResponse.ok) {
           const switchPayload = (await switchResponse.json()) as { globalLaunchActive?: boolean };
-          setGlobalLaunchActive(Boolean(switchPayload.globalLaunchActive));
+          const nextLaunchState = Boolean(switchPayload.globalLaunchActive);
+          if (launchSnapshotRef.current !== nextLaunchState) {
+            launchSnapshotRef.current = nextLaunchState;
+            setGlobalLaunchActive(nextLaunchState);
+          }
         }
       } finally {
         if (mounted) {
@@ -87,7 +119,7 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
       mounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [mounted]);
 
   const thoughtLines = useMemo(() => {
     if (!thoughts?.length) return [];
@@ -123,9 +155,12 @@ export default function NeuralDashboardClient({ initialThoughts }: { initialThou
   };
 
   useEffect(() => {
+    if (!mounted) return;
     if (!terminalRef.current) return;
     terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-  }, [thoughtLines]);
+  }, [mounted, thoughtLines]);
+
+  if (!mounted) return <div className="min-h-screen bg-black" />;
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">

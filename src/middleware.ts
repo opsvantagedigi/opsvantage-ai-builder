@@ -18,6 +18,10 @@ export async function middleware(req: NextRequest) {
   const adminToken = req.cookies.get("zenith_admin_token")?.value;
   const isSovereignAdmin = Boolean(adminToken);
 
+  if (isSovereignAdmin && pathname.startsWith("/admin/dashboard")) {
+    return NextResponse.next();
+  }
+
   const allowPrefixes = ["/api", "/_next"];
   const allowExact = new Set(["/", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/sovereign-access"]);
 
