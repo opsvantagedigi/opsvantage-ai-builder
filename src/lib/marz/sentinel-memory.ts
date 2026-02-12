@@ -16,7 +16,28 @@ type SeedResult = {
   seededCount: number;
 };
 
+function canUseDatabase() {
+  return Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0);
+}
+
+function isDatabaseUnavailableError(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+    return true;
+  }
+
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return /environment variable not found:\s*database_url|can't reach database server|invalid `prisma\./i.test(message);
+}
+
 export async function ensureSentinelMemory(userId?: string | null): Promise<SeedResult> {
+  if (!canUseDatabase()) {
+    return { seededCount: 0 };
+  }
+
   const entries = [
     { category: "CORE", insight: CORE_DIRECTIVE },
     { category: "CORE", insight: ENTRY_001_SPARK },
@@ -47,7 +68,7 @@ export async function ensureSentinelMemory(userId?: string | null): Promise<Seed
       }
     }
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+    if (isDatabaseUnavailableError(error)) {
       return { seededCount: 0 };
     }
     throw error;
@@ -57,6 +78,10 @@ export async function ensureSentinelMemory(userId?: string | null): Promise<Seed
 }
 
 export async function getSentinelJournalContext(limit = 6): Promise<string[]> {
+  if (!canUseDatabase()) {
+    return [];
+  }
+
   try {
     const rows = await prisma.marzMemory.findMany({
       where: {
@@ -71,7 +96,7 @@ export async function getSentinelJournalContext(limit = 6): Promise<string[]> {
 
     return rows.map((row) => row.insight);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+    if (isDatabaseUnavailableError(error)) {
       return [];
     }
     throw error;

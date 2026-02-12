@@ -212,13 +212,32 @@ export default function NeuralDashboardClient({
     const height = canvas.height;
 
     context.clearRect(0, 0, width, height);
-    context.drawImage(image, 0, 0, width, height);
+
+    const imageAspect = image.naturalWidth / image.naturalHeight;
+    const canvasAspect = width / height;
+
+    let drawWidth = width;
+    let drawHeight = height;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (imageAspect > canvasAspect) {
+      drawWidth = width;
+      drawHeight = width / imageAspect;
+      offsetY = (height - drawHeight) / 2;
+    } else {
+      drawHeight = height;
+      drawWidth = height * imageAspect;
+      offsetX = (width - drawWidth) / 2;
+    }
+
+    context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
 
     const clamped = Math.max(0, Math.min(1, mouthIntensity));
     const mouthHeight = 6 + clamped * 28;
     const mouthWidth = 36 + clamped * 8;
-    const mouthX = width * 0.5;
-    const mouthY = height * 0.655;
+    const mouthX = offsetX + drawWidth * 0.5;
+    const mouthY = offsetY + drawHeight * 0.655;
 
     context.save();
     context.fillStyle = "rgba(15, 23, 42, 0.72)";
@@ -400,12 +419,16 @@ export default function NeuralDashboardClient({
     const canvas = marzCanvasRef.current;
     if (!canvas) return;
 
-    canvas.width = 1280;
-    canvas.height = 720;
+    canvas.width = 1024;
+    canvas.height = 1280;
 
     const image = new Image();
     image.src = "/MARZ_Headshot.png";
     image.onload = () => {
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+      }
       marzImageRef.current = image;
       drawMarzFrame(0);
     };
@@ -500,7 +523,7 @@ export default function NeuralDashboardClient({
               <div className="marz-parallax-layer">
                 <canvas
                   ref={marzCanvasRef}
-                  className="aspect-video w-full"
+                  className="mx-auto h-auto max-h-[78vh] w-full"
                   aria-label="MARZ avatar media canvas"
                 />
               </div>
