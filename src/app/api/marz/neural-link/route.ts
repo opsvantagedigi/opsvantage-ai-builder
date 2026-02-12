@@ -3,9 +3,12 @@ import type { NextRequest } from "next/server";
 
 import { verifySession } from "@/lib/verify-session";
 import { MarzAgent } from "@/lib/marz/agent-core";
-import { ELEVENLABS_VOICE_PROFILE, getInitialVoicePayload } from "@/lib/marz-logic";
+import { getInitialVoicePayload } from "@/lib/marz-logic";
 import { ensureSentinelMemory } from "@/lib/marz/sentinel-memory";
 
+const VOICE_ID = "nz_female_grounded";
+const ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
+const ELEVENLABS_MODEL_LABEL = "NZ-Aria";
 const DEFAULT_PROMPT =
   "Deliver a concise ops update in a grounded New Zealand tone inspired by a calm, motherly advisor. Keep it under 70 words.";
 
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ELEVENLABS_API_KEY is not configured." }, { status: 503 });
     }
 
-    const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_PROFILE.voiceId}/stream`, {
+    const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`, {
       method: "POST",
       headers: {
         "xi-api-key": elevenLabsApiKey,
@@ -50,28 +53,56 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         text: spokenText,
-        model_id: ELEVENLABS_VOICE_PROFILE.modelId,
-        voice_settings: ELEVENLABS_VOICE_PROFILE.settings,
+        model_id: ELEVENLABS_MODEL_ID,
+        voice_settings: {
+          stability: 0.45,
+          similarity_boost: 0.85,
+          style: 0.2,
+          use_speaker_boost: true,
+        },
       }),
     });
 
+    let audioBuffer: string;
+    let modelLabel = ELEVENLABS_MODEL_LABEL;
+
     if (!ttsResponse.ok) {
       const details = await ttsResponse.text();
-      return NextResponse.json(
-        {
-          error: "ElevenLabs synthesis failed.",
-          details: details.slice(0, 600),
-        },
-        { status: 502 }
-      );
+      
+      // Check if the error is due to payment required (free tier limitation)
+      if (ttsResponse.status === 402) { // Payment Required
+        // Fallback to a browser-based speech synthesis
+        console.log("ElevenLabs payment required, falling back to browser speech synthesis");
+        
+        // Return a success response with a placeholder audio and a different model label
+        // The client will handle the browser-based speech synthesis
+        audioBuffer = ""; // Will be handled by browser
+        modelLabel = "Browser-TTS";
+        
+        return NextResponse.json({
+          voiceId: "browser_synthesis",
+          modelId: "browser_tts",
+          modelLabel: modelLabel,
+          text: spokenText,
+          audioBase64: audioBuffer,
+        });
+      } else {
+        return NextResponse.json(
+          {
+            error: "ElevenLabs synthesis failed.",
+            details: details.slice(0, 600),
+          },
+          { status: 502 }
+        );
+      }
     }
 
-    const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
+    audioBuffer = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
     return NextResponse.json({
-      voiceId: ELEVENLABS_VOICE_PROFILE.voiceId,
-      modelId: ELEVENLABS_VOICE_PROFILE.modelId,
-      modelLabel: ELEVENLABS_VOICE_PROFILE.modelLabel,
+      voiceId: VOICE_ID,
+      modelId: ELEVENLABS_MODEL_ID,
+      modelLabel: modelLabel,
       text: spokenText,
       audioBase64: audioBuffer,
     });

@@ -213,6 +213,7 @@ export default function NeuralDashboardClient({
 
     context.clearRect(0, 0, width, height);
 
+    // Calculate the aspect ratio to properly fit the image
     const imageAspect = image.naturalWidth / image.naturalHeight;
     const canvasAspect = width / height;
 
@@ -221,23 +222,27 @@ export default function NeuralDashboardClient({
     let offsetX = 0;
     let offsetY = 0;
 
+    // Scale the image to fit within the canvas while maintaining aspect ratio
     if (imageAspect > canvasAspect) {
-      drawHeight = height;
-      drawWidth = height * imageAspect;
-      offsetX = (width - drawWidth) / 2;
-    } else {
+      // Image is wider than canvas (relative to heights)
       drawWidth = width;
       drawHeight = width / imageAspect;
       offsetY = (height - drawHeight) / 2;
+    } else {
+      // Image is taller than canvas (relative to widths)
+      drawHeight = height;
+      drawWidth = height * imageAspect;
+      offsetX = (width - drawWidth) / 2;
     }
 
     context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
 
+    // Calculate mouth position relative to the drawn image, not the full canvas
     const clamped = Math.max(0, Math.min(1, mouthIntensity));
-    const mouthHeight = 6 + clamped * 28;
-    const mouthWidth = 36 + clamped * 8;
-    const mouthX = width * 0.5;
-    const mouthY = height * 0.655;
+    const mouthHeight = (6 + clamped * 28) * (drawHeight / image.naturalHeight); // Scale with image
+    const mouthWidth = (36 + clamped * 8) * (drawWidth / image.naturalWidth); // Scale with image
+    const mouthX = offsetX + drawWidth * 0.5; // Center horizontally in the drawn image
+    const mouthY = offsetY + drawHeight * 0.655; // Position vertically in the drawn image
 
     context.save();
     context.fillStyle = "rgba(15, 23, 42, 0.72)";
@@ -246,7 +251,7 @@ export default function NeuralDashboardClient({
     context.fill();
 
     context.strokeStyle = "rgba(251, 191, 36, 0.55)";
-    context.lineWidth = 2;
+    context.lineWidth = 2 * (drawWidth / image.naturalWidth); // Scale stroke width with image
     context.beginPath();
     context.ellipse(mouthX, mouthY, mouthWidth, mouthHeight, 0, 0, Math.PI * 2);
     context.stroke();
@@ -296,7 +301,62 @@ export default function NeuralDashboardClient({
   }, [drawMarzFrame]);
 
   const playNeuralSpeech = React.useCallback(
-    async (audioBase64: string) => {
+    async (audioBase64: string, modelId?: string) => {
+      // If using browser-based TTS, use the Web Speech API
+      if (modelId === "browser_tts" || !audioBase64) {
+        // Stop any existing audio
+        stopLipSync();
+        
+        // Use Web Speech API for text-to-speech
+        const utterance = new SpeechSynthesisUtterance(neuralSpeech);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.1;
+        utterance.volume = 0.8;
+        
+        // Animate lips while speaking
+        const startTime = Date.now();
+        const duration = neuralSpeech.length * 50; // Approximate duration based on text length
+        
+        const animateLips = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Create a breathing-like lip movement pattern
+          const breathCycle = (Math.sin(progress * Math.PI * 2 * 3) + 1) / 2; // 3 cycles per second
+          const intensity = breathCycle * 0.7; // Reduce intensity
+          
+          drawMarzFrame(intensity);
+          
+          if (progress < 1) {
+            animationFrameRef.current = requestAnimationFrame(animateLips);
+          } else {
+            // End of speech, reset to idle
+            setTimeout(() => {
+              setNeuralLinkActive(false);
+              drawMarzFrame(0);
+            }, 500);
+          }
+        };
+        
+        utterance.onstart = () => {
+          setNeuralLinkActive(true);
+          animationFrameRef.current = requestAnimationFrame(animateLips);
+        };
+        
+        utterance.onend = () => {
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+          }
+          setNeuralLinkActive(false);
+          drawMarzFrame(0);
+        };
+        
+        speechSynthesis.speak(utterance);
+        return;
+      }
+      
+      // Original audio playback for ElevenLabs audio
       stopLipSync();
 
       const raw = atob(audioBase64);
@@ -346,7 +406,7 @@ export default function NeuralDashboardClient({
       await audioElement.play();
       animationFrameRef.current = requestAnimationFrame(renderFrame);
     },
-    [drawMarzFrame, stopLipSync]
+    [drawMarzFrame, neuralSpeech, stopLipSync]
   );
 
   const activateNeuralLink = React.useCallback(async () => {
@@ -369,14 +429,14 @@ export default function NeuralDashboardClient({
       });
 
       const payload = (await response.json()) as NeuralLinkResponse & { error?: string; details?: string };
-      if (!response.ok || !payload.audioBase64) {
+      if (!response.ok) {
         throw new Error(payload.details || payload.error || "Neural Link activation failed.");
       }
 
       hasEstablishedNeuralLinkRef.current = true;
       setVoiceModelLabel(payload.modelLabel || payload.modelId || "NZ-Aria");
       setNeuralSpeech(payload.text);
-      await playNeuralSpeech(payload.audioBase64);
+      await playNeuralSpeech(payload.audioBase64, payload.modelId);
     } catch (error) {
       setNeuralLinkActive(false);
       setNeuralLinkError(error instanceof Error ? error.message : String(error));
@@ -384,7 +444,7 @@ export default function NeuralDashboardClient({
     } finally {
       setNeuralLinkBusy(false);
     }
-  }, [drawMarzFrame, playNeuralSpeech, thoughtLines]);
+  }, [drawMarzFrame, neuralSpeech, playNeuralSpeech, thoughtLines]);
 
   const handleKillSwitch = async () => {
     setSwitchBusy(true);
@@ -419,18 +479,43 @@ export default function NeuralDashboardClient({
     const canvas = marzCanvasRef.current;
     if (!canvas) return;
 
+    // Set initial canvas dimensions
     canvas.width = 1024;
     canvas.height = 1280;
 
     const image = new Image();
     image.src = "/MARZ_Headshot.png";
+    image.crossOrigin = "anonymous"; // Enable CORS for the image
     image.onload = () => {
-      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
-        canvas.width = image.naturalWidth;
-        canvas.height = image.naturalHeight;
+      // Maintain aspect ratio by calculating appropriate dimensions
+      const maxWidth = 600; // Maximum width for display
+      const maxHeight = 800; // Maximum height for display
+      
+      // Calculate aspect ratio
+      const aspectRatio = image.naturalWidth / image.naturalHeight;
+      
+      let displayWidth = maxWidth;
+      let displayHeight = maxHeight;
+      
+      // Adjust dimensions to maintain aspect ratio
+      if (aspectRatio > 1) {
+        // Landscape orientation
+        displayHeight = maxWidth / aspectRatio;
+      } else {
+        // Portrait orientation
+        displayWidth = maxHeight * aspectRatio;
       }
+      
+      // Set canvas dimensions to match the calculated display size
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+      
       marzImageRef.current = image;
       drawMarzFrame(0);
+    };
+    
+    image.onerror = () => {
+      console.error("Failed to load MARZ headshot image");
     };
   }, [drawMarzFrame, mounted]);
 
@@ -523,7 +608,7 @@ export default function NeuralDashboardClient({
               <div className="marz-parallax-layer">
                 <canvas
                   ref={marzCanvasRef}
-                  className="mx-auto h-auto max-h-[78vh] w-full"
+                  className="mx-auto h-auto max-h-[78vh] w-full object-contain"
                   aria-label="MARZ avatar media canvas"
                 />
               </div>
