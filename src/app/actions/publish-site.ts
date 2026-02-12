@@ -123,8 +123,6 @@ export async function publishSiteAction(
 
     if (customDomain) {
       try {
-        console.log(`[MARZ] Processing custom domain: ${customDomain}`);
-
         // In a real implementation, you would integrate with your hosting provider here
         // For now, we'll simulate the domain setup
         
@@ -163,8 +161,6 @@ export async function publishSiteAction(
         publishedAt: new Date(),
       },
     });
-
-    console.log(`[MARZ] Project published: ${projectId} -> ${liveUrl}`);
 
     return {
       success: true,

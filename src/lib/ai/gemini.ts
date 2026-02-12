@@ -3,17 +3,12 @@
 // e.g., import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function getGenerativeModel(modelName: string = 'gemini-pro') {
-  console.log('[GENERIC_MODEL] using model:', modelName);
   // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   // return genAI.getGenerativeModel({ model: modelName });
 
   // Mock implementation for now
   return {
     generateContent: async (prompt: string): Promise<{ response: { text: () => string } }> => {
-      console.log('--- MOCK GEMINI PROMPT ---');
-      console.log(prompt.substring(0, 500) + '...');
-      console.log('--------------------------');
-
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 

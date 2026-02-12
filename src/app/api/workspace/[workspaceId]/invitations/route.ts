@@ -197,8 +197,6 @@ export async function POST(
       },
     });
 
-    console.log(`[MARZ] Invitation created: ${email} to ${workspaceId}`);
-
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
 
     return NextResponse.json({

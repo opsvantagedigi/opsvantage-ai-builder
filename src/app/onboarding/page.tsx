@@ -117,7 +117,6 @@ const OnboardingPage = () => {
   };
 
   const handleGenerateSite = async () => {
-    console.log('Final data, starting site generation:', formData);
     try {
       await saveData({ ...formData, status: 'COMPLETED' });
       // Redirect to the project builder for final editing and publishing.

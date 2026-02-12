@@ -48,8 +48,6 @@ export async function DELETE(
       where: { id },
     });
 
-    console.log(`[MARZ] Invitation revoked: ${id}`);
-
     return NextResponse.json({
       success: true,
       message: 'Invitation revoked',

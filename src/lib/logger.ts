@@ -15,7 +15,7 @@ const createLogger = (): Logger => {
   const timestamp = () => new Date().toISOString();
 
   const log = (level: string, levelValue: number, msg: string, ...args: unknown[]) => {
-    if (levelValue >= currentLevel) {
+    if (process.env.NODE_ENV !== 'production' && levelValue >= currentLevel) {
       console.log(`[${timestamp()}] [${level.toUpperCase()}]`, msg, ...args);
     }
   };

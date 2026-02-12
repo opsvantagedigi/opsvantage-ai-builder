@@ -45,7 +45,6 @@ export function useAutoSave(
           setError(null);
           retryCountRef.current = 0;
           onStatusChange?.('saved');
-          console.log('[MARZ] Engram saved successfully');
         } else {
           throw new Error(result.error || 'Save failed');
         }
@@ -56,10 +55,6 @@ export function useAutoSave(
         // Retry logic
         if (retryCountRef.current < MAX_RETRIES) {
           retryCountRef.current += 1;
-          console.warn(
-            `[MARZ] Retry attempt ${retryCountRef.current}/${MAX_RETRIES}:`,
-            errorMsg
-          );
           setStatus('unsaved');
           onStatusChange?.('unsaved');
 
@@ -68,7 +63,6 @@ export function useAutoSave(
         } else {
           setStatus('error');
           onStatusChange?.('error');
-          console.error('[MARZ] Save failed after retries:', errorMsg);
         }
       }
     },

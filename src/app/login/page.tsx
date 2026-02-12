@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [providers, setProviders] = useState<Record<string, unknown> | null>(null);
@@ -16,10 +18,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setError(null);
 
+    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
     const result = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/dashboard",
+      callbackUrl,
       redirect: false,
     });
 
@@ -29,7 +33,7 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = result?.url || "/dashboard";
+    window.location.href = result?.url || callbackUrl;
   }
 
   useEffect(() => {
@@ -119,11 +123,12 @@ export default function LoginPage() {
                   const providerId = String(provider.id || key);
                   const providerName = String(provider.name || key);
 
+                  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
                   return (
                     <button
                       key={providerId}
                       type="button"
-                      onClick={() => signIn(providerId, { callbackUrl: "/dashboard" })}
+                      onClick={() => signIn(providerId, { callbackUrl })}
                       className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       {providerId === "google" ? (

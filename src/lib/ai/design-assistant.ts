@@ -337,7 +337,6 @@ export async function generateImage(prompt: string): Promise<{ url: string }> {
 export async function analyzeCompetitor(bodyContent: string): Promise<{ tone: string, keywords: string[], summary: string }> {
   // In a real implementation, you would call your generative AI model here
   // with the bodyContent to get an analysis.
-  console.log('Analyzing competitor content:', bodyContent.substring(0, 100) + '...');
   return Promise.resolve({
     tone: 'Professional',
     keywords: ['AI', 'Websites', 'SEO'],
@@ -346,7 +345,6 @@ export async function analyzeCompetitor(bodyContent: string): Promise<{ tone: st
 }
 
 export async function generateAnalyticsInsights(data: Record<string, unknown>): Promise<{ summary: string; recommendations: string[] }> {
-  console.log('Generating analytics insights for:', data);
   // In a real implementation, you would call your generative AI model here.
   return Promise.resolve({
     summary: 'This is a mock analytics insight based on the provided data.',
@@ -361,7 +359,6 @@ interface PageSection {
 }
 
 export async function refactorPageData(data: { sections: PageSection[], instruction: string }): Promise<{ sections: PageSection[] }> {
-  console.log('Refactoring page data with instruction:', data.instruction);
   // In a real implementation, you would send the sections and instruction
   // to the AI and get back a new structure. For now, we just return the original.
   return Promise.resolve({

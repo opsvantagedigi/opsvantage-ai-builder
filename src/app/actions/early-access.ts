@@ -24,8 +24,6 @@ export async function submitEarlyAccessEmail(email: string) {
     //   data: { email, signedUpAt: new Date() }
     // });
 
-    console.log('[MARZ] Early access signup:', email);
-
     // TODO: Send confirmation email via Resend/SendGrid
     // await sendConfirmationEmail(email);
 

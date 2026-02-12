@@ -76,7 +76,6 @@ export default function SitePage({ params }: SitePageProps) {
 
         const data = await response.json() as SiteData;
         setSiteData(data);
-        console.log('[MARZ] Public stage loaded for:', resolvedParams.siteId);
       } catch (err) {
         console.error('[MARZ] Failed to load site:', err);
         setError('Failed to load site data');

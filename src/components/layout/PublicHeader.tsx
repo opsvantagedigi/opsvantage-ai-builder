@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { AuthGuardedCta } from "@/components/auth/AuthGuardedCta";
 import { MARKETING_NAV, SITE_DOMAIN } from "@/lib/site-config";
 
 export function PublicHeader() {
@@ -47,12 +48,11 @@ export function PublicHeader() {
 
         <div className="hidden items-center gap-3 md:flex">
           <ThemeToggle />
-          <Link
+          <AuthGuardedCta
+            label="Start Free"
             href="/onboarding"
             className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400"
-          >
-            Start Free
-          </Link>
+          />
         </div>
 
         <button
@@ -80,13 +80,11 @@ export function PublicHeader() {
             ))}
             <div className="mt-2 flex items-center justify-between">
               <ThemeToggle />
-              <Link
+              <AuthGuardedCta
+                label="Start Free"
                 href="/onboarding"
-                onClick={() => setMenuOpen(false)}
                 className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-cyan-500 dark:text-slate-950"
-              >
-                Start Free
-              </Link>
+              />
             </div>
           </nav>
         </div>

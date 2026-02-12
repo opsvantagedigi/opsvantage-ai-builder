@@ -15,8 +15,6 @@ export async function saveProjectContentAction(projectId: string, content: any) 
       return { success: false, error: 'Unauthorized' };
     }
 
-    console.log(`[MARZ] Persisting Engram for Project: ${projectId}`);
-
     // 2. UPDATE DATABASE
     await db.project.update({
       where: { id: projectId },
@@ -25,8 +23,6 @@ export async function saveProjectContentAction(projectId: string, content: any) 
         updatedAt: new Date(),
       },
     });
-
-    console.log(`[MARZ] Memory Write Complete: ${projectId}`);
     return { success: true, timestamp: new Date().toISOString() };
   } catch (error) {
     console.error('[MARZ] Memory Write Failed:', error);
@@ -44,8 +40,6 @@ export async function loadProjectContentAction(projectId: string) {
     if (!session?.email) {
       return { success: false, error: 'Unauthorized' };
     }
-
-    console.log(`[MARZ] Retrieving Engram for Project: ${projectId}`);
 
     // 2. LOAD FROM DATABASE
     const project = await db.project.findUnique({

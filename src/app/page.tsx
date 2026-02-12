@@ -1,6 +1,7 @@
 import ComingSoon from "../components/ComingSoon";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Cpu, Gauge, Globe2, ShieldCheck, Sparkles } from "lucide-react";
+import { AuthGuardedCta } from "@/components/auth/AuthGuardedCta";
 
 const LAUNCH_DATE = "2026-03-10T00:00:00Z";
 
@@ -70,10 +71,10 @@ function FullLanding() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/onboarding" className="button-primary">
+            <AuthGuardedCta label="Start Building" href="/onboarding" className="button-primary">
               Start Building
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+            </AuthGuardedCta>
             <Link href="/pricing" className="button-secondary">
               View Pricing
             </Link>

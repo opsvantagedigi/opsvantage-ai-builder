@@ -77,8 +77,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    console.log(`[MARZ] Serving published site: ${siteId}`);
-
     // Return the site content with cache headers
     return NextResponse.json(project.content, {
       headers: {

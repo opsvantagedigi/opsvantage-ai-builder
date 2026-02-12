@@ -94,10 +94,6 @@ export async function POST(
       data: { status: 'ACCEPTED' },
     });
 
-    console.log(
-      `[MARZ] Invitation accepted: ${user.email} joined ${invitation.workspace.name}`
-    );
-
     return NextResponse.json({
       success: true,
       message: `Welcome to ${invitation.workspace.name}!`,

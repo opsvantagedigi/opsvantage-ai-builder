@@ -98,10 +98,6 @@ export default function BuilderPage({ params }: BuilderPageProps) {
 
         if (result.success && result.content) {
           setSiteData(result.content as typeof DEFAULT_SITE_DATA);
-          console.log('[MARZ] Engram loaded from long-term memory');
-        } else if (result.error) {
-          // If no saved data, use default
-          console.log('[MARZ] Starting fresh Engram, using default structure');
         }
       } catch (error) {
         console.error('[MARZ] Failed to load project:', error);

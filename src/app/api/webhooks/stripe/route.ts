@@ -47,8 +47,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[MARZ] Stripe webhook event: ${event.type}`);
-
     // 2. Handle different event types
     switch (event.type) {
       case 'customer.subscription.created':
@@ -69,7 +67,7 @@ export async function POST(req: NextRequest) {
         break;
 
       default:
-        console.log(`[MARZ] Unhandled event type: ${event.type}`);
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -140,9 +138,6 @@ async function handleSubscriptionCreatedOrUpdated(subscription: Stripe.Subscript
       },
     });
 
-    console.log(
-      `[MARZ] Subscription updated for user ${user.id}: ${subscription.status}`
-    );
   } catch (error) {
     console.error('[MARZ] Error handling subscription created/updated:', error);
     throw error;
@@ -183,7 +178,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       },
     });
 
-    console.log(`[MARZ] Subscription canceled for user ${user.id}`);
   } catch (error) {
     console.error('[MARZ] Error handling subscription deleted:', error);
     throw error;
@@ -209,8 +203,6 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       return;
     }
 
-    console.log(`[MARZ] Payment succeeded for user ${user.id}: ${invoiceData.amount / 100} ${invoiceData.currency.toUpperCase()}`);
-    // You can add additional logic here, like sending a receipt email
   } catch (error) {
     console.error('[MARZ] Error handling invoice payment succeeded:', error);
     throw error;
@@ -244,8 +236,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       },
     });
 
-    console.log(`[MARZ] Payment failed for user ${user.id}`);
-    // You can add additional logic here, like sending a payment failure email
   } catch (error) {
     console.error('[MARZ] Error handling invoice payment failed:', error);
     throw error;

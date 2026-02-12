@@ -1,8 +1,7 @@
-import { type NextAuthOptions, type User, type Session } from "next-auth";
+import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
-import { JWT } from "next-auth/jwt";
 
 const credentialProvider = CredentialsProvider({
   name: "Credentials",
@@ -35,42 +34,7 @@ export const authOptions: NextAuthOptions = {
   session: { 
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  // Ensure a secret is always present to avoid runtime errors in production
   secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
-  // Temporarily enable debug mode unconditionally to capture detailed
-  // NextAuth logs in production. Revert this change after diagnostics.
-  debug: true,
-  // Ensure server-side errors and warnings are logged to runtime logs
-  logger: {
-    error(code, metadata) {
-      console.error('NextAuth ERROR', code, metadata)
-      // Best-effort: forward NextAuth errors to diagnostics endpoint so they
-      // appear as dedicated log entries in production logs for easier filtering.
-      try {
-        const endpoint = process.env.NEXTAUTH_URL
-          ? `${process.env.NEXTAUTH_URL}/api/diagnostics/nextauth-errors`
-          : undefined
-        if (endpoint) {
-          // fire-and-forget
-          void fetch(endpoint, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ code, metadata, timestamp: new Date().toISOString() }),
-          }).catch(() => undefined)
-        }
-      } catch (e) {
-        // Ignore forwarding errors to avoid cascading failures
-      }
-    },
-    warn(code) {
-      console.warn('NextAuth WARN', code)
-    },
-    debug(code) {
-      // Use console.error for debug-level messages so they are visible
-      // in production runtime logs where console.debug may be filtered.
-      console.error('NextAuth DEBUG', code)
-    }
-  },
   callbacks: {
     jwt: async ({ token, user }: any) => {
       if (user) {
@@ -98,7 +62,4 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login'
   },
-  // Note: We rely on the `logger.error` handler above to capture runtime
-  // NextAuth errors. Avoid adding an `events` block with incompatible typing
-  // to keep the TypeScript build clean in production.
 };

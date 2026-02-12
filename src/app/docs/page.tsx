@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { BookOpenText, BotMessageSquare, FileCheck2, Layers3, ServerCog } from "lucide-react";
 
 const docsSections = [
@@ -7,28 +10,38 @@ const docsSections = [
     title: "Platform Overview",
     description: "Understand how OpsVantage connects AI planning, page generation, publishing, and operations.",
     href: "/docs#platform-overview",
+    content:
+      "OpsVantage unifies planning, generation, deployment, and operational monitoring so teams can move from strategy to live production with fewer handoffs.",
   },
   {
     icon: Layers3,
     title: "Implementation Guides",
     description: "Step-by-step setup for projects, workspaces, domains, and launch governance.",
     href: "/docs#implementation-guides",
+    content:
+      "Implementation guides cover workspace setup, domain onboarding, approvals, and launch controls to keep every environment deployment-safe and repeatable.",
   },
   {
     icon: ServerCog,
     title: "Deployment Playbooks",
     description: "Cloud Run deployment, environment controls, and production checks for reliable releases.",
     href: "/docs#deployment-playbooks",
+    content:
+      "Playbooks include release toggles, runtime checks, build traceability, and rollback discipline so each deployment can be verified and audited quickly.",
   },
   {
     icon: BotMessageSquare,
     title: "AI Workflow Patterns",
     description: "Practical frameworks for prompts, content quality review, and iterative optimization.",
     href: "/docs#ai-workflow-patterns",
+    content:
+      "AI workflow patterns define prompt structuring, review gates, and quality loops that keep generated output aligned with business outcomes and brand standards.",
   },
 ];
 
 export default function DocsPage() {
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
   return (
     <div className="mesh-gradient py-10 md:py-14">
       <section className="section-shell">
@@ -48,14 +61,26 @@ export default function DocsPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {docsSections.map((section) => {
             const Icon = section.icon;
+            const isOpen = openSection === section.title;
+
             return (
               <article key={section.title} className="surface-card">
                 <Icon className="h-5 w-5 text-cyan-700 dark:text-cyan-300" />
                 <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{section.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{section.description}</p>
-                <Link href={section.href} className="mt-4 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200">
+                <button
+                  type="button"
+                  onClick={() => setOpenSection(isOpen ? null : section.title)}
+                  className="mt-4 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                >
                   Read section
-                </Link>
+                </button>
+                {isOpen && <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-200">{section.content}</p>}
+                <div className="mt-3">
+                  <Link href={section.href} className="text-xs font-medium text-slate-500 underline-offset-2 hover:underline dark:text-slate-400">
+                    Jump to detailed guide
+                  </Link>
+                </div>
               </article>
             );
           })}

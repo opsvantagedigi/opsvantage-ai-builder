@@ -124,8 +124,6 @@ export async function inviteMemberAction(
       },
     });
 
-    console.log(`[MARZ] Invitation created: ${email} to workspace ${workspaceId}`);
-
     // TODO: Send email with invitation link
     // const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
     // await sendInvitationEmail(email, inviteLink, workspace.name);
@@ -209,8 +207,6 @@ export async function acceptInvitationAction(token: string): Promise<InviteMembe
       data: { status: 'ACCEPTED' },
     });
 
-    console.log(`[MARZ] Invitation accepted: ${user.email} joined workspace ${invitation.workspaceId}`);
-
     return {
       success: true,
       message: `Welcome to ${invitation.workspace.name}!`,
@@ -256,8 +252,6 @@ export async function revokeinvitationAction(invitationId: string, workspaceId: 
     await db.invitation.delete({
       where: { id: invitationId },
     });
-
-    console.log(`[MARZ] Invitation revoked: ${invitationId}`);
 
     return { success: true, message: 'Invitation revoked' };
   } catch (error) {

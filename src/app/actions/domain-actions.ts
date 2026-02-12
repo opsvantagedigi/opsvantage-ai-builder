@@ -36,7 +36,7 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
             const retailAmount = (costPrice * MARKUP).toFixed(2);
 
             return {
-                status: result.status, // "free", "active", "quarantine"
+                status: result.status,
                 domain: result.domain,
                 price: {
                     currency: currency,
@@ -53,8 +53,7 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
             isPremium: result.is_premium
         };
 
-    } catch (error) {
-        console.error("[MARZ] Domain Check Action Error:", error);
+    } catch {
         return { error: "Neural link timeout. Repurposing bandwidth..." };
     }
 }

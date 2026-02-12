@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthGuardedCta } from "@/components/auth/AuthGuardedCta";
 
 export type ContentCard = {
   title: string;
@@ -43,9 +44,9 @@ export function FeatureDetailPage({
           </h1>
           <p className="mt-6 max-w-3xl text-base leading-7 text-slate-600 md:text-lg dark:text-slate-300">{description}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={primaryCta.href} className="button-primary">
+            <AuthGuardedCta label={primaryCta.label} href={primaryCta.href} className="button-primary">
               {primaryCta.label}
-            </Link>
+            </AuthGuardedCta>
             {secondaryCta && (
               <Link href={secondaryCta.href} className="button-secondary">
                 {secondaryCta.label}

@@ -1,4 +1,5 @@
 import { DomainSearchInput } from "@/components/features/domain-search";
+import { InfrastructureWizard } from "@/components/features/InfrastructureWizard";
 import { Globe2, ShieldCheck, Workflow } from "lucide-react";
 
 const domainBenefits = [
@@ -39,6 +40,10 @@ export default function DomainsPage() {
         <div className="surface-card p-6 md:p-8">
           <DomainSearchInput />
         </div>
+      </section>
+
+      <section className="section-shell py-4">
+        <InfrastructureWizard />
       </section>
 
       <section className="section-shell py-8 pb-16">

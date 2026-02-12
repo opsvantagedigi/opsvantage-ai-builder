@@ -53,8 +53,6 @@ export function EditableImage({
       // Pick a random placeholder
       const randomImage = placeholders[Math.floor(Math.random() * placeholders.length)];
       onUpdate(randomImage);
-
-      console.log('[MARZ] Generated visual cortex update:', prompt);
     } catch (error) {
       console.error('[MARZ] Image generation failed:', error);
     } finally {
@@ -79,7 +77,6 @@ export function EditableImage({
       reader.onload = (event) => {
         const result = event.target?.result as string;
         onUpdate(result);
-        console.log('[MARZ] Image uploaded to visual cortex');
       };
       reader.readAsDataURL(file);
     } catch (error) {

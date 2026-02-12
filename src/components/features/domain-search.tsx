@@ -2,15 +2,16 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { checkDomainAvailabilityAction } from '@/app/actions/domain-actions';
 import { CheckCircle2, Globe, Loader2, Search, ShieldCheck, XCircle } from 'lucide-react';
 
 type DomainResult = {
   domain: string;
-  status: 'free' | 'taken' | string;
+  status: 'free' | 'taken' | 'active' | 'in use' | string;
+  reason?: string;
+  suggestions?: string[];
   isPremium?: boolean;
   price?: {
-    amount: number;
+    amount: string;
     currency: string;
   };
 };
@@ -32,7 +33,13 @@ export function DomainSearchInput() {
     setError(null);
 
     try {
-      const data = await checkDomainAvailabilityAction(query.trim().toLowerCase());
+      const response = await fetch('/api/domains', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ domain: query.trim().toLowerCase() }),
+      });
+      const data = (await response.json()) as DomainResult & { error?: string };
+
       if (data.error) {
         setError(data.error);
         return;
@@ -47,6 +54,7 @@ export function DomainSearchInput() {
   };
 
   const showAvailable = result?.status === 'free';
+  const showSuggestions = Boolean(result?.suggestions?.length) && !showAvailable;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -129,6 +137,9 @@ export function DomainSearchInput() {
                     {showAvailable ? 'Available' : 'Unavailable'}
                   </p>
                   <h3 className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">{result.domain}</h3>
+                  {result.reason && (
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{result.reason}</p>
+                  )}
                   {result.isPremium && (
                     <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-600 dark:text-amber-300">
                       Premium domain
@@ -146,6 +157,24 @@ export function DomainSearchInput() {
                 </div>
               )}
             </div>
+
+            {showSuggestions && (
+              <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Suggested alternatives</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {result.suggestions?.slice(0, 8).map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setQuery(suggestion)}
+                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.article>
         )}
       </AnimatePresence>

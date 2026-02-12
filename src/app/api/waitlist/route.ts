@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 function isValidEmail(email: unknown): email is string {
   if (typeof email !== "string") return false;
@@ -9,6 +10,11 @@ function isValidEmail(email: unknown): email is string {
 }
 
 export async function POST(request: Request) {
+  const rate = applyRateLimit(request, { keyPrefix: "api:waitlist", limit: 15, windowMs: 60_000 });
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a minute." }, { status: 429, headers: { "Retry-After": `${rate.retryAfterSeconds}` } });
+  }
+
   try {
     const body = (await request.json()) as { email?: unknown; source?: unknown };
     const email = body.email;

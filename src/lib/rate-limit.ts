@@ -1,3 +1,60 @@
+import type { NextRequest } from "next/server";
+
+type Bucket = {
+  count: number;
+  resetAt: number;
+};
+
+const globalBuckets = globalThis as typeof globalThis & {
+  __rateLimitBuckets?: Map<string, Bucket>;
+};
+
+const buckets = globalBuckets.__rateLimitBuckets ?? new Map<string, Bucket>();
+globalBuckets.__rateLimitBuckets = buckets;
+
+function getClientIp(request: Request | NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
+export function applyRateLimit(
+  request: Request | NextRequest,
+  options: {
+    keyPrefix: string;
+    limit: number;
+    windowMs: number;
+  }
+) {
+  const ip = getClientIp(request);
+  const key = `${options.keyPrefix}:${ip}`;
+  const now = Date.now();
+
+  const bucket = buckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    buckets.set(key, { count: 1, resetAt: now + options.windowMs });
+    return { allowed: true, remaining: options.limit - 1, retryAfterSeconds: Math.ceil(options.windowMs / 1000) };
+  }
+
+  if (bucket.count >= options.limit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
+    };
+  }
+
+  bucket.count += 1;
+  buckets.set(key, bucket);
+
+  return {
+    allowed: true,
+    remaining: options.limit - bucket.count,
+    retryAfterSeconds: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
+  };
+}
 import { LRUCache } from 'lru-cache';
 import { NextResponse } from 'next/server';
 import { logger } from './logger';
