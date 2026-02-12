@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useHasMounted } from '@/hooks/useHasMounted';
 
 declare global {
   interface Window {
@@ -10,6 +11,7 @@ declare global {
 }
 
 const MarzOperator = () => {
+  const hasMounted = useHasMounted();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [conversationLog, setConversationLog] = useState<string[]>([]);
@@ -18,6 +20,8 @@ const MarzOperator = () => {
   const router = useRouter();
 
   useEffect(() => {
+    if (!hasMounted) return;
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (SpeechRecognition) {
@@ -51,9 +55,11 @@ const MarzOperator = () => {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [hasMounted]);
 
   const processVoiceCommand = (command: string) => {
+    if (!hasMounted) return;
+    
     const lowerCommand = command.toLowerCase().trim();
     
     // Add to conversation log
@@ -81,6 +87,8 @@ const MarzOperator = () => {
   };
 
   const toggleListening = () => {
+    if (!hasMounted) return;
+    
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -96,6 +104,8 @@ const MarzOperator = () => {
   };
 
   const downloadBlueprint = () => {
+    if (!hasMounted) return;
+    
     const blueprintContent = `# MARZ Build Blueprint\n\n## Conversation Log\n${conversationLog.join('\n')}\n\n## Generated on: ${new Date().toISOString()}`;
     const blob = new Blob([blueprintContent], { type: 'text/markdown' });
     const url = window.URL.createObjectURL(blob);
@@ -107,6 +117,11 @@ const MarzOperator = () => {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
+
+  if (!hasMounted) {
+    // Render an empty div with the same structure to prevent hydration mismatch
+    return <div className="fixed bottom-6 right-6 z-50" />;
+  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50">

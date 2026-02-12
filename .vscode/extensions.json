@@ -2,6 +2,7 @@
     "recommendations": [
         "github.copilot-chat",
         "csstools.postcss",
-        "googlecloudtools.cloudcode"
+        "googlecloudtools.cloudcode",
+        "google.geminicodeassist"
     ]
 }

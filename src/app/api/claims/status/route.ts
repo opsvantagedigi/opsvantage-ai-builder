@@ -1,23 +1,36 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-import { FOUNDERS_LIMITS, getOfferStatus } from "@/lib/claims-counter";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { getOfferStatus, isFoundersOfferId } from "@/lib/claims-counter";
 
-export async function GET() {
-  const offerIds = Object.keys(FOUNDERS_LIMITS) as Array<keyof typeof FOUNDERS_LIMITS>;
-  const statuses = await Promise.all(offerIds.map((offerId) => getOfferStatus(offerId)));
+export async function GET(req: NextRequest) {
+  const rate = applyRateLimit(req, { keyPrefix: "api:claims:status", limit: 60, windowMs: 60_000 });
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      { status: 429, headers: { "Retry-After": `${rate.retryAfterSeconds}` } }
+    );
+  }
 
-  // Primary scarcity driver is the Wholesale Ghost per Sovereign 25.
-  const wholesale = statuses.find((s) => s.offerId === "wholesale-ghost");
+  const { searchParams } = new URL(req.url);
+  const offerId = searchParams.get("offerId");
 
-  const counterBadgeText = wholesale?.limit
-    ? `Only ${wholesale.remaining ?? 0}/${wholesale.limit} Founding Estate spots remaining.`
-    : null;
+  if (!offerId) {
+    // Default: only the headline scarcity offer.
+    const wholesale = await getOfferStatus("wholesale-ghost");
+    return NextResponse.json({ offers: { [wholesale.offerId]: wholesale } }, { status: 200 });
+  }
 
-  return NextResponse.json(
-    {
-      offers: statuses,
-      counterBadgeText,
-    },
-    { status: 200 }
-  );
+  if (!isFoundersOfferId(offerId)) {
+    return NextResponse.json({ error: "Invalid offerId." }, { status: 400 });
+  }
+
+  try {
+    const status = await getOfferStatus(offerId);
+    return NextResponse.json({ offers: { [status.offerId]: status } }, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load claim status.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

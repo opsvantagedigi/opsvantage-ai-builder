@@ -28,6 +28,7 @@ model User {
   orders                 Order[]
   sessions               Session[]
   subscriptions          Subscription[]
+  foundersClaims         FoundersClaim[]
   ownedWorkspaces        Workspace[]       @relation("WorkspaceOwner")
   workspaces             WorkspaceMember[]
 }
@@ -259,25 +260,6 @@ model Order {
   user                 User     @relation(fields: [userId], references: [id])
 }
 
-model FoundersClaim {
-  id              String   @id @default(cuid())
-  offerId          String
-  fingerprint      String
-  userId           String?
-  awardedOfferId   String?
-  competitorPrice  Float?
-  zenithPrice      Float?
-  savedAmount      Float?
-  currency         String   @default("USD")
-  createdAt        DateTime @default(now())
-
-  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@unique([offerId, fingerprint])
-  @@index([offerId, createdAt])
-  @@index([userId, createdAt])
-}
-
 model AuditLog {
   id          String      @id @default(cuid())
   workspaceId String
@@ -316,11 +298,29 @@ model EarlyAccessSignup {
   notified   Boolean  @default(false)
 }
 
+model FoundersClaim {
+  id              String   @id @default(cuid())
+  offerId         String
+  fingerprint     String
+  userId          String?
+  awardedOfferId  String?
+  competitorPrice Float?
+  zenithPrice     Float?
+  savedAmount     Float?
+  currency        String   @default("USD")
+  createdAt       DateTime @default(now())
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([offerId, fingerprint])
+  @@index([offerId, createdAt])
+  @@index([userId, createdAt])
+}
+
 model MarzMemory {
   id        String   @id @default(cuid())
   userId    String?
   insight   String
-  category  String   // 'PREFERENCE', 'PROJECT_GOAL', 'FINANCIAL'
+  category  String
   createdAt DateTime @default(now())
 }
 

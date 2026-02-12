@@ -1,115 +1,83 @@
 import crypto from "crypto";
+import { Prisma } from "@prisma/client";
 
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
-export type FoundersOfferId = "estate-founder" | "wholesale-ghost" | "architect-choice" | "zenith-discount-15";
+export type FoundersOfferId =
+  | "estate-founder"
+  | "wholesale-ghost"
+  | "architect-choice"
+  | "zenith-discount-15";
 
-export const FOUNDERS_LIMITS: Record<Exclude<FoundersOfferId, "zenith-discount-15">, number> = {
+export const FOUNDERS_LIMITS: Readonly<Record<FoundersOfferId, number>> = {
   "estate-founder": 50,
   "wholesale-ghost": 25,
   "architect-choice": 25,
+  "zenith-discount-15": Number.POSITIVE_INFINITY,
 };
 
-export const SOLD_OUT_REPLACEMENT: FoundersOfferId = "zenith-discount-15";
-
-export type OfferStatus = {
-  offerId: FoundersOfferId;
-  limit: number | null;
-  claimed: number;
-  remaining: number | null;
-  soldOut: boolean;
-};
-
-export type ClaimResult = {
-  awardedOfferId: FoundersOfferId;
-  replaced: boolean;
-  status: OfferStatus;
-};
-
-export function hashFingerprint(input: string): string {
-  return crypto.createHash("sha256").update(input).digest("hex");
+export function isFoundersOfferId(value: string | null | undefined): value is FoundersOfferId {
+  if (!value) return false;
+  return value in FOUNDERS_LIMITS;
 }
 
-export async function getOfferStatus(offerId: FoundersOfferId): Promise<OfferStatus> {
-  const limit = (FOUNDERS_LIMITS as Partial<Record<FoundersOfferId, number>>)[offerId] ?? null;
-  const claimed = await db.foundersClaim.count({ where: { offerId } });
-
-  if (!limit) {
-    return { offerId, limit: null, claimed, remaining: null, soldOut: false };
-  }
-
-  const remaining = Math.max(0, limit - claimed);
-  return { offerId, limit, claimed, remaining, soldOut: remaining <= 0 };
+export function hashFingerprint(input: string | null | undefined) {
+  if (!input) return null;
+  const salt = process.env.CLAIMS_SALT ?? "dev-claims-salt";
+  return crypto.createHash("sha256").update(`${salt}:${input}`).digest("hex");
 }
 
-export async function claimOffer(params: {
+export async function getOfferClaimsCount(offerId: FoundersOfferId) {
+  return prisma.foundersClaim.count({ where: { offerId } });
+}
+
+export async function getOfferStatus(offerId: FoundersOfferId) {
+  const limit = FOUNDERS_LIMITS[offerId] ?? 0;
+  const claimed = await getOfferClaimsCount(offerId);
+  const exhausted = Number.isFinite(limit) ? claimed >= limit : false;
+  const remaining = Number.isFinite(limit) ? Math.max(0, limit - claimed) : null;
+
+  return {
+    offerId,
+    claimed,
+    limit: Number.isFinite(limit) ? limit : null,
+    remaining,
+    exhausted,
+  };
+}
+
+export async function createOfferClaim(params: {
   offerId: FoundersOfferId;
   fingerprint: string;
-  userId?: string;
-  competitorPrice?: number;
-  zenithPrice?: number;
-  savedAmount?: number;
-  currency?: string;
-}): Promise<ClaimResult> {
-  const offerId = params.offerId;
-  const limit = (FOUNDERS_LIMITS as Partial<Record<FoundersOfferId, number>>)[offerId];
+  userId?: string | null;
+}) {
+  const limit = FOUNDERS_LIMITS[params.offerId];
 
-  if (!limit) {
-    return {
-      awardedOfferId: offerId,
-      replaced: false,
-      status: { offerId, limit: null, claimed: 0, remaining: null, soldOut: false },
-    };
-  }
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        const claimed = await tx.foundersClaim.count({ where: { offerId: params.offerId } });
+        if (Number.isFinite(limit) && claimed >= limit) {
+          throw new Error("Offer is fully claimed.");
+        }
 
-  const currentCount = await db.foundersClaim.count({ where: { offerId } });
-  if (currentCount >= limit) {
-    return {
-      awardedOfferId: SOLD_OUT_REPLACEMENT,
-      replaced: true,
-      status: {
-        offerId,
-        limit,
-        claimed: currentCount,
-        remaining: 0,
-        soldOut: true,
+        await tx.foundersClaim.create({
+          data: {
+            offerId: params.offerId,
+            fingerprint: params.fingerprint,
+            userId: params.userId ?? null,
+            awardedOfferId: params.offerId,
+          },
+        });
       },
-    };
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("You have already claimed this offer.");
+    }
+    throw error;
   }
 
-  await db.foundersClaim.upsert({
-    where: { offerId_fingerprint: { offerId, fingerprint: params.fingerprint } },
-    update: {
-      awardedOfferId: offerId,
-      competitorPrice: params.competitorPrice,
-      zenithPrice: params.zenithPrice,
-      savedAmount: params.savedAmount,
-      currency: params.currency ?? "USD",
-      userId: params.userId,
-    },
-    create: {
-      offerId,
-      fingerprint: params.fingerprint,
-      awardedOfferId: offerId,
-      competitorPrice: params.competitorPrice,
-      zenithPrice: params.zenithPrice,
-      savedAmount: params.savedAmount,
-      currency: params.currency ?? "USD",
-      userId: params.userId,
-    },
-  });
-
-  const updatedCount = currentCount + 1;
-  const remaining = Math.max(0, limit - updatedCount);
-  return {
-    awardedOfferId: offerId,
-    replaced: false,
-    status: {
-      offerId,
-      limit,
-      claimed: updatedCount,
-      remaining,
-      soldOut: remaining <= 0,
-    },
-  };
+  return getOfferStatus(params.offerId);
 }

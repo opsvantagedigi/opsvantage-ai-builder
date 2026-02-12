@@ -10,19 +10,36 @@ export async function middleware(req: NextRequest) {
   const { pathname, origin, searchParams } = req.nextUrl;
   const launchMode = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? "BETA").toUpperCase();
 
-  const allowPrefixes = ["/api", "/_next"];
-  const allowExact = new Set(["/", "/favicon.ico", "/robots.txt", "/sitemap.xml"]);
+  const adminToken = req.cookies.get("zenith_admin_token")?.value;
+  const isSovereignAdmin = Boolean(adminToken);
 
-  if (allowExact.has(pathname) || allowPrefixes.some((prefix) => pathname.startsWith(prefix))) {
-    return NextResponse.next();
+  const allowPrefixes = ["/api", "/_next"];
+  const allowExact = new Set(["/", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/sovereign-access"]);
+
+  let globalLaunchActive = false;
+  if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+    try {
+      const response = await fetch(`${origin}/api/admin/kill-switch`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as { globalLaunchActive?: boolean };
+        globalLaunchActive = Boolean(payload.globalLaunchActive);
+      }
+    } catch {
+      globalLaunchActive = false;
+    }
   }
 
-  // Check for sovereign admin token
-  const adminToken = req.cookies.get("zenith_admin_token")?.value;
-  const isSovereignAdmin = adminToken === "ZENITH_S_2026_NZ";
+  if (allowExact.has(pathname) || allowPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    const response = NextResponse.next();
+    response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
+    return response;
+  }
 
   // Allow sovereign admins to bypass all launch mode restrictions
-  if (isSovereignAdmin && (pathname.startsWith("/services") || pathname.startsWith("/neural-wheel") || pathname.startsWith("/api/admin"))) {
+  if (isSovereignAdmin || globalLaunchActive) {
     // Skip pre-launch checks for sovereign admins accessing protected routes
   } else {
     const isPreLaunch = now < LAUNCH_DATE;
@@ -41,27 +58,41 @@ export async function middleware(req: NextRequest) {
         maxAge: 60 * 60 * 24 * 7,
         path: "/",
       });
+      // Add the bypass state header
+      res.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
       return res;
     }
 
     if (isPreLaunch && !isReleaseOverride && !allowPrelaunchBypass) {
-      return NextResponse.redirect(`${origin}/`);
+      const response = NextResponse.redirect(`${origin}/`);
+      // Add the bypass state header
+      response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
+      return response;
     }
   }
 
   const needsAuth = pathname.startsWith("/admin") || pathname.startsWith("/dashboard");
-  if (!needsAuth) {
-    return NextResponse.next();
+  if (!needsAuth || isSovereignAdmin) {
+    const response = NextResponse.next();
+    response.headers.set("x-global-launch-active", globalLaunchActive.toString());
+    response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
+    return response;
   }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET || "dev-nextauth-secret" });
   if (!token) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    response.headers.set("x-global-launch-active", globalLaunchActive.toString());
+    response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
+    return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set("x-global-launch-active", globalLaunchActive.toString());
+  response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
+  return response;
 }
 
 export const config = {

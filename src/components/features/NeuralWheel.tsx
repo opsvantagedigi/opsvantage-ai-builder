@@ -29,6 +29,14 @@ interface FoundersOffer {
   available: boolean;
 }
 
+interface OfferStatus {
+  offerId: string;
+  claimed: number;
+  limit: number | null;
+  remaining: number | null;
+  exhausted: boolean;
+}
+
 const quizQuestions: QuizQuestion[] = [
   {
     id: 'scale',
@@ -120,7 +128,7 @@ const foundersOffers: FoundersOffer[] = [
     savings: 100, // 100% savings on markup
     duration: '12 months',
     icon: <Zap className="h-6 w-6" />,
-    available: true // Limited to 20 per tier
+    available: true // Limited to 25 total
   },
   {
     id: 'architect-choice',
@@ -130,6 +138,15 @@ const foundersOffers: FoundersOffer[] = [
     duration: 'Life of domain',
     icon: <Trophy className="h-6 w-6" />,
     available: true // Limited to 25 per tier
+  },
+  {
+    id: 'zenith-discount-15',
+    name: '15% Zenith Discount',
+    description: '15% discount on all products for 12 months',
+    savings: 15,
+    duration: '12 months',
+    icon: <Zap className="h-6 w-6" />,
+    available: true
   }
 ];
 
@@ -140,23 +157,74 @@ export default function NeuralWheel() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [recommendedOffers, setRecommendedOffers] = useState<FoundersOffer[]>([]);
   const [spinning, setSpinning] = useState(false);
+  const [offerStatuses, setOfferStatuses] = useState<Record<string, OfferStatus>>({});
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [claimingOfferId, setClaimingOfferId] = useState<string | null>(null);
+  const [claimMessages, setClaimMessages] = useState<Record<string, string>>({});
+
+  const wholesaleStatus = offerStatuses['wholesale-ghost'];
+  const wholesaleExhausted = wholesaleStatus?.exhausted ?? false;
+
+  const resolveOfferId = (offerId: string) => {
+    if (offerId === 'wholesale-ghost' && wholesaleExhausted) {
+      return 'zenith-discount-15';
+    }
+    return offerId;
+  };
+
+  const getOfferById = (offerId: string) => foundersOffers.find((offer) => offer.id === resolveOfferId(offerId));
+
+  const spinPool = wholesaleExhausted
+    ? foundersOffers.filter((offer) => offer.id !== 'wholesale-ghost')
+    : foundersOffers.filter((offer) => offer.id !== 'zenith-discount-15');
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStatuses = async () => {
+      try {
+        const response = await fetch('/api/claims/status?offerId=wholesale-ghost', { cache: 'no-store' });
+        const data = await response.json();
+        const status = data?.offers?.['wholesale-ghost'] as OfferStatus | undefined;
+
+        if (!mounted) return;
+        if (status) {
+          setOfferStatuses({ 'wholesale-ghost': status });
+        }
+      } catch {
+        if (mounted) {
+          setOfferStatuses({});
+        }
+      } finally {
+        if (mounted) {
+          setStatusLoading(false);
+        }
+      }
+    };
+
+    loadStatuses();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleAnswer = (questionId: string, optionId: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
+    const nextAnswers = { ...answers, [questionId]: optionId };
+    setAnswers(nextAnswers);
     
     if (currentQuestion < quizQuestions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
       // Quiz completed
       setQuizCompleted(true);
-      calculateRecommendedOffers();
+      calculateRecommendedOffers(nextAnswers);
     }
   };
 
-  const calculateRecommendedOffers = () => {
+  const calculateRecommendedOffers = (answersInput: Record<string, string>) => {
     // Simple logic to determine recommended offers based on answers
     // In a real implementation, this would be more sophisticated
-    const userScore = Object.values(answers).reduce((acc, answerId) => {
+    const userScore = Object.values(answersInput).reduce((acc, answerId) => {
       const question = quizQuestions.find(q => 
         q.options.some(o => o.id === answerId)
       );
@@ -168,35 +236,84 @@ export default function NeuralWheel() {
     }, 0);
 
     // Determine which offers to recommend based on score and answers
-    let selectedOffers = [];
+    let selectedOfferIds: string[] = [];
     
     if (userScore < 4) {
       // Personal projects get basic offers
-      selectedOffers = [foundersOffers[0]]; // The Estate Founder
+      selectedOfferIds = ['estate-founder'];
     } else if (userScore < 7) {
       // Small business gets middle offers
-      selectedOffers = [foundersOffers[0], foundersOffers[2]]; // Estate Founder + Architect's Choice
+      selectedOfferIds = ['estate-founder', 'architect-choice'];
     } else {
       // Enterprise gets premium offers
-      selectedOffers = [foundersOffers[1], foundersOffers[2]]; // Wholesale Ghost + Architect's Choice
+      selectedOfferIds = ['wholesale-ghost', 'architect-choice'];
     }
 
     // Add special offers based on specific answers
-    if (answers.security === 'enterprise-security' || answers.growth === 'aggressive') {
+    if (answersInput.security === 'enterprise-security' || answersInput.growth === 'aggressive') {
       // Add the Architect's Choice offer if they selected high security or aggressive growth
-      if (!selectedOffers.some(offer => offer.id === 'architect-choice')) {
-        selectedOffers.push(foundersOffers[2]);
+      if (!selectedOfferIds.includes('architect-choice')) {
+        selectedOfferIds.push('architect-choice');
       }
     }
 
+    const selectedOffers = selectedOfferIds
+      .map((offerId) => getOfferById(offerId))
+      .filter((offer): offer is FoundersOffer => Boolean(offer));
+
     setRecommendedOffers(selectedOffers);
   };
+
+  useEffect(() => {
+    setRecommendedOffers((prev) =>
+      prev.map((offer) => {
+        if (offer.id !== 'wholesale-ghost' || !wholesaleExhausted) {
+          return offer;
+        }
+        return getOfferById('wholesale-ghost') ?? offer;
+      })
+    );
+  }, [wholesaleExhausted]);
 
   const resetQuiz = () => {
     setCurrentQuestion(0);
     setAnswers({});
     setQuizCompleted(false);
     setRecommendedOffers([]);
+    setClaimMessages({});
+  };
+
+  const handleClaim = async (offerId: string) => {
+    setClaimingOfferId(offerId);
+    setClaimMessages((prev) => ({ ...prev, [offerId]: '' }));
+
+    try {
+      const response = await fetch('/api/claims/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerId })
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        setClaimMessages((prev) => ({
+          ...prev,
+          [offerId]: payload?.error || 'Unable to claim this offer right now.'
+        }));
+        return;
+      }
+
+      const status = payload?.status as OfferStatus | undefined;
+      if (status?.offerId === 'wholesale-ghost') {
+        setOfferStatuses((prev) => ({ ...prev, 'wholesale-ghost': status }));
+      }
+
+      setClaimMessages((prev) => ({ ...prev, [offerId]: 'Offer claimed successfully.' }));
+    } catch {
+      setClaimMessages((prev) => ({ ...prev, [offerId]: 'Unable to claim this offer right now.' }));
+    } finally {
+      setClaimingOfferId(null);
+    }
   };
 
   const spinWheel = () => {
@@ -205,7 +322,7 @@ export default function NeuralWheel() {
     setTimeout(() => {
       setSpinning(false);
       // Show a random offer as the result
-      const randomOffer = foundersOffers[Math.floor(Math.random() * foundersOffers.length)];
+      const randomOffer = spinPool[Math.floor(Math.random() * spinPool.length)];
       setRecommendedOffers([randomOffer]);
     }, 2000);
   };
@@ -217,6 +334,19 @@ export default function NeuralWheel() {
           <div className="inline-flex items-center bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full px-4 py-2 text-sm mb-4">
             <Sparkles className="h-4 w-4 mr-2" />
             <span>Exclusive Founders 25 Launch Offer</span>
+          </div>
+          <div className="mb-4">
+            {statusLoading ? (
+              <Badge variant="secondary">Checking offer availability...</Badge>
+            ) : wholesaleStatus?.remaining !== null && !wholesaleExhausted ? (
+              <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
+                {wholesaleStatus.remaining} spots remaining for Wholesale Ghost
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100">
+                Wholesale Ghost claimed out — 15% Zenith Discount is now active
+              </Badge>
+            )}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             AI Architect Blueprint
@@ -292,6 +422,13 @@ export default function NeuralWheel() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {recommendedOffers.map((offer) => (
+                    (() => {
+                      const isWholesale = offer.id === 'wholesale-ghost';
+                      const status = isWholesale ? offerStatuses['wholesale-ghost'] : undefined;
+                      const exhausted = status?.exhausted ?? false;
+                      const claimMessage = claimMessages[offer.id];
+
+                      return (
                     <Card 
                       key={offer.id} 
                       className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 border-0 shadow-md"
@@ -336,12 +473,27 @@ export default function NeuralWheel() {
                             </div>
                           )}
                           
-                          <Button className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white mt-4">
-                            Claim Offer <ArrowRight className="ml-2 h-4 w-4" />
+                          <Button
+                            disabled={exhausted || claimingOfferId === offer.id}
+                            onClick={() => handleClaim(offer.id)}
+                            className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white mt-4 disabled:opacity-60"
+                          >
+                            {claimingOfferId === offer.id ? 'Claiming...' : exhausted ? 'Fully Claimed' : 'Claim Offer'}
+                            {!exhausted && <ArrowRight className="ml-2 h-4 w-4" />}
                           </Button>
+                          {claimMessage && (
+                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-2">{claimMessage}</p>
+                          )}
+                          {isWholesale && status?.remaining !== null && !exhausted && (
+                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                              {status.remaining} spots remaining
+                            </p>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
+                      );
+                    })()
                   ))}
                 </div>
                 

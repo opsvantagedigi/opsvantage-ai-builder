@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useHasMounted } from '@/hooks/useHasMounted';
 import { Loader2, ArrowRight, CheckCircle, Sparkles, Trophy } from "lucide-react";
 
 type ServiceKey = "domains" | "ssl" | "server" | "security";
 
-type NeedsState = Record<ServiceKey, boolean> & { 
-  scale?: "personal" | "business" | "enterprise"; 
+type NeedsState = Record<ServiceKey, boolean> & {
+  scale?: "personal" | "business" | "enterprise";
   primaryConcern?: "speed" | "security" | "scalability";
 };
 
@@ -14,33 +15,35 @@ type NeedsState = Record<ServiceKey, boolean> & {
 type WizardStep = "intro" | "projectType" | "needsAssessment" | "addOns" | "services" | "review";
 
 const serviceOptions: { key: ServiceKey; label: string; description: string; insight: string }[] = [
-  { 
-    key: "domains", 
-    label: "Domain Registration", 
-    description: "Secure your brand identity with the perfect domain name", 
-    insight: "Every digital presence starts with a memorable domain. Choose wisely as it becomes your brand's digital address." 
+  {
+    key: "domains",
+    label: "Domain Registration",
+    description: "Secure your brand identity with the perfect domain name",
+    insight: "Every digital presence starts with a memorable domain. Choose wisely as it becomes your brand's digital address."
   },
-  { 
-    key: "ssl", 
-    label: "SSL Certificates", 
-    description: "Encrypt data transmission and build visitor trust", 
-    insight: "Essential for security and SEO. Without SSL, browsers will flag your site as 'Not Secure'." 
+  {
+    key: "ssl",
+    label: "SSL Certificates",
+    description: "Encrypt data transmission and build visitor trust",
+    insight: "Essential for security and SEO. Without SSL, browsers will flag your site as 'Not Secure'."
   },
-  { 
-    key: "server", 
-    label: "Cloud Hosting", 
-    description: "Reliable infrastructure for optimal performance", 
-    insight: "Your foundation for speed, uptime, and scalability. Choose based on traffic projections." 
+  {
+    key: "server",
+    label: "Cloud Hosting",
+    description: "Reliable infrastructure for optimal performance",
+    insight: "Your foundation for speed, uptime, and scalability. Choose based on traffic projections."
   },
-  { 
-    key: "security", 
-    label: "Advanced Security", 
-    description: "Comprehensive protection against threats", 
-    insight: "Beyond basic SSL, consider spam filtering, malware scanning, and DDoS protection." 
+  {
+    key: "security",
+    label: "Advanced Security",
+    description: "Comprehensive protection against threats",
+    insight: "Beyond basic SSL, consider spam filtering, malware scanning, and DDoS protection."
   },
 ];
 
 export function InfrastructureWizard() {
+  const hasMounted = useHasMounted();
+  
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [projectType, setProjectType] = useState("saas");
   const [needs, setNeeds] = useState<NeedsState>({ domains: true, ssl: true, server: false, security: false, scale: "business", primaryConcern: "security" });
@@ -54,11 +57,13 @@ export function InfrastructureWizard() {
 
   // Calculate total build cost in real-time
   const totalCost = useMemo(() => {
+    if (!hasMounted) return 0;
     return cartItems.reduce((sum, item) => sum + item.price, 0);
-  }, [cartItems]);
+  }, [cartItems, hasMounted]);
 
   // Determine recommended add-ons based on selections
   const recommended = useMemo(() => {
+    if (!hasMounted) return [];
     const base: string[] = [];
 
     if (needs.domains) base.push("Domain search and claim setup");
@@ -79,9 +84,11 @@ export function InfrastructureWizard() {
     }
 
     return base;
-  }, [needs, projectType]);
+  }, [needs, projectType, hasMounted]);
 
   const loadServiceData = async () => {
+    if (!hasMounted) return;
+    
     setLoading(true);
     setError(null);
     setSecurityUrl(null);
@@ -133,8 +140,14 @@ export function InfrastructureWizard() {
 
   // Function to add an item to the cart
   const addToStack = (itemName: string, price: number) => {
+    if (!hasMounted) return;
     setCartItems(prev => [...prev, { name: itemName, price }]);
   };
+
+  if (!hasMounted) {
+    // Render an empty div with the same structure to prevent hydration mismatch
+    return <div className="surface-card p-6 md:p-8" />;
+  }
 
   // Render the current step of the wizard
   const renderStep = () => {
