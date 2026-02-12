@@ -259,6 +259,25 @@ model Order {
   user                 User     @relation(fields: [userId], references: [id])
 }
 
+model FoundersClaim {
+  id              String   @id @default(cuid())
+  offerId          String
+  fingerprint      String
+  userId           String?
+  awardedOfferId   String?
+  competitorPrice  Float?
+  zenithPrice      Float?
+  savedAmount      Float?
+  currency         String   @default("USD")
+  createdAt        DateTime @default(now())
+
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([offerId, fingerprint])
+  @@index([offerId, createdAt])
+  @@index([userId, createdAt])
+}
+
 model AuditLog {
   id          String      @id @default(cuid())
   workspaceId String
@@ -295,6 +314,14 @@ model EarlyAccessSignup {
   email      String   @unique
   signedUpAt DateTime @default(now())
   notified   Boolean  @default(false)
+}
+
+model MarzMemory {
+  id        String   @id @default(cuid())
+  userId    String?
+  insight   String
+  category  String   // 'PREFERENCE', 'PROJECT_GOAL', 'FINANCIAL'
+  createdAt DateTime @default(now())
 }
 
 enum Status {

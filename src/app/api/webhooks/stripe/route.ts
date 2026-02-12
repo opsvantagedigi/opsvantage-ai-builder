@@ -138,6 +138,11 @@ async function handleSubscriptionCreatedOrUpdated(subscription: Stripe.Subscript
       },
     });
 
+    // TODO: Execute OpenProvider Provisioning for [ProductID]
+    // This is where we would provision services based on the subscription plan
+    // Example: provisionDomain(user.email, planId);
+    // Example: provisionHosting(user.id, planId);
+
   } catch (error) {
     console.error('[MARZ] Error handling subscription created/updated:', error);
     throw error;

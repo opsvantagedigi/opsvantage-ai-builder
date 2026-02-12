@@ -1,100 +1,182 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Terminal, Shield, Zap, Sparkles, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
-export function MarzOperator() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [status, setStatus] = useState('INTELLIGENCE ONLINE');
-    const [messages, setMessages] = useState<string[]>([
-        "System Online. Ready to architect your digital presence.",
-        "MARZ Protocol initialized. Monitoring system health..."
-    ]);
-
-    return (
-        <div className="fixed bottom-8 right-8 z-100">
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                        className="mb-6 w-96 glass-luminous rounded-4xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]"
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
-                                        <Sparkles className="w-5 h-5 text-blue-400 animate-glow" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-display font-black text-white tracking-widest uppercase">MARZ OPERATOR</h3>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{status}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-500 hover:text-white"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4 max-h-80 overflow-y-auto mb-6 pr-2 scrollbar-hide">
-                                {messages.map((msg, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        className="p-4 rounded-2xl bg-white/5 border border-white/5 text-sm font-medium text-slate-300 leading-relaxed"
-                                    >
-                                        {msg}
-                                    </motion.div>
-                                ))}
-                            </div>
-
-                            <div className="relative group">
-                                <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Issue command to MARZ..."
-                                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 text-xs font-bold text-white outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="bg-white/5 border-t border-white/5 p-4 flex items-center justify-around">
-                            <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity cursor-pointer">
-                                <Shield className="w-4 h-4 text-emerald-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase">Secure</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity cursor-pointer">
-                                <Zap className="w-4 h-4 text-yellow-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase">Compute</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity cursor-pointer">
-                                <MessageSquare className="w-4 h-4 text-blue-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase">Network</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <motion.button
-                onClick={() => setIsOpen(!isOpen)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-16 h-16 glass-luminous rounded-2xl flex items-center justify-center group shadow-2xl relative"
-            >
-                <div className="absolute inset-0 bg-blue-600/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <Sparkles className="w-7 h-7 text-blue-400 z-10 animate-glow" />
-            </motion.button>
-        </div>
-    );
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+  }
 }
+
+const MarzOperator = () => {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [conversationLog, setConversationLog] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            setTranscript(prev => prev + transcript + ' ');
+            processVoiceCommand(transcript);
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        setTranscript(interimTranscript);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const processVoiceCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase().trim();
+    
+    // Add to conversation log
+    setConversationLog(prev => [...prev, `User: ${command}`, `MARZ: Processing command...`]);
+    
+    // Navigation commands
+    if (lowerCommand.includes('show ssl') || lowerCommand.includes('ssl options')) {
+      router.push('/services/ssl');
+      setConversationLog(prev => [...prev, `MARZ: Navigating to SSL options page.`]);
+    } else if (lowerCommand.includes('show me services') || lowerCommand.includes('go to services')) {
+      router.push('/services');
+      setConversationLog(prev => [...prev, `MARZ: Navigating to services page.`]);
+    } else if (lowerCommand.includes('neural wheel') || lowerCommand.includes('spin wheel')) {
+      router.push('/neural-wheel');
+      setConversationLog(prev => [...prev, `MARZ: Navigating to Neural Wheel.`]);
+    } else if (lowerCommand.includes('dashboard') || lowerCommand.includes('admin panel')) {
+      router.push('/dashboard');
+      setConversationLog(prev => [...prev, `MARZ: Navigating to dashboard.`]);
+    } else if (lowerCommand.includes('home') || lowerCommand.includes('main page')) {
+      router.push('/');
+      setConversationLog(prev => [...prev, `MARZ: Navigating to home page.`]);
+    } else {
+      setConversationLog(prev => [...prev, `MARZ: Command "${command}" not recognized.`]);
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      // Add final transcript to conversation log
+      if (transcript.trim()) {
+        setConversationLog(prev => [...prev, `User: ${transcript}`]);
+        setTranscript('');
+      }
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
+
+  const downloadBlueprint = () => {
+    const blueprintContent = `# MARZ Build Blueprint\n\n## Conversation Log\n${conversationLog.join('\n')}\n\n## Generated on: ${new Date().toISOString()}`;
+    const blob = new Blob([blueprintContent], { type: 'text/markdown' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'marz-build-blueprint.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50">
+      {/* Expanded View */}
+      {isExpanded && (
+        <div className="bg-gray-900 bg-opacity-90 backdrop-blur-lg rounded-xl p-4 mb-4 w-80 shadow-2xl border border-cyan-500/30">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-cyan-400 font-bold">MARZ Operator</h3>
+            <button 
+              onClick={() => setIsExpanded(false)}
+              className="text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="mb-3 h-32 overflow-y-auto bg-gray-800 rounded p-2 text-sm">
+            {conversationLog.length > 0 ? (
+              conversationLog.map((entry, index) => (
+                <p key={index} className={`${entry.startsWith('MARZ:') ? 'text-cyan-300' : 'text-gray-300'} mb-1`}>
+                  {entry}
+                </p>
+              ))
+            ) : (
+              <p className="text-gray-500 italic">No conversation yet...</p>
+            )}
+          </div>
+          
+          <div className="flex items-center mb-3">
+            <button
+              onClick={toggleListening}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium mr-2 ${
+                isListening 
+                  ? 'bg-red-500 hover:bg-red-600 text-white' 
+                  : 'bg-cyan-600 hover:bg-cyan-700 text-white'
+              }`}
+            >
+              {isListening ? 'Stop Listening' : 'Start Listening'}
+            </button>
+            
+            <button
+              onClick={downloadBlueprint}
+              className="py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium"
+            >
+              Download Blueprint
+            </button>
+          </div>
+          
+          {transcript && (
+            <div className="text-sm text-gray-300 bg-gray-800 p-2 rounded">
+              <strong>Current:</strong> {transcript}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Floating Zenith Orb */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+          isListening 
+            ? 'animate-pulse bg-gradient-to-r from-cyan-500 to-amber-500' 
+            : 'bg-gradient-to-r from-cyan-600 to-amber-600'
+        }`}
+        aria-label="MARZ Operator"
+      >
+        <span className="text-white font-bold text-xl">M</span>
+      </button>
+    </div>
+  );
+};
+
+export default MarzOperator;

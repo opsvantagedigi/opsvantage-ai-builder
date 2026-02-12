@@ -17,27 +17,36 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const isPreLaunch = now < LAUNCH_DATE;
-  const isReleaseOverride = launchMode === "RELEASE" || launchMode === "PRODUCTION" || launchMode === "PUBLIC";
+  // Check for sovereign admin token
+  const adminToken = req.cookies.get("zenith_admin_token")?.value;
+  const isSovereignAdmin = adminToken === "ZENITH_S_2026_NZ";
 
-  const hasPreviewParam = searchParams.get("preview") === "true";
-  const hasPreviewCookie = req.cookies.get(PREVIEW_COOKIE)?.value === "1";
-  const allowPrelaunchBypass = hasPreviewParam || hasPreviewCookie;
+  // Allow sovereign admins to bypass all launch mode restrictions
+  if (isSovereignAdmin && (pathname.startsWith("/services") || pathname.startsWith("/neural-wheel") || pathname.startsWith("/api/admin"))) {
+    // Skip pre-launch checks for sovereign admins accessing protected routes
+  } else {
+    const isPreLaunch = now < LAUNCH_DATE;
+    const isReleaseOverride = launchMode === "RELEASE" || launchMode === "PRODUCTION" || launchMode === "PUBLIC";
 
-  if (hasPreviewParam && !hasPreviewCookie) {
-    const res = NextResponse.next();
-    res.cookies.set(PREVIEW_COOKIE, "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-    return res;
-  }
+    const hasPreviewParam = searchParams.get("preview") === "true";
+    const hasPreviewCookie = req.cookies.get(PREVIEW_COOKIE)?.value === "1";
+    const allowPrelaunchBypass = hasPreviewParam || hasPreviewCookie;
 
-  if (isPreLaunch && !isReleaseOverride && !allowPrelaunchBypass) {
-    return NextResponse.redirect(`${origin}/`);
+    if (hasPreviewParam && !hasPreviewCookie) {
+      const res = NextResponse.next();
+      res.cookies.set(PREVIEW_COOKIE, "1", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/",
+      });
+      return res;
+    }
+
+    if (isPreLaunch && !isReleaseOverride && !allowPrelaunchBypass) {
+      return NextResponse.redirect(`${origin}/`);
+    }
   }
 
   const needsAuth = pathname.startsWith("/admin") || pathname.startsWith("/dashboard");

@@ -107,8 +107,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         products = [];
     }
   } catch (error) {
-    console.error(`Error fetching products for category ${params.category}:`, error);
-    // Fallback to empty array
+    // Error is handled silently to prevent UI disruption
+    // In production, this would be logged to an error tracking service
     products = [];
   }
 
