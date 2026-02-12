@@ -46,9 +46,13 @@ const bodyHtml = `
 `;
 
 async function main() {
-  const leads = await prisma.launchLead.findMany({ orderBy: { createdAt: "asc" } }) as { email: string; createdAt: Date; source: string | null }[];
+  const leads = await prisma.launchLead.findMany({ 
+    where: { notified: false }, // Only send to leads that haven't been notified yet
+    orderBy: { createdAt: "asc" } 
+  }) as { id: string; email: string; createdAt: Date; source: string | null }[];
+  
   if (!leads.length) {
-    console.log("No leads found. Exiting.");
+    console.log("No unnotified leads found. Exiting.");
     return;
   }
 
@@ -76,6 +80,13 @@ async function main() {
         subject,
         html: bodyHtml,
       });
+      
+      // Mark the lead as notified in the database
+      await prisma.launchLead.update({
+        where: { id: lead.id },
+        data: { notified: true }
+      });
+      
       const line = `OK ${lead.email}`;
       console.log(line);
       await log(line);
