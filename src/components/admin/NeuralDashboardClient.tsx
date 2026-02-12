@@ -222,13 +222,13 @@ export default function NeuralDashboardClient({
     let offsetY = 0;
 
     if (imageAspect > canvasAspect) {
-      drawWidth = width;
-      drawHeight = width / imageAspect;
-      offsetY = (height - drawHeight) / 2;
-    } else {
       drawHeight = height;
       drawWidth = height * imageAspect;
       offsetX = (width - drawWidth) / 2;
+    } else {
+      drawWidth = width;
+      drawHeight = width / imageAspect;
+      offsetY = (height - drawHeight) / 2;
     }
 
     context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
@@ -236,8 +236,8 @@ export default function NeuralDashboardClient({
     const clamped = Math.max(0, Math.min(1, mouthIntensity));
     const mouthHeight = 6 + clamped * 28;
     const mouthWidth = 36 + clamped * 8;
-    const mouthX = offsetX + drawWidth * 0.5;
-    const mouthY = offsetY + drawHeight * 0.655;
+    const mouthX = width * 0.5;
+    const mouthY = height * 0.655;
 
     context.save();
     context.fillStyle = "rgba(15, 23, 42, 0.72)";

@@ -3,12 +3,9 @@ import type { NextRequest } from "next/server";
 
 import { verifySession } from "@/lib/verify-session";
 import { MarzAgent } from "@/lib/marz/agent-core";
-import { getInitialVoicePayload } from "@/lib/marz-logic";
+import { ELEVENLABS_VOICE_PROFILE, getInitialVoicePayload } from "@/lib/marz-logic";
 import { ensureSentinelMemory } from "@/lib/marz/sentinel-memory";
 
-const VOICE_ID = "nz_female_grounded";
-const ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
-const ELEVENLABS_MODEL_LABEL = "NZ-Aria";
 const DEFAULT_PROMPT =
   "Deliver a concise ops update in a grounded New Zealand tone inspired by a calm, motherly advisor. Keep it under 70 words.";
 
@@ -44,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ELEVENLABS_API_KEY is not configured." }, { status: 503 });
     }
 
-    const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`, {
+    const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_PROFILE.voiceId}/stream`, {
       method: "POST",
       headers: {
         "xi-api-key": elevenLabsApiKey,
@@ -53,13 +50,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         text: spokenText,
-        model_id: ELEVENLABS_MODEL_ID,
-        voice_settings: {
-          stability: 0.45,
-          similarity_boost: 0.85,
-          style: 0.2,
-          use_speaker_boost: true,
-        },
+        model_id: ELEVENLABS_VOICE_PROFILE.modelId,
+        voice_settings: ELEVENLABS_VOICE_PROFILE.settings,
       }),
     });
 
@@ -77,9 +69,9 @@ export async function POST(req: NextRequest) {
     const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
     return NextResponse.json({
-      voiceId: VOICE_ID,
-      modelId: ELEVENLABS_MODEL_ID,
-      modelLabel: ELEVENLABS_MODEL_LABEL,
+      voiceId: ELEVENLABS_VOICE_PROFILE.voiceId,
+      modelId: ELEVENLABS_VOICE_PROFILE.modelId,
+      modelLabel: ELEVENLABS_VOICE_PROFILE.modelLabel,
       text: spokenText,
       audioBase64: audioBuffer,
     });
