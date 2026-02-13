@@ -8,6 +8,7 @@ const PREVIEW_COOKIE = "ov_preview";
 export async function middleware(req: NextRequest) {
   const now = new Date();
   const { pathname, origin, searchParams } = req.nextUrl;
+  const isPublicAsset = /\.[^/]+$/.test(pathname);
   const launchMode = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? "BETA").toUpperCase();
 
   const launchModeBypassPaths = ["/sovereign-access", "/admin/dashboard", "/api/admin/telemetry"];
@@ -41,7 +42,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  if (allowExact.has(pathname) || allowPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+  if (isPublicAsset || allowExact.has(pathname) || allowPrefixes.some((prefix) => pathname.startsWith(prefix))) {
     const response = NextResponse.next();
     response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
     return response;
@@ -105,5 +106,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*", "/((?!_next/static|_next/image|favicon.ico|api/webhooks).*)"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/((?!_next/static|_next/image|api/webhooks|.*\\..*).*)"],
 };

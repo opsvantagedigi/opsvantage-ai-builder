@@ -109,7 +109,7 @@ export function PublicHeader() {
       {menuOpen && (
         <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden dark:border-slate-800 dark:bg-slate-950">
           <nav className="flex flex-col gap-3">
-            {SITE_NAVIGATION.map((item) => {
+            {MARKETING_NAV.map((item) => {
               // Special handling for the Services link to show submenu on mobile
               if (item.label === "Services") {
                 return (
