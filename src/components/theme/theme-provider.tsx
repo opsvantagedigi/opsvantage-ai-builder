@@ -16,6 +16,7 @@ const STORAGE_KEY = "opsvantage-theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function applyTheme(theme: Theme) {
+  if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
   root.setAttribute("data-theme", theme);
@@ -26,6 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const savedTheme = localStorage.getItem(STORAGE_KEY);
     if (savedTheme === "light" || savedTheme === "dark") {
       setThemeState(savedTheme);
@@ -43,7 +45,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = useCallback((nextTheme: Theme) => {
     setThemeState(nextTheme);
-    localStorage.setItem(STORAGE_KEY, nextTheme);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, nextTheme);
+    }
     applyTheme(nextTheme);
   }, []);
 

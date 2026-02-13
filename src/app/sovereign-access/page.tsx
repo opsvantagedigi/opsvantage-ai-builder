@@ -48,6 +48,7 @@ export default async function SovereignAccessPage({
               id="password"
               name="password"
               type="password"
+              autoComplete="new-password"
               required
               className="w-full rounded-xl border border-amber-400/30 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-0 transition focus:border-amber-300"
               placeholder="Enter your sovereign key"

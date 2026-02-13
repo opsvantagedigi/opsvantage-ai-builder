@@ -53,7 +53,46 @@ export async function POST(req: NextRequest) {
       const marzReply = await agent.processMessage(finalPrompt, []);
       spokenText = marzReply.content?.replace(/\s+/g, " ").trim().slice(0, 450) || "Neural link is online.";
     }
-    const speech = await generateSpeech(spokenText);
+    let speech: Awaited<ReturnType<typeof generateSpeech>> | null = null;
+    try {
+      speech = await generateSpeech(spokenText);
+    } catch {
+      return NextResponse.json(
+        {
+          ok: true,
+          engine: "text-only",
+          text: spokenText,
+          warning: "Speech synthesis unavailable",
+        },
+        {
+          status: 200,
+          headers: {
+            "cache-control": "no-store",
+            "x-marz-engine": "text-only",
+            "x-marz-text": encodeURIComponent(spokenText),
+          },
+        }
+      );
+    }
+
+    if (!speech) {
+      return NextResponse.json(
+        {
+          ok: true,
+          engine: "text-only",
+          text: spokenText,
+        },
+        {
+          status: 200,
+          headers: {
+            "cache-control": "no-store",
+            "x-marz-engine": "text-only",
+            "x-marz-text": encodeURIComponent(spokenText),
+          },
+        }
+      );
+    }
+
     const audioBytes = new Uint8Array(speech.audioBuffer.buffer, speech.audioBuffer.byteOffset, speech.audioBuffer.byteLength);
     const sourceBuffer = speech.audioBuffer.buffer as ArrayBuffer;
     const audioBuffer = sourceBuffer.slice(audioBytes.byteOffset, audioBytes.byteOffset + audioBytes.byteLength);

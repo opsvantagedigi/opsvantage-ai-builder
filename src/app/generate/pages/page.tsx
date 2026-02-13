@@ -129,13 +129,21 @@ export default function GeneratePagesPage() {
                           const body = await res.json().catch(() => ({} as Record<string, unknown>))
                           const maybeError = (body as Record<string, unknown>)["error"]
                           if (!res.ok) throw new Error(typeof maybeError === 'string' ? maybeError : 'Save failed')
-                          alert('Page saved: ' + (body.pageId ?? ''))
+                          if (typeof window !== 'undefined') {
+                            window.alert('Page saved: ' + (body.pageId ?? ''))
+                          }
                         } catch (e: unknown) {
                           const ex = e as Error
-                          alert('Save failed: ' + (ex.message || String(ex)))
+                          if (typeof window !== 'undefined') {
+                            window.alert('Save failed: ' + (ex.message || String(ex)))
+                          }
                         }
                       }} className="bg-green-600 text-white px-4 py-2 rounded">Save page</button>
-                      <button onClick={() => navigator.clipboard.writeText(JSON.stringify(pageJson, null, 2))} className="bg-gray-100 px-4 py-2 rounded">Copy JSON</button>
+                      <button onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          void navigator.clipboard.writeText(JSON.stringify(pageJson, null, 2))
+                        }
+                      }} className="bg-gray-100 px-4 py-2 rounded">Copy JSON</button>
                     </div>
                   </div>
                 )

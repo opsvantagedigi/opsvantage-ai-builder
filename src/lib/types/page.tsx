@@ -74,11 +74,15 @@ export default function WizardPage() {
       
       if (result.success) {
         // B. Redirect to builder with the new ID
-        window.location.href = `/dashboard/${result.projectId}/builder`;
+        if (typeof window !== 'undefined') {
+          window.location.href = `/dashboard/${result.projectId}/builder`;
+        }
       }
     } catch (error) {
       console.error("Generation Failed", error);
-      alert("MARZ failed to generate the project. Please try again.");
+      if (typeof window !== 'undefined') {
+        window.alert("MARZ failed to generate the project. Please try again.");
+      }
       setIsGenerating(false);
     }
   };

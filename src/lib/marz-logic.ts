@@ -83,6 +83,11 @@ async function synthesizeWithAllTalk(text: string): Promise<SpeechResult> {
 }
 
 async function synthesizeWithEdgeTts(text: string): Promise<SpeechResult> {
+  const normalizedText = String(text ?? "").trim();
+  if (!normalizedText) {
+    throw new Error("text must be a string");
+  }
+
   const edgeTtsModule = (await import("edge-tts-universal")) as any;
   const candidate = edgeTtsModule.default ?? edgeTtsModule;
   const UniversalEdgeTTS = edgeTtsModule.UniversalEdgeTTS ?? candidate?.UniversalEdgeTTS;
@@ -92,16 +97,31 @@ async function synthesizeWithEdgeTts(text: string): Promise<SpeechResult> {
   if (typeof UniversalEdgeTTS === "function") {
     const universal = new UniversalEdgeTTS({ voice });
     if (typeof universal.synthesize === "function") {
-      rawAudio = await universal.synthesize(text, {
-        voice,
-        format: "audio-24khz-48kbitrate-mono-mp3",
-      });
+      try {
+        rawAudio = await universal.synthesize(normalizedText, {
+          voice,
+          format: "audio-24khz-48kbitrate-mono-mp3",
+        });
+      } catch {
+        rawAudio = await universal.synthesize({
+          text: normalizedText,
+          voice,
+          format: "audio-24khz-48kbitrate-mono-mp3",
+        });
+      }
     } else if (typeof universal.generate === "function") {
-      rawAudio = await universal.generate({
-        text,
-        voice,
-        format: "audio-24khz-48kbitrate-mono-mp3",
-      });
+      try {
+        rawAudio = await universal.generate(normalizedText, {
+          voice,
+          format: "audio-24khz-48kbitrate-mono-mp3",
+        });
+      } catch {
+        rawAudio = await universal.generate({
+          text: normalizedText,
+          voice,
+          format: "audio-24khz-48kbitrate-mono-mp3",
+        });
+      }
     }
   }
 
@@ -112,8 +132,17 @@ async function synthesizeWithEdgeTts(text: string): Promise<SpeechResult> {
   if (!rawAudio) {
     for (const fn of possibleFns) {
       try {
+        rawAudio = await fn(normalizedText, {
+          voice,
+          format: "audio-24khz-48kbitrate-mono-mp3",
+        });
+        if (rawAudio) break;
+      } catch {
+      }
+
+      try {
         rawAudio = await fn({
-          text,
+          text: normalizedText,
           voice,
           format: "audio-24khz-48kbitrate-mono-mp3",
         });

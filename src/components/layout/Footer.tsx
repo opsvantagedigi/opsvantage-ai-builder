@@ -9,13 +9,20 @@ export function Footer() {
     <footer className="border-t border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
         <div className="space-y-4 md:col-span-1">
-          <Link href="/" className="inline-flex items-center gap-3">
+          <Link href="/" className="group flex items-center gap-4">
+            <Image
+              src="/icon.png"
+              alt="Brand Icon"
+              width={33}
+              height={33}
+              className="h-[33px] w-[33px] aspect-square hover:opacity-80 transition-all duration-300"
+            />
             <Image
               src="/logo.svg"
-              alt="OpsVantage Digital"
-              width={171}
-              height={32}
-              className="h-8 w-auto"
+              alt="Brand Logo"
+              width={153}
+              height={30}
+              className="h-[30px] w-auto hover:opacity-80 transition-all duration-300"
             />
           </Link>
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -32,7 +39,7 @@ export function Footer() {
 
       <div className="border-t border-slate-200 dark:border-slate-800">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 text-xs text-slate-500 md:flex-row md:items-center md:justify-between md:px-6 dark:text-slate-400">
-          <p>© {year} OpsVantage Digital Pty Ltd. All rights reserved.</p>
+          <p>© {year} All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-4">
             {LEGAL_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="transition hover:text-slate-900 dark:hover:text-slate-100">

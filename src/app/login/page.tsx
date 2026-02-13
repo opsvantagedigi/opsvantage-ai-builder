@@ -52,7 +52,9 @@ function LoginInner() {
       return;
     }
 
-    window.location.href = result?.url || callbackUrl;
+    if (typeof window !== "undefined") {
+      window.location.href = result?.url || callbackUrl;
+    }
   }
 
   useEffect(() => {

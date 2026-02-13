@@ -144,9 +144,11 @@ export default function BuilderPage({ params }: BuilderPageProps) {
 
       // Check usage limits
       if (subscription.usage.sites.used >= subscription.usage.sites.limit) {
-        alert(
-          `You've reached your site limit for the ${subscription.plan} plan. Upgrade to publish more sites.`
-        );
+        if (typeof window !== 'undefined') {
+          window.alert(
+            `You've reached your site limit for the ${subscription.plan} plan. Upgrade to publish more sites.`
+          );
+        }
         router.push('/dashboard/billing');
         return;
       }
@@ -155,16 +157,22 @@ export default function BuilderPage({ params }: BuilderPageProps) {
       const result = await publishSiteAction(params.projectId);
 
       if (result.success) {
-        alert(
-          `Website published! Visit: ${result.url}`
-        );
-        window.open(result.url, '_blank');
+        if (typeof window !== 'undefined') {
+          window.alert(
+            `Website published! Visit: ${result.url}`
+          );
+          window.open(result.url, '_blank');
+        }
       } else {
-        alert(`Publish failed: ${result.error}`);
+        if (typeof window !== 'undefined') {
+          window.alert(`Publish failed: ${result.error}`);
+        }
       }
     } catch (error) {
       console.error('[MARZ] Publish error:', error);
-      alert('Failed to publish website');
+      if (typeof window !== 'undefined') {
+        window.alert('Failed to publish website');
+      }
     } finally {
       setIsPublishing(false);
     }
