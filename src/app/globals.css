@@ -41,7 +41,7 @@
   }
 
   .hero-shell {
-    @apply section-shell py-14 md:py-20;
+    @apply section-shell py-6 md:py-8;
   }
 
   .surface-card {

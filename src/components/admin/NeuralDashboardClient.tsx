@@ -199,6 +199,8 @@ export default function NeuralDashboardClient({
 
     const context = canvas.getContext("2d");
     if (!context) return;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
 
     const width = canvas.width;
     const height = canvas.height;
@@ -424,7 +426,11 @@ export default function NeuralDashboardClient({
     const image = new Image();
     image.src = "/MARZ_Headshot.png";
     image.crossOrigin = "anonymous"; // Enable CORS for the image
+    image.loading = "eager";
+    (image as HTMLImageElement & { fetchPriority?: "high" | "low" | "auto" }).fetchPriority = "high";
     image.onload = () => {
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
       marzImageRef.current = image;
       drawMarzFrame(0);
     };

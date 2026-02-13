@@ -17,6 +17,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
         <Link href="/" className="group flex items-center gap-4" onClick={() => setMenuOpen(false)}>
+          <Image src="/icon.png" alt="OpsVantage Icon" width={44} height={44} className="h-11 w-11 aspect-square hover:opacity-80 transition-all duration-300" priority />
           <Image src="/logo.svg" alt="OpsVantage Digital" width={204} height={40} className="h-10 w-auto hover:opacity-80 transition-all duration-300" priority />
           <span className="hidden text-xs font-medium text-slate-500 md:inline dark:text-slate-400">{SITE_DOMAIN}</span>
         </Link>

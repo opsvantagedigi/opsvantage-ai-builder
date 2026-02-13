@@ -92,8 +92,9 @@ function FullLanding() {
               alt="MARZ teaser"
               width={900}
               height={1200}
-              className="h-auto w-full rounded-xl blur-sm"
-              priority
+              className="h-auto w-full rounded-xl"
+              quality={100}
+              priority={true}
             />
             <p className="mt-3 text-sm text-amber-200">She&apos;s waking up. Your legacy is her priority.</p>
           </div>
