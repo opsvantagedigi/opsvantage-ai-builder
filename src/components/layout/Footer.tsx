@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { LEGAL_LINKS, PRODUCT_LINKS, RESOURCE_LINKS, SITE_DOMAIN, TOOL_LINKS } from "@/lib/site-config";
 
 export function Footer() {
@@ -9,9 +10,13 @@ export function Footer() {
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
         <div className="space-y-4 md:col-span-1">
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold tracking-wide text-white dark:bg-cyan-400 dark:text-slate-950">
-              OV
-            </span>
+            <Image
+              src="/logo.svg"
+              alt="OpsVantage Digital"
+              width={171}
+              height={32}
+              className="h-8 w-auto"
+            />
             <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100">
               OpsVantage Digital
             </span>

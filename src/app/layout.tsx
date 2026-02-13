@@ -21,8 +21,10 @@ export const metadata: Metadata = {
   description:
     "OpsVantage Digital is an autonomous AI website builder for high-performance brands. Design, deploy, host, secure, and scale from one platform.",
   icons: {
-    icon: "/icon.png",
-    shortcut: "/favicon.ico",
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+    ],
+    shortcut: "/icon.png",
     apple: "/apple-icon.png",
   },
   openGraph: {
