@@ -1,0 +1,18 @@
+<svg width="300" height="60" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#D4AF37;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66FCF1;stop-opacity:1" />
+    </linearGradient>
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700&amp;display=swap');
+      .logo-text { 
+        font-family: 'Manrope', sans-serif; 
+        font-weight: 700; 
+        font-size: 32px; 
+        fill: url(#logoGradient); 
+      }
+    </style>
+  </defs>
+  <text x="0" y="40" class="logo-text">OpsVantage Digital</text>
+</svg>

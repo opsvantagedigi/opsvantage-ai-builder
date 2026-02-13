@@ -29,7 +29,7 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
 
         // Whitelabel Pricing Logic
         if (result.price?.reseller) {
-            const costPrice = result.price.reseller.price ?? 0;
+            const costPrice = result.price.reseller.price ?? result.price.reseller.cost ?? 0;
             const currency = result.price.reseller.currency;
 
             // Check if costPrice is defined before using it
