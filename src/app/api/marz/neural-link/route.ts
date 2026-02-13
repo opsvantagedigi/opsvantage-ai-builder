@@ -22,28 +22,33 @@ export async function POST(req: NextRequest) {
 
     await ensureSentinelMemory(session?.sub ?? null);
 
-    const { gen_text, text, prompt, firstLink } = (await req.json().catch(() => ({}))) as {
+    const body = (await req.json().catch(() => ({}))) as {
       gen_text?: unknown;
       text?: unknown;
       prompt?: unknown;
       firstLink?: boolean;
     };
-    const normalizedGenText =
-      typeof gen_text === "string" ? gen_text.trim() : gen_text != null ? String(gen_text).trim() : "";
-    const normalizedText =
-      typeof text === "string" ? text.trim() : text != null ? String(text).trim() : "";
-    const finalPrompt = typeof prompt === "string" && prompt.trim().length > 0 ? prompt.trim() : DEFAULT_PROMPT;
+    console.log("DEBUG PAYLOAD:", body);
+
+    const speechText = String(body.gen_text || body.text || "Synchronisation complete.").trim();
+    if (!speechText) {
+      return NextResponse.json(
+        {
+          error: "Invalid payload",
+          details: "Speech text cannot be empty.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const finalPrompt = typeof body.prompt === "string" && body.prompt.trim().length > 0 ? body.prompt.trim() : DEFAULT_PROMPT;
 
     const userRole = sovereignCookie ? "SOVEREIGN" : "CLIENT";
 
-    let spokenText = "Neural link is online.";
-    if (normalizedGenText.length > 0) {
-      spokenText = normalizedGenText.slice(0, 450);
-    } else if (normalizedText.length > 0) {
-      spokenText = normalizedText.slice(0, 450);
-    } else if (firstLink) {
+    let spokenText = speechText.slice(0, 450);
+    if (body.firstLink && speechText === "Synchronisation complete.") {
       spokenText = getInitialVoicePayload(userRole);
-    } else {
+    } else if (speechText === "Synchronisation complete.") {
       const agent = new MarzAgent(session?.email || "sovereign-admin");
       const marzReply = await agent.processMessage(finalPrompt, []);
       spokenText = marzReply.content?.replace(/\s+/g, " ").trim().slice(0, 450) || "Neural link is online.";

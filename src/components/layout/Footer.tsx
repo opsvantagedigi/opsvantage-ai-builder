@@ -17,9 +17,6 @@ export function Footer() {
               height={32}
               className="h-8 w-auto"
             />
-            <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100">
-              OpsVantage Digital
-            </span>
           </Link>
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
             Autonomous AI website operations for founders, teams, and agencies. Build, launch, host, secure, and optimize

@@ -81,6 +81,7 @@ export default function NeuralDashboardClient({
 
   useEffect(() => {
     if (!mounted) return;
+    if (process.env.NODE_ENV === "production") return;
 
     let isActive = true;
 
@@ -178,7 +179,7 @@ export default function NeuralDashboardClient({
 
   const thoughtLines = useMemo(() => {
     const computedLines = (thoughts ?? []).slice(0, 50).map((thought, index) => {
-      const timestamp = thought.createdAt
+      const timestamp = thought.createdAt && typeof window !== "undefined"
         ? new Date(thought.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : `T+${index + 1}`;
       const normalizedCategory = (thought.category || "STRATEGY").toUpperCase();
@@ -526,12 +527,12 @@ export default function NeuralDashboardClient({
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-amber-500/20 bg-slate-950">
+          <div className="relative w-full aspect-video overflow-hidden rounded-xl border border-gold/20">
             <div className="marz-sovereign-frame marz-breathe">
               <div className="marz-parallax-layer h-[78vh] w-full">
                 <canvas
                   ref={marzCanvasRef}
-                  className="h-full w-full object-cover"
+                  className="object-cover object-top w-full h-full"
                   aria-label="MARZ avatar media canvas"
                 />
               </div>
