@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { SiteShell } from "@/components/layout/SiteShell";
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.png",
     shortcut: "/favicon.ico",
-    apple: "/icon.png",
+    apple: "/apple-icon.png",
   },
   openGraph: {
     type: "website",
@@ -39,6 +39,12 @@ export const metadata: Metadata = {
     description:
       "Build and operate enterprise-grade websites with AI workflows, managed infrastructure, integrated domains, and security automation.",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0A0A0A",
 };
 
 export default function RootLayout({
