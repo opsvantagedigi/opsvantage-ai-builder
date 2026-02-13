@@ -36,5 +36,18 @@ export default async function AdminDashboardPage() {
     initialJournal = [];
   }
 
-  return <NeuralDashboardClient initialThoughts={initialThoughts} initialJournal={initialJournal} />;
+  // Convert Date objects to strings for the client component
+  const initialThoughtsWithStringDates = initialThoughts.map(({ insight, category, createdAt }) => ({
+    insight,
+    category,
+    createdAt: createdAt.toISOString(),
+  }));
+
+  const initialJournalWithStringDates = initialJournal.map(({ insight, category, createdAt }) => ({
+    insight,
+    category,
+    createdAt: createdAt.toISOString(),
+  }));
+
+  return <NeuralDashboardClient initialThoughts={initialThoughtsWithStringDates} initialJournal={initialJournalWithStringDates} />;
 }

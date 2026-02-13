@@ -150,7 +150,7 @@ export function InfrastructureWizard() {
   }
 
   // Render the current step of the wizard
-  const renderStep = () => {
+  const renderStep = (): React.ReactNode => {
     switch(currentStep) {
       case "intro":
         return (
@@ -230,7 +230,7 @@ export function InfrastructureWizard() {
                         ? "border-cyan-500 bg-cyan-50/50 dark:bg-cyan-500/10" 
                         : "border-slate-200 dark:border-slate-700 hover:border-cyan-300"
                     }`}
-                    onClick={() => setNeeds(prev => ({...prev, scale: option.value}))}
+                    onClick={() => setNeeds(prev => ({...prev, scale: option.value as "personal" | "business" | "enterprise"}))}
                   >
                     <p className="font-medium text-slate-900 dark:text-slate-100">{option.label}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{option.desc}</p>
@@ -255,7 +255,7 @@ export function InfrastructureWizard() {
                         ? "border-cyan-500 bg-cyan-50/50 dark:bg-cyan-500/10" 
                         : "border-slate-200 dark:border-slate-700 hover:border-cyan-300"
                     }`}
-                    onClick={() => setNeeds(prev => ({...prev, primaryConcern: option.value}))}
+                    onClick={() => setNeeds(prev => ({...prev, primaryConcern: option.value as "security" | "speed" | "scalability"}))}
                   >
                     <p className="font-medium text-slate-900 dark:text-slate-100">{option.label}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{option.desc}</p>
@@ -493,7 +493,7 @@ export function InfrastructureWizard() {
                           <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{String(item.name || item.title || item.brand_name || "Service item")}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{String(item.category || item.product || item.status || "OpenProvider data")}</p>
                         </div>
-                        <span className="text-sm font-bold text-green-600 dark:text-green-400">${item.price || "TBD"}/year</span>
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400">${item.price || item.amount || item.cost || "TBD"}/year</span>
                       </div>
                       <button 
                         onClick={() => addToStack(String(item.name || item.title || "Service"), Number(item.price) || 0)}

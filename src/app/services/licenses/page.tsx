@@ -60,7 +60,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
 
   // Fetch products based on category
-  let products = [];
+  let products: any[] = [];
   try {
     switch (params.category) {
       case 'domains':

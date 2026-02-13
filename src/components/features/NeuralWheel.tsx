@@ -486,7 +486,7 @@ export default function NeuralWheel() {
                           )}
                           {isWholesale && status?.remaining !== null && !exhausted && (
                             <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                              {status.remaining} spots remaining
+                              {status?.remaining} spots remaining
                             </p>
                           )}
                         </div>

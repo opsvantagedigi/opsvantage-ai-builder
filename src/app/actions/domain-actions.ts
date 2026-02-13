@@ -28,18 +28,56 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
         const result = response.data.results[0];
 
         // Whitelabel Pricing Logic
-        if (result.price && result.price.reseller) {
-            const costPrice = result.price.reseller.price;
+        if (result.price?.reseller) {
+            const costPrice = result.price.reseller.price!;
             const currency = result.price.reseller.currency;
 
+            // Check if costPrice is defined before using it
+            if (costPrice === undefined || costPrice === null || typeof costPrice !== 'number') {
+                return {
+                    status: result.status,
+                    domain: result.domain,
+                    price: {
+                        currency: currency || 'USD',
+                        amount: '0.00',
+                    },
+                    isPremium: result.is_premium
+                };
+            }
+
+            // Check if costPrice is defined before using it
+            if (costPrice === undefined || costPrice === null || typeof costPrice !== 'number') {
+                return {
+                    status: result.status,
+                    domain: result.domain,
+                    price: {
+                        currency: currency || 'USD',
+                        amount: '0.00',
+                    },
+                    isPremium: result.is_premium
+                };
+            }
+
             // Calculate Retail Price with Markup
+            if (typeof costPrice !== 'number') {
+                return {
+                    status: result.status,
+                    domain: result.domain,
+                    price: {
+                        currency: currency || 'USD',
+                        amount: '0.00',
+                    },
+                    isPremium: result.is_premium
+                };
+            }
+            
             const retailAmount = (costPrice * MARKUP).toFixed(2);
 
             return {
                 status: result.status,
                 domain: result.domain,
                 price: {
-                    currency: currency,
+                    currency: currency || 'USD',
                     amount: retailAmount,
                 },
                 isPremium: result.is_premium

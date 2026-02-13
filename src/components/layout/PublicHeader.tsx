@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
@@ -16,21 +17,14 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
         <Link href="/" className="group inline-flex items-center gap-3" onClick={() => setMenuOpen(false)}>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold tracking-wide text-white shadow-sm dark:bg-cyan-400 dark:text-slate-950">
-            OV
-          </span>
-          <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100">
-            OpsVantage Digital
-            <span className="ml-2 hidden text-xs font-medium text-slate-500 md:inline dark:text-slate-400">
-              {SITE_DOMAIN}
-            </span>
-          </span>
+          <Image src="/logo.png" alt="OpsVantage Digital" width={229} height={40} className="h-10 w-auto" priority />
+          <span className="hidden text-xs font-medium text-slate-500 md:inline dark:text-slate-400">{SITE_DOMAIN}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex relative">
           {MARKETING_NAV.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-            
+
             // Special handling for the Services link to show submenu
             if (item.label === "Services") {
               return (
@@ -45,29 +39,29 @@ export function PublicHeader() {
                   >
                     {item.label} <span className="text-xs">▼</span>
                   </Link>
-                  
+
                   {/* Services submenu */}
                   <div className="absolute top-full left-0 mt-2 w-56 rounded-xl bg-white/90 backdrop-blur-md shadow-lg border border-slate-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 dark:bg-slate-800/90 dark:border-slate-700">
-                    <Link 
-                      href="/services/domains" 
+                    <Link
+                      href="/services/domains"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       Domain Registration
                     </Link>
-                    <Link 
-                      href="/services/ssl" 
+                    <Link
+                      href="/services/ssl"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       SSL Certificates
                     </Link>
-                    <Link 
-                      href="/services/licenses" 
+                    <Link
+                      href="/services/licenses"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       Hosting Licenses
                     </Link>
-                    <Link 
-                      href="/services/security" 
+                    <Link
+                      href="/services/security"
                       className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       Spam Filters
@@ -76,7 +70,7 @@ export function PublicHeader() {
                 </div>
               );
             }
-            
+
             return (
               <Link
                 key={item.href}
@@ -115,7 +109,7 @@ export function PublicHeader() {
       {menuOpen && (
         <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden dark:border-slate-800 dark:bg-slate-950">
           <nav className="flex flex-col gap-3">
-            {MARKETING_NAV.map((item) => {
+            {SITE_NAVIGATION.map((item) => {
               // Special handling for the Services link to show submenu on mobile
               if (item.label === "Services") {
                 return (
@@ -127,32 +121,32 @@ export function PublicHeader() {
                     >
                       {item.label}
                     </Link>
-                    
+
                     {/* Mobile Services submenu */}
                     <div className="pl-4 mt-1 space-y-1">
-                      <Link 
-                        href="/services/domains" 
+                      <Link
+                        href="/services/domains"
                         onClick={() => setMenuOpen(false)}
                         className="block px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 rounded"
                       >
                         Domain Registration
                       </Link>
-                      <Link 
-                        href="/services/ssl" 
+                      <Link
+                        href="/services/ssl"
                         onClick={() => setMenuOpen(false)}
                         className="block px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 rounded"
                       >
                         SSL Certificates
                       </Link>
-                      <Link 
-                        href="/services/licenses" 
+                      <Link
+                        href="/services/licenses"
                         onClick={() => setMenuOpen(false)}
                         className="block px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 rounded"
                       >
                         Hosting Licenses
                       </Link>
-                      <Link 
-                        href="/services/security" 
+                      <Link
+                        href="/services/security"
                         onClick={() => setMenuOpen(false)}
                         className="block px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50 rounded"
                       >
@@ -162,7 +156,7 @@ export function PublicHeader() {
                   </div>
                 );
               }
-              
+
               return (
                 <Link
                   key={item.href}

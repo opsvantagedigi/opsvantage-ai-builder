@@ -48,10 +48,12 @@ export async function GET(req: NextRequest) {
 
   let rows: Array<{ offerId: string; _count: { offerId: number } }> = [];
   try {
-    rows = await prisma.foundersClaim.groupBy({
+    const rawRows = await prisma.foundersClaim.groupBy({
       by: ["offerId"],
       _count: { offerId: true },
     });
+    
+    rows = rawRows as Array<{ offerId: string; _count: { offerId: number } }>;
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) {
       throw error;

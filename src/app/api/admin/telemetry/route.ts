@@ -53,7 +53,7 @@ async function getMarzThoughtRows() {
 
 async function getEstimatedSavings() {
   try {
-    const rows = await prisma.$queryRawUnsafe<Array<{ total: number | null }>>(
+    const rows: Array<{ total: number | null }> = await prisma.$queryRawUnsafe(
       `SELECT COALESCE(SUM("savedAmount"), 0) AS total FROM "FoundersClaim"`
     );
     const total = Number(rows[0]?.total ?? 0);
@@ -91,10 +91,10 @@ export async function GET(req: NextRequest) {
   ]);
 
   const fallbackThoughts = [
-    { category: "Observation", insight: "Detected search for .ai domain." },
-    { category: "Rationalization", insight: "User is building an AI-centric estate. SSL is mandatory for trust." },
-    { category: "Action Taken", insight: "Pre-selected Premium EV SSL in the background worker." },
-    { category: "Economic Impact", insight: "Saved user $214.00 vs. GoDaddy retail." },
+    { category: "Observation", insight: "Detected search for .ai domain.", createdAt: new Date().toISOString() },
+    { category: "Rationalization", insight: "User is building an AI-centric estate. SSL is mandatory for trust.", createdAt: new Date().toISOString() },
+    { category: "Action Taken", insight: "Pre-selected Premium EV SSL in the background worker.", createdAt: new Date().toISOString() },
+    { category: "Economic Impact", insight: "Saved user $214.00 vs. GoDaddy retail.", createdAt: new Date().toISOString() },
   ];
 
   return NextResponse.json({
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
     openProviderStatus: apiStatus,
     marzThoughts:
       marzRows.length > 0
-        ? marzRows.map((row) => ({
+        ? marzRows.map((row: { category: string; insight: string; createdAt: Date }) => ({
             category: row.category,
             insight: row.insight,
             createdAt: row.createdAt,

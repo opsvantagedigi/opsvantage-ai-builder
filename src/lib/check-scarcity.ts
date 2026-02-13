@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 
 /**
  * Checks the scarcity of available slots for the "Founders 25" offering
@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db';
 export async function checkScarcity(): Promise<boolean> {
   try {
     // Count the number of claimed "Founders 25" slots
-    const claimedCount = await prisma.foundersClaim.count({
+    const claimedCount = await db.foundersClaim.count({
       where: {
         offerId: 'FOUNDERS_25', // Assuming this is the offer ID for the Founders 25 program
       },
@@ -32,7 +32,7 @@ export async function checkScarcity(): Promise<boolean> {
  */
 export async function getClaimedCount(): Promise<number> {
   try {
-    const claimedCount = await prisma.foundersClaim.count({
+    const claimedCount = await db.foundersClaim.count({
       where: {
         offerId: 'FOUNDERS_25',
       },

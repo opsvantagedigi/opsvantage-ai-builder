@@ -24,14 +24,6 @@ type ImpactReport = {
   };
 };
 
-type NeuralLinkResponse = {
-  voiceId: string;
-  modelId?: string;
-  modelLabel?: string;
-  text: string;
-  audioBase64: string;
-};
-
 type JournalEntry = {
   category: string;
   insight: string;
@@ -222,17 +214,15 @@ export default function NeuralDashboardClient({
     let offsetX = 0;
     let offsetY = 0;
 
-    // Scale the image to fit within the canvas while maintaining aspect ratio
+    // Scale the image to cover the canvas while maintaining aspect ratio
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas (relative to heights)
-      drawWidth = width;
-      drawHeight = width / imageAspect;
-      offsetY = (height - drawHeight) / 2;
-    } else {
-      // Image is taller than canvas (relative to widths)
       drawHeight = height;
       drawWidth = height * imageAspect;
       offsetX = (width - drawWidth) / 2;
+    } else {
+      drawWidth = width;
+      drawHeight = width / imageAspect;
+      offsetY = (height - drawHeight) / 2;
     }
 
     context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
@@ -301,71 +291,13 @@ export default function NeuralDashboardClient({
   }, [drawMarzFrame]);
 
   const playNeuralSpeech = React.useCallback(
-    async (audioBase64: string, modelId?: string) => {
-      // If using browser-based TTS, use the Web Speech API
-      if (modelId === "browser_tts" || !audioBase64) {
-        // Stop any existing audio
-        stopLipSync();
-        
-        // Use Web Speech API for text-to-speech
-        const utterance = new SpeechSynthesisUtterance(neuralSpeech);
-        utterance.rate = 0.9;
-        utterance.pitch = 1.1;
-        utterance.volume = 0.8;
-        
-        // Animate lips while speaking
-        const startTime = Date.now();
-        const duration = neuralSpeech.length * 50; // Approximate duration based on text length
-        
-        const animateLips = () => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          
-          // Create a breathing-like lip movement pattern
-          const breathCycle = (Math.sin(progress * Math.PI * 2 * 3) + 1) / 2; // 3 cycles per second
-          const intensity = breathCycle * 0.7; // Reduce intensity
-          
-          drawMarzFrame(intensity);
-          
-          if (progress < 1) {
-            animationFrameRef.current = requestAnimationFrame(animateLips);
-          } else {
-            // End of speech, reset to idle
-            setTimeout(() => {
-              setNeuralLinkActive(false);
-              drawMarzFrame(0);
-            }, 500);
-          }
-        };
-        
-        utterance.onstart = () => {
-          setNeuralLinkActive(true);
-          animationFrameRef.current = requestAnimationFrame(animateLips);
-        };
-        
-        utterance.onend = () => {
-          if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
-          }
-          setNeuralLinkActive(false);
-          drawMarzFrame(0);
-        };
-        
-        speechSynthesis.speak(utterance);
-        return;
-      }
-      
-      // Original audio playback for ElevenLabs audio
+    async (audioBytes: Uint8Array) => {
       stopLipSync();
 
-      const raw = atob(audioBase64);
-      const bytes = new Uint8Array(raw.length);
-      for (let index = 0; index < raw.length; index += 1) {
-        bytes[index] = raw.charCodeAt(index);
-      }
-
-      const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
+      // Create a copy of the buffer to ensure compatibility
+      const copy = new Uint8Array(audioBytes.length);
+      copy.set(audioBytes);
+      const audioBlob = new Blob([copy], { type: "audio/mpeg" });
       const objectUrl = URL.createObjectURL(audioBlob);
       audioUrlRef.current = objectUrl;
 
@@ -406,7 +338,7 @@ export default function NeuralDashboardClient({
       await audioElement.play();
       animationFrameRef.current = requestAnimationFrame(renderFrame);
     },
-    [drawMarzFrame, neuralSpeech, stopLipSync]
+    [drawMarzFrame, stopLipSync]
   );
 
   const activateNeuralLink = React.useCallback(async () => {
@@ -428,15 +360,21 @@ export default function NeuralDashboardClient({
         }),
       });
 
-      const payload = (await response.json()) as NeuralLinkResponse & { error?: string; details?: string };
       if (!response.ok) {
-        throw new Error(payload.details || payload.error || "Neural Link activation failed.");
+        const payload = (await response.json().catch(() => null)) as { error?: string; details?: string } | null;
+        throw new Error(payload?.details || payload?.error || "Neural Link activation failed.");
       }
 
+      const engine = response.headers.get("x-marz-engine");
+      const speechHeader = response.headers.get("x-marz-text");
+      const audioBuffer = await response.arrayBuffer();
+
       hasEstablishedNeuralLinkRef.current = true;
-      setVoiceModelLabel(payload.modelLabel || payload.modelId || "NZ-Aria");
-      setNeuralSpeech(payload.text);
-      await playNeuralSpeech(payload.audioBase64, payload.modelId);
+      setVoiceModelLabel(engine === "alltalk" ? "AllTalk" : engine === "edge-tts" ? "Edge-TTS" : "Hybrid");
+      if (speechHeader) {
+        setNeuralSpeech(decodeURIComponent(speechHeader));
+      }
+      await playNeuralSpeech(new Uint8Array(audioBuffer));
     } catch (error) {
       setNeuralLinkActive(false);
       setNeuralLinkError(error instanceof Error ? error.message : String(error));
@@ -480,36 +418,13 @@ export default function NeuralDashboardClient({
     if (!canvas) return;
 
     // Set initial canvas dimensions
-    canvas.width = 1024;
-    canvas.height = 1280;
+    canvas.width = 900;
+    canvas.height = 1200;
 
     const image = new Image();
     image.src = "/MARZ_Headshot.png";
     image.crossOrigin = "anonymous"; // Enable CORS for the image
     image.onload = () => {
-      // Maintain aspect ratio by calculating appropriate dimensions
-      const maxWidth = 600; // Maximum width for display
-      const maxHeight = 800; // Maximum height for display
-      
-      // Calculate aspect ratio
-      const aspectRatio = image.naturalWidth / image.naturalHeight;
-      
-      let displayWidth = maxWidth;
-      let displayHeight = maxHeight;
-      
-      // Adjust dimensions to maintain aspect ratio
-      if (aspectRatio > 1) {
-        // Landscape orientation
-        displayHeight = maxWidth / aspectRatio;
-      } else {
-        // Portrait orientation
-        displayWidth = maxHeight * aspectRatio;
-      }
-      
-      // Set canvas dimensions to match the calculated display size
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
-      
       marzImageRef.current = image;
       drawMarzFrame(0);
     };
@@ -605,10 +520,10 @@ export default function NeuralDashboardClient({
 
           <div className="overflow-hidden rounded-xl border border-amber-500/20 bg-slate-950">
             <div className="marz-sovereign-frame marz-breathe">
-              <div className="marz-parallax-layer">
+              <div className="marz-parallax-layer h-[78vh] w-full">
                 <canvas
                   ref={marzCanvasRef}
-                  className="mx-auto h-auto max-h-[78vh] w-full object-contain"
+                  className="h-full w-full object-cover"
                   aria-label="MARZ avatar media canvas"
                 />
               </div>
@@ -616,7 +531,7 @@ export default function NeuralDashboardClient({
           </div>
 
           <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
-            <span className="font-semibold text-amber-200">Voice Profile:</span> ElevenLabs <span className="font-mono">Rachel</span>
+            <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
             <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
             <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
           </div>

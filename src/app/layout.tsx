@@ -17,12 +17,17 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: {
-    default: "OpsVantage Digital | Autonomous AI Website Builder",
-    template: "%s | OpsVantage Digital",
-  },
+  title: "OpsVantage Digital | Sovereign Enterprise AI",
   description:
     "OpsVantage Digital is an autonomous AI website builder for high-performance brands. Design, deploy, host, secure, and scale from one platform.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
+  },
   openGraph: {
     type: "website",
     url: SITE_URL,

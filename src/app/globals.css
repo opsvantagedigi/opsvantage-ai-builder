@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: #D4AF37;
+  --accent: #66FCF1;
+}
+
 @layer base {
   html {
     color-scheme: light;

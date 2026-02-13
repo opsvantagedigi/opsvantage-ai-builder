@@ -7,6 +7,7 @@ import { useHasMounted } from '@/hooks/useHasMounted';
 declare global {
   interface Window {
     webkitSpeechRecognition: any;
+    SpeechRecognition: any;
   }
 }
 
