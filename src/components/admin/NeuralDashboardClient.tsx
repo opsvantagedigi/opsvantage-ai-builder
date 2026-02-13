@@ -349,6 +349,7 @@ export default function NeuralDashboardClient({
 
     try {
       const isFirstLink = !hasEstablishedNeuralLinkRef.current;
+      const inputText = thoughtLines[0];
       const promptSeed = thoughtLines[0]
         ? `Using this latest neural thought, speak a grounded update: ${thoughtLines[0]}`
         : "Provide a grounded operational update for today.";
@@ -357,6 +358,7 @@ export default function NeuralDashboardClient({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          gen_text: String(inputText || "Neural Link Established."),
           prompt: promptSeed,
           firstLink: isFirstLink,
         }),

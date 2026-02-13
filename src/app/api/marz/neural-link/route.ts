@@ -22,18 +22,25 @@ export async function POST(req: NextRequest) {
 
     await ensureSentinelMemory(session?.sub ?? null);
 
-    const { text, prompt, firstLink } = (await req.json().catch(() => ({}))) as {
-      text?: string;
-      prompt?: string;
+    const { gen_text, text, prompt, firstLink } = (await req.json().catch(() => ({}))) as {
+      gen_text?: unknown;
+      text?: unknown;
+      prompt?: unknown;
       firstLink?: boolean;
     };
+    const normalizedGenText =
+      typeof gen_text === "string" ? gen_text.trim() : gen_text != null ? String(gen_text).trim() : "";
+    const normalizedText =
+      typeof text === "string" ? text.trim() : text != null ? String(text).trim() : "";
     const finalPrompt = typeof prompt === "string" && prompt.trim().length > 0 ? prompt.trim() : DEFAULT_PROMPT;
 
     const userRole = sovereignCookie ? "SOVEREIGN" : "CLIENT";
 
     let spokenText = "Neural link is online.";
-    if (typeof text === "string" && text.trim().length > 0) {
-      spokenText = text.trim().slice(0, 450);
+    if (normalizedGenText.length > 0) {
+      spokenText = normalizedGenText.slice(0, 450);
+    } else if (normalizedText.length > 0) {
+      spokenText = normalizedText.slice(0, 450);
     } else if (firstLink) {
       spokenText = getInitialVoicePayload(userRole);
     } else {
