@@ -31,27 +31,17 @@ const PHASES: Phase[] = [
   { id: "phase-3", label: "Phase 3: Launch Readiness", start: "2026-03-06", end: "2026-03-20" },
 ];
 
-function getCurrentPhaseLabel(now: Date) {
-  const current = PHASES.find((phase) => {
-    const start = new Date(`${phase.start}T00:00:00Z`).getTime();
-    const end = new Date(`${phase.end}T23:59:59Z`).getTime();
-    const target = now.getTime();
-    return target >= start && target <= end;
-  });
-
-  return current?.label ?? "Phase Tracking";
-}
-
 export function DashboardTaskList({
   onThought,
   onUrgentStateChange,
+  title = "Sovereign TODO List",
 }: {
   onThought: (insight: string) => void;
   onUrgentStateChange: (hasUrgentPending: boolean) => void;
+  title?: string;
 }) {
   const [tasks, setTasks] = useState<DashboardTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [today] = useState(() => new Date());
 
   useEffect(() => {
     let active = true;
@@ -96,8 +86,6 @@ export function DashboardTaskList({
     onUrgentStateChange(urgentPending);
   }, [onUrgentStateChange, urgentPending]);
 
-  const currentPhase = useMemo(() => getCurrentPhaseLabel(today), [today]);
-
   const toggleTask = (taskId: string) => {
     setTasks((prev) =>
       prev.map((task) => {
@@ -110,17 +98,9 @@ export function DashboardTaskList({
   };
 
   return (
-    <section className="rounded-2xl border border-amber-500/30 bg-black/70 p-5 h-full min-h-[400px]">
-      <div className="mb-4 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-amber-300/80">Calendar Strip</p>
-        <p className="mt-1 text-sm font-semibold text-amber-200">{currentPhase}</p>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-          <div className="h-full w-1/3 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.9)]" />
-        </div>
-      </div>
-
+    <section className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5 h-full min-h-[300px]">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-amber-200">Sovereign TODO</h2>
+        <h2 className="text-lg font-semibold text-amber-200">{title}</h2>
         <span className="text-xs text-slate-500">Real-time Task Tracking</span>
       </div>
 

@@ -5,6 +5,10 @@ import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import MentorLog from "@/components/admin/MentorLog";
 import { DashboardTaskList } from "@/components/admin/DashboardTaskList";
+import { LegacyGuidebook } from "@/components/admin/LegacyGuidebook";
+import { Fortune500Metrics } from "@/components/admin/Fortune500Metrics";
+import { DashboardHeader } from "@/components/admin/DashboardHeader";
+import { DashboardFooter } from "@/components/admin/DashboardFooter";
 
 type Thought = {
   category: string;
@@ -385,15 +389,20 @@ export default function NeuralDashboardClient({
     try {
       const isFirstLink = !hasEstablishedNeuralLinkRef.current;
       const inputText = thoughtLines[0];
+      const fallbackSpeechText = "Neural Link Established. System online.";
+      const safeSpeechText = String(inputText || fallbackSpeechText);
       const promptSeed = thoughtLines[0]
         ? `Using this latest neural thought, speak a grounded update: ${thoughtLines[0]}`
         : "Provide a grounded operational update for today.";
+      const neuralLinkEndpoint = process.env.NEXT_PUBLIC_NEURAL_LINK_ENDPOINT || "/api/marz/neural-link";
 
-      const response = await fetch("/api/marz/neural-link", {
+      const response = await fetch(neuralLinkEndpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          gen_text: String(inputText || "Neural Link Established."),
+          text: safeSpeechText,
+          voice: "NZ-Aria",
+          gen_text: safeSpeechText,
           prompt: promptSeed,
           firstLink: isFirstLink,
         }),
@@ -407,6 +416,7 @@ export default function NeuralDashboardClient({
       const engine = response.headers.get("x-marz-engine");
       const speechHeader = response.headers.get("x-marz-text");
       const responseContentType = (response.headers.get("content-type") || "").toLowerCase();
+      setHasUrgentTask(false);
 
       if (responseContentType.includes("application/json")) {
         const payload = (await response.json().catch(() => null)) as { text?: string; warning?: string } | null;
@@ -506,8 +516,9 @@ export default function NeuralDashboardClient({
   if (!mounted) return <div className="min-h-screen bg-black" />;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+      <DashboardHeader />
+      <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
         <div className="mb-4 h-2 w-full overflow-hidden rounded-full border border-amber-500/30 bg-slate-900/70">
           <div className="h-full w-1/3 rounded-full bg-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.95)]" />
         </div>
@@ -528,7 +539,7 @@ export default function NeuralDashboardClient({
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/70 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5">
             <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Sovereign 25</p>
             <p className="mt-2 text-3xl font-bold text-cyan-300 animate-pulse">
               {loading ? "--" : telemetry?.sovereign25SlotsRemaining ?? 0}
@@ -536,7 +547,7 @@ export default function NeuralDashboardClient({
             <p className="mt-1 text-sm text-slate-400">Slots Remaining</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/70 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5">
             <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Economic Impact</p>
             <p className="mt-2 text-3xl font-bold text-cyan-300 animate-pulse">
               {loading ? "--" : formatCurrency(nzdSaved).replace("$", "NZ$")}
@@ -544,7 +555,7 @@ export default function NeuralDashboardClient({
             <p className="mt-1 text-sm text-slate-400">New Zealand Dollars Saved</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/70 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5">
             <p className="text-xs uppercase tracking-[0.14em] text-slate-400">OpenProvider API</p>
             <div className="mt-3 flex items-center gap-3">
               <span
@@ -560,7 +571,7 @@ export default function NeuralDashboardClient({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/70 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5">
             <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Global Kill Switch</p>
             <p className={`mt-2 text-lg font-semibold ${globalLaunchActive ? "text-emerald-300" : "text-amber-200"}`}>
               {globalLaunchActive ? "Launch Active" : "Launch Guarded"}
@@ -574,77 +585,97 @@ export default function NeuralDashboardClient({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start mt-6">
-          <section className="rounded-2xl border border-amber-500/30 bg-black/70 p-5 h-full min-h-[400px]">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-amber-200">MARZ Neural Presence</h2>
-            </div>
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-3 space-y-6">
+            <section className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5 h-full min-h-[320px]">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-amber-200">MARZ Neural Presence</h2>
+              </div>
 
-            <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
-              <div className="marz-sovereign-frame marz-breathe">
-                <div className="marz-parallax-layer h-full w-full">
-                  <canvas
-                    ref={marzCanvasRef}
-                    className="object-contain w-full h-full p-6"
-                    aria-label="MARZ avatar media canvas"
-                  />
+              <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
+                <div className="marz-sovereign-frame marz-breathe">
+                  <div className="marz-parallax-layer h-full w-full">
+                    <canvas
+                      ref={marzCanvasRef}
+                      className="object-contain w-full h-full p-6"
+                      aria-label="MARZ avatar media canvas"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
-              <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
-              <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
-              <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
-            </div>
+              <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
+                <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
+                <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
+                <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
+              </div>
 
-            <p className="mt-3 text-sm text-slate-400">{neuralSpeech}</p>
-            {neuralLinkError && <p className="mt-2 text-sm text-red-300">{neuralLinkError}</p>}
-          </section>
+              <p className="mt-3 text-sm text-slate-400">{neuralSpeech}</p>
+              {neuralLinkError && <p className="mt-2 text-sm text-red-300">{neuralLinkError}</p>}
+            </section>
 
-          <section className="rounded-2xl border border-amber-500/30 bg-black/70 p-5 h-full min-h-[400px]">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-amber-200">Marz Autonomous Thoughts</h2>
-              <button
-                onClick={activateNeuralLink}
-                disabled={neuralLinkBusy}
-                className="rounded-lg border border-amber-400/40 bg-slate-950 px-3 py-2 text-sm font-medium text-amber-200 transition hover:bg-slate-800 disabled:opacity-50"
-              >
-                {neuralLinkBusy ? "Connecting Neural Link..." : "Activate Neural Link"}
-              </button>
-            </div>
-            <div className="mb-4 flex items-center gap-3">
-              {welcomePinned && (
+            <LegacyGuidebook />
+          </div>
+
+          <div className="lg:col-span-5 space-y-6 flex flex-col">
+            <section className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5 h-full min-h-[400px]">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-amber-200">Marz Autonomous Thoughts</h2>
                 <button
-                  onClick={() => setWelcomePinned(false)}
-                  className="rounded-md border border-amber-500/30 px-2 py-1 text-xs text-amber-200 hover:bg-amber-500/10"
+                  onClick={activateNeuralLink}
+                  disabled={neuralLinkBusy}
+                  className="rounded-lg border border-amber-400/40 bg-slate-950 px-3 py-2 text-sm font-medium text-amber-200 transition hover:bg-slate-800 disabled:opacity-50"
                 >
-                  Mark Welcome Note Read
+                  {neuralLinkBusy ? "Connecting Neural Link..." : "Activate Neural Link"}
                 </button>
-              )}
-              <span className="text-xs text-slate-500">Refresh: 15s</span>
-            </div>
+              </div>
+              <div className="mb-4 flex items-center gap-3">
+                {welcomePinned && (
+                  <button
+                    onClick={() => setWelcomePinned(false)}
+                    className="rounded-md border border-amber-500/30 px-2 py-1 text-xs text-amber-200 hover:bg-amber-500/10"
+                  >
+                    Mark Welcome Note Read
+                  </button>
+                )}
+                <span className="text-xs text-slate-500">Refresh: 15s</span>
+              </div>
 
-            <div
-              ref={terminalRef}
-              className="h-full min-h-[400px] overflow-y-auto rounded-xl border border-amber-500/20 bg-black px-4 py-3 font-mono text-sm leading-6 text-emerald-300"
-            >
-              {thoughtLines.length === 0 ? (
-                <p className="text-slate-500">Awaiting neural thought stream...</p>
-              ) : (
-                thoughtLines.map((line, index) => (
-                  <p key={`${line}-${index}`} className="whitespace-pre-wrap">
-                    {line}
-                  </p>
-                ))
-              )}
-            </div>
-          </section>
+              <div
+                ref={terminalRef}
+                className="h-full min-h-[400px] max-h-[500px] overflow-y-auto rounded-xl border border-amber-500/20 bg-black px-4 py-3 font-mono text-sm leading-6 text-emerald-300"
+              >
+                {thoughtLines.length === 0 ? (
+                  <p className="text-slate-500">Awaiting neural thought stream...</p>
+                ) : (
+                  thoughtLines.map((line, index) => (
+                    <p key={`${line}-${index}`} className="whitespace-pre-wrap">
+                      {line}
+                    </p>
+                  ))
+                )}
+              </div>
+            </section>
 
-          <DashboardTaskList
-            onThought={appendAutonomousThought}
-            onUrgentStateChange={setHasUrgentTask}
-          />
+            <Fortune500Metrics />
+          </div>
+
+          <div className="lg:col-span-4 space-y-6">
+            <section className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5 h-full min-h-[180px]">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-amber-200">Real-time Launch Calendar</h3>
+              <p className="mt-2 text-sm text-slate-300">Current Phase: <span className="font-semibold text-amber-300">{currentPhaseLabel}</span></p>
+              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div className="h-full w-1/3 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.9)]" />
+              </div>
+              <div className="mt-3 text-xs text-slate-400">Today: Feb 14, 2026 • Mission window active.</div>
+            </section>
+
+            <DashboardTaskList
+              onThought={appendAutonomousThought}
+              onUrgentStateChange={setHasUrgentTask}
+              title="Sovereign TODO List"
+            />
+          </div>
         </div>
 
         <MentorLog entries={initialJournal} />
@@ -692,6 +723,7 @@ export default function NeuralDashboardClient({
           </div>
         )}
       </div>
+      <DashboardFooter />
     </main>
   );
 }
