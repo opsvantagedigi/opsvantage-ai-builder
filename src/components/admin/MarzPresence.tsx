@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Mode = "idle" | "speaking" | "intro";
@@ -17,8 +18,9 @@ export function MarzPresence({
   isSpeaking: boolean;
   onSummon?: () => void;
 }) {
+  const videoModeEnabled = process.env.NEXT_PUBLIC_MARZ_VIDEO_MODE === "true";
   const [mode, setMode] = useState<Mode>("idle");
-  const [videoAvailable, setVideoAvailable] = useState(true);
+  const [videoAvailable, setVideoAvailable] = useState(videoModeEnabled);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -30,6 +32,8 @@ export function MarzPresence({
 
   const handleSummon = async () => {
     onSummon?.();
+    if (!videoModeEnabled) return;
+
     setVideoAvailable(true);
     setMode("intro");
 
@@ -44,7 +48,7 @@ export function MarzPresence({
   return (
     <div className="space-y-3">
       <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
-        {videoAvailable ? (
+        {videoModeEnabled && videoAvailable ? (
           <video
             ref={videoRef}
             key={activeSrc}
@@ -58,8 +62,15 @@ export function MarzPresence({
             onError={() => setVideoAvailable(false)}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center p-6 text-center text-xs text-slate-300">
-            MARZ presence media unavailable. Upload intro/idle/speaking videos to /public/videos.
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center text-xs text-slate-300">
+            <Image
+              src="/MARZ_Headshot.png"
+              alt="MARZ avatar"
+              width={220}
+              height={280}
+              className="h-full max-h-[220px] w-auto rounded-md object-contain"
+            />
+            <p className="text-[11px] text-slate-300/90">MARZ visual standby mode active.</p>
           </div>
         )}
       </div>

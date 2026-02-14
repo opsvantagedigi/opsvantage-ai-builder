@@ -41,6 +41,16 @@ export default async function SovereignAccessPage({
           <p className="mt-2 text-sm text-slate-400">Authenticate with your master key to unlock Sovereign controls.</p>
 
           <form action={grantSovereignAccess} className="mt-8 space-y-4">
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              defaultValue="sovereign"
+            />
             <label className="block text-sm text-slate-300" htmlFor="password">
               Master Key
             </label>
