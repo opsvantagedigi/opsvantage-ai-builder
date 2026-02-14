@@ -4,6 +4,7 @@ import Link from "next/link";
 import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import MentorLog from "@/components/admin/MentorLog";
+import { DashboardTaskList } from "@/components/admin/DashboardTaskList";
 
 type Thought = {
   category: string;
@@ -61,6 +62,7 @@ export default function NeuralDashboardClient({
   const [neuralSpeech, setNeuralSpeech] = useState("Idle. MARZ awaiting Neural Link activation.");
   const [voiceModelLabel, setVoiceModelLabel] = useState("NZ-Aria");
   const [welcomePinned, setWelcomePinned] = useState(true);
+  const [hasUrgentTask, setHasUrgentTask] = useState(false);
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const marzCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const marzImageRef = useRef<HTMLImageElement | null>(null);
@@ -192,6 +194,30 @@ export default function NeuralDashboardClient({
 
     return computedLines;
   }, [pinnedWelcomeThought, thoughts, welcomePinned]);
+
+  const appendAutonomousThought = React.useCallback((insight: string) => {
+    setThoughts((prev) => {
+      const next = [
+        {
+          category: "TASK",
+          insight,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 50);
+
+      thoughtsSnapshotRef.current = JSON.stringify(next);
+      return next;
+    });
+  }, []);
+
+  const currentPhaseLabel = useMemo(() => {
+    const now = new Date();
+    const phaseOneStart = new Date("2026-02-10T00:00:00Z").getTime();
+    const phaseOneEnd = new Date("2026-02-20T23:59:59Z").getTime();
+    const inPhaseOne = now.getTime() >= phaseOneStart && now.getTime() <= phaseOneEnd;
+    return inPhaseOne ? "Phase 1: Visual Lockdown" : "Phase Tracking";
+  }, []);
 
   const drawMarzFrame = React.useCallback((mouthIntensity: number) => {
     const canvas = marzCanvasRef.current;
@@ -482,6 +508,11 @@ export default function NeuralDashboardClient({
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-7xl">
+        <div className="mb-4 h-2 w-full overflow-hidden rounded-full border border-amber-500/30 bg-slate-900/70">
+          <div className="h-full w-1/3 rounded-full bg-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.95)]" />
+        </div>
+        <p className="mb-2 text-xs uppercase tracking-[0.16em] text-amber-300/90">{currentPhaseLabel}</p>
+
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-500/20 pb-6">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-amber-300/80">Zenith Command Center</p>
@@ -543,7 +574,7 @@ export default function NeuralDashboardClient({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start mt-6">
           <section className="rounded-2xl border border-amber-500/30 bg-black/70 p-5 h-full min-h-[400px]">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-amber-200">MARZ Neural Presence</h2>
@@ -609,9 +640,22 @@ export default function NeuralDashboardClient({
               )}
             </div>
           </section>
+
+          <DashboardTaskList
+            onThought={appendAutonomousThought}
+            onUrgentStateChange={setHasUrgentTask}
+          />
         </div>
 
         <MentorLog entries={initialJournal} />
+
+        {hasUrgentTask && (
+          <div className="fixed bottom-4 left-1/2 z-40 w-full max-w-3xl -translate-x-1/2 px-4">
+            <div className="animate-pulse rounded-xl border border-red-500/60 bg-red-950/90 px-4 py-3 text-sm font-medium text-red-100 shadow-[0_0_20px_rgba(239,68,68,0.35)]">
+              Urgent Reminder: High-priority task pending — MARZ Greeting Fix requires immediate attention.
+            </div>
+          </div>
+        )}
 
         {switchOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
