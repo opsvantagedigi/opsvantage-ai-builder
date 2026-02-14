@@ -10,7 +10,9 @@ RUN npm ci --legacy-peer-deps
 
 FROM base AS builder
 ARG DATABASE_URL
+ARG NEXT_PUBLIC_MARZ_VIDEO_MODE
 ENV DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder?sslmode=require}
+ENV NEXT_PUBLIC_MARZ_VIDEO_MODE=${NEXT_PUBLIC_MARZ_VIDEO_MODE:-false}
 ENV SKIP_DB_CHECK_DURING_BUILD=true
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -19,6 +21,7 @@ RUN npm run build
 
 FROM base AS runner
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_MARZ_VIDEO_MODE=true
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --legacy-peer-deps
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
