@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Facebook, Instagram, Linkedin, Music2, Twitter } from "lucide-react";
 import { LEGAL_LINKS, PRODUCT_LINKS, RESOURCE_LINKS, SITE_DOMAIN, TOOL_LINKS } from "@/lib/site-config";
 
 export function Footer() {
@@ -7,7 +8,7 @@ export function Footer() {
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 md:grid-cols-5 md:px-6">
         <div className="space-y-4 md:col-span-1">
           <Link href="/" className="group flex items-center gap-4">
             <Image
@@ -35,6 +36,7 @@ export function Footer() {
         <FooterColumn title="Platform" links={PRODUCT_LINKS} />
         <FooterColumn title="Resources" links={RESOURCE_LINKS} />
         <FooterColumn title="Tools" links={TOOL_LINKS} />
+        <FooterSocialColumn />
       </div>
 
       <div className="border-t border-slate-200 dark:border-slate-800">
@@ -56,6 +58,60 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterSocialColumn() {
+  const links = [
+    {
+      href: "https://www.tiktok.com/@opsvantagedigi",
+      label: "@opsvantagedigi",
+      icon: Music2,
+    },
+    {
+      href: "https://www.instagram.com/opsvantagedigital",
+      label: "@opsvantagedigital",
+      icon: Instagram,
+    },
+    {
+      href: "https://x.com/opsvantagedigi",
+      label: "@opsvantagedigi",
+      icon: Twitter,
+    },
+    {
+      href: "https://www.facebook.com/OpsVantageDigital",
+      label: "OpsVantage Digital",
+      icon: Facebook,
+    },
+    {
+      href: "https://www.linkedin.com/company/opsvantage-digital",
+      label: "OpsVantage Digital",
+      icon: Linkedin,
+    },
+  ];
+
+  return (
+    <div>
+      <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">CONNECT</h3>
+      <ul className="space-y-2">
+        {links.map((link) => {
+          const Icon = link.icon;
+          return (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-xs text-slate-700 transition hover:text-slate-950 dark:text-slate-200 dark:hover:text-white"
+              >
+                <Icon className="h-3 w-3" aria-hidden="true" />
+                {link.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
