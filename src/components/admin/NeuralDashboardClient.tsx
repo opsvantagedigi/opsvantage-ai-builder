@@ -382,6 +382,40 @@ export default function NeuralDashboardClient({
     [drawMarzFrame, stopLipSync]
   );
 
+  const playBrowserFallbackSpeech = React.useCallback((text: string) => {
+    if (typeof window === "undefined" || typeof window.speechSynthesis === "undefined") {
+      setNeuralLinkError("Speech unavailable in this browser.");
+      return;
+    }
+
+    const trimmed = String(text || "").trim();
+    if (!trimmed) {
+      setNeuralLinkError("No speech text available.");
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(trimmed);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      utterance.onstart = () => {
+        setNeuralLinkActive(true);
+      };
+      utterance.onend = () => {
+        setNeuralLinkActive(false);
+      };
+      utterance.onerror = () => {
+        setNeuralLinkActive(false);
+        setNeuralLinkError("Speech unavailable in this browser.");
+      };
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setNeuralLinkActive(false);
+      setNeuralLinkError("Speech unavailable in this browser.");
+    }
+  }, []);
+
   const activateNeuralLink = React.useCallback(async () => {
     setNeuralLinkBusy(true);
     setNeuralLinkError(null);
@@ -421,14 +455,18 @@ export default function NeuralDashboardClient({
       if (responseContentType.includes("application/json")) {
         const payload = (await response.json().catch(() => null)) as { text?: string; warning?: string } | null;
         hasEstablishedNeuralLinkRef.current = true;
-        setVoiceModelLabel("Text-only");
+        setVoiceModelLabel("Browser TTS Fallback");
         setNeuralLinkActive(false);
+        setNeuralLinkError(null);
         if (payload?.text) {
           setNeuralSpeech(payload.text);
         } else if (speechHeader) {
           setNeuralSpeech(decodeURIComponent(speechHeader));
         }
-        if (payload?.warning) {
+        const fallbackText = payload?.text || (speechHeader ? decodeURIComponent(speechHeader) : "");
+        if (fallbackText) {
+          playBrowserFallbackSpeech(fallbackText);
+        } else if (payload?.warning) {
           setNeuralLinkError(payload.warning);
         }
         drawMarzFrame(0);
@@ -450,7 +488,7 @@ export default function NeuralDashboardClient({
     } finally {
       setNeuralLinkBusy(false);
     }
-  }, [drawMarzFrame, neuralSpeech, playNeuralSpeech, thoughtLines]);
+  }, [drawMarzFrame, neuralSpeech, playBrowserFallbackSpeech, playNeuralSpeech, thoughtLines]);
 
   const handleKillSwitch = async () => {
     setSwitchBusy(true);
