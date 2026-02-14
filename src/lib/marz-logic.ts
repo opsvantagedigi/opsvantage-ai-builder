@@ -2,7 +2,7 @@ export type MarzUserRole = "SOVEREIGN" | "CLIENT";
 
 type SpeechResult = {
   audioBuffer: Buffer;
-  engine: "alltalk" | "edge-tts";
+  engine: "alltalk";
 };
 
 export function getInitialVoicePayload(userRole: MarzUserRole): string {
@@ -30,6 +30,9 @@ async function synthesizeWithAllTalk(text: string): Promise<SpeechResult> {
     },
     body: JSON.stringify({
       text_input: text,
+      text: text,
+      model: "xttsv2",
+      tts_model_name: "xttsv2",
       character_voice_gen: "NZ_Grounded_Female.wav",
       output_file_name: "marz_voice",
     }),
@@ -82,119 +85,6 @@ async function synthesizeWithAllTalk(text: string): Promise<SpeechResult> {
   throw new Error("AllTalk returned an unsupported response payload.");
 }
 
-async function synthesizeWithEdgeTts(text: string): Promise<SpeechResult> {
-  const normalizedText = String(text ?? "").trim();
-  if (!normalizedText) {
-    throw new Error("text must be a string");
-  }
-
-  const edgeTtsModule = (await import("edge-tts-universal")) as any;
-  const candidate = edgeTtsModule.default ?? edgeTtsModule;
-  const UniversalEdgeTTS = edgeTtsModule.UniversalEdgeTTS ?? candidate?.UniversalEdgeTTS;
-  const voice = "en-NZ-MollyNeural";
-
-  let rawAudio: unknown;
-  if (typeof UniversalEdgeTTS === "function") {
-    const universal = new UniversalEdgeTTS({ voice });
-    if (typeof universal.synthesize === "function") {
-      try {
-        rawAudio = await universal.synthesize(normalizedText, {
-          voice,
-          format: "audio-24khz-48kbitrate-mono-mp3",
-        });
-      } catch {
-        rawAudio = await universal.synthesize({
-          text: normalizedText,
-          voice,
-          format: "audio-24khz-48kbitrate-mono-mp3",
-        });
-      }
-    } else if (typeof universal.generate === "function") {
-      try {
-        rawAudio = await universal.generate(normalizedText, {
-          voice,
-          format: "audio-24khz-48kbitrate-mono-mp3",
-        });
-      } catch {
-        rawAudio = await universal.generate({
-          text: normalizedText,
-          voice,
-          format: "audio-24khz-48kbitrate-mono-mp3",
-        });
-      }
-    }
-  }
-
-  const possibleFns = [candidate.generate, candidate.synthesize, candidate.tts].filter(
-    (fn) => typeof fn === "function"
-  );
-
-  if (!rawAudio) {
-    for (const fn of possibleFns) {
-      try {
-        rawAudio = await fn(normalizedText, {
-          voice,
-          format: "audio-24khz-48kbitrate-mono-mp3",
-        });
-        if (rawAudio) break;
-      } catch {
-      }
-
-      try {
-        rawAudio = await fn({
-          text: normalizedText,
-          voice,
-          format: "audio-24khz-48kbitrate-mono-mp3",
-        });
-        if (rawAudio) break;
-      } catch {
-      }
-    }
-  }
-
-  if (!rawAudio) {
-    throw new Error("edge-tts-universal did not return audio output.");
-  }
-
-  if (Buffer.isBuffer(rawAudio)) {
-    return { audioBuffer: rawAudio, engine: "edge-tts" };
-  }
-
-  if (rawAudio instanceof Uint8Array) {
-    return { audioBuffer: Buffer.from(rawAudio), engine: "edge-tts" };
-  }
-
-  if (typeof rawAudio === "string") {
-    return {
-      audioBuffer: decodeBase64Audio(rawAudio),
-      engine: "edge-tts",
-    };
-  }
-
-  const objectAudio = rawAudio as { audio?: Uint8Array | string; audioBase64?: string; data?: Uint8Array };
-  if (objectAudio.audio instanceof Uint8Array) {
-    return { audioBuffer: Buffer.from(objectAudio.audio), engine: "edge-tts" };
-  }
-
-  if (typeof objectAudio.audio === "string") {
-    return { audioBuffer: decodeBase64Audio(objectAudio.audio), engine: "edge-tts" };
-  }
-
-  if (typeof objectAudio.audioBase64 === "string") {
-    return { audioBuffer: decodeBase64Audio(objectAudio.audioBase64), engine: "edge-tts" };
-  }
-
-  if (objectAudio.data instanceof Uint8Array) {
-    return { audioBuffer: Buffer.from(objectAudio.data), engine: "edge-tts" };
-  }
-
-  throw new Error("edge-tts-universal returned an unsupported payload format.");
-}
-
 export async function generateSpeech(text: string): Promise<SpeechResult> {
-  try {
-    return await synthesizeWithAllTalk(text);
-  } catch {
-    return synthesizeWithEdgeTts(text);
-  }
+  return synthesizeWithAllTalk(text);
 }

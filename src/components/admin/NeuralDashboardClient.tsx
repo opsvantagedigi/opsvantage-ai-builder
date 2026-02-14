@@ -9,6 +9,7 @@ import { LegacyGuidebook } from "@/components/admin/LegacyGuidebook";
 import { Fortune500Metrics } from "@/components/admin/Fortune500Metrics";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardFooter } from "@/components/admin/DashboardFooter";
+import { MarzPresence } from "@/components/admin/MarzPresence";
 
 type Thought = {
   category: string;
@@ -68,8 +69,6 @@ export default function NeuralDashboardClient({
   const [welcomePinned, setWelcomePinned] = useState(true);
   const [hasUrgentTask, setHasUrgentTask] = useState(false);
   const terminalRef = useRef<HTMLDivElement | null>(null);
-  const marzCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const marzImageRef = useRef<HTMLImageElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -223,64 +222,6 @@ export default function NeuralDashboardClient({
     return inPhaseOne ? "Phase 1: Visual Lockdown" : "Phase Tracking";
   }, []);
 
-  const drawMarzFrame = React.useCallback((mouthIntensity: number) => {
-    const canvas = marzCanvasRef.current;
-    const image = marzImageRef.current;
-    if (!canvas || !image) return;
-
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    context.clearRect(0, 0, width, height);
-
-    // Calculate the aspect ratio to properly fit the image
-    const imageAspect = image.naturalWidth / image.naturalHeight;
-    const canvasAspect = width / height;
-
-    let drawWidth = width;
-    let drawHeight = height;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    // Scale the image to cover the canvas while maintaining aspect ratio
-    if (imageAspect > canvasAspect) {
-      drawHeight = height;
-      drawWidth = height * imageAspect;
-      offsetX = (width - drawWidth) / 2;
-    } else {
-      drawWidth = width;
-      drawHeight = width / imageAspect;
-      offsetY = (height - drawHeight) / 2;
-    }
-
-    context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
-
-    // Calculate mouth position relative to the drawn image, not the full canvas
-    const clamped = Math.max(0, Math.min(1, mouthIntensity));
-    const mouthHeight = (6 + clamped * 28) * (drawHeight / image.naturalHeight); // Scale with image
-    const mouthWidth = (36 + clamped * 8) * (drawWidth / image.naturalWidth); // Scale with image
-    const mouthX = offsetX + drawWidth * 0.5; // Center horizontally in the drawn image
-    const mouthY = offsetY + drawHeight * 0.655; // Position vertically in the drawn image
-
-    context.save();
-    context.fillStyle = "rgba(15, 23, 42, 0.72)";
-    context.beginPath();
-    context.ellipse(mouthX, mouthY, mouthWidth, mouthHeight, 0, 0, Math.PI * 2);
-    context.fill();
-
-    context.strokeStyle = "rgba(251, 191, 36, 0.55)";
-    context.lineWidth = 2 * (drawWidth / image.naturalWidth); // Scale stroke width with image
-    context.beginPath();
-    context.ellipse(mouthX, mouthY, mouthWidth, mouthHeight, 0, 0, Math.PI * 2);
-    context.stroke();
-    context.restore();
-  }, []);
-
   const stopLipSync = React.useCallback(() => {
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -320,8 +261,7 @@ export default function NeuralDashboardClient({
     }
 
     setNeuralLinkActive(false);
-    drawMarzFrame(0);
-  }, [drawMarzFrame]);
+  }, []);
 
   const playNeuralSpeech = React.useCallback(
     async (audioBytes: Uint8Array) => {
@@ -363,9 +303,6 @@ export default function NeuralDashboardClient({
         if (!analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(frequencyData);
         const average = frequencyData.reduce((sum, current) => sum + current, 0) / frequencyData.length;
-        const mouthIntensity = Math.min(1, average / 90);
-        drawMarzFrame(mouthIntensity);
-
         if (audioElementRef.current && !audioElementRef.current.paused && !audioElementRef.current.ended) {
           animationFrameRef.current = requestAnimationFrame(renderFrame);
         }
@@ -379,7 +316,7 @@ export default function NeuralDashboardClient({
       await audioElement.play();
       animationFrameRef.current = requestAnimationFrame(renderFrame);
     },
-    [drawMarzFrame, stopLipSync]
+    [stopLipSync]
   );
 
   const playBrowserFallbackSpeech = React.useCallback((text: string) => {
@@ -469,7 +406,6 @@ export default function NeuralDashboardClient({
         } else if (payload?.warning) {
           setNeuralLinkError(payload.warning);
         }
-        drawMarzFrame(0);
         return;
       }
 
@@ -484,11 +420,10 @@ export default function NeuralDashboardClient({
     } catch (error) {
       setNeuralLinkActive(false);
       setNeuralLinkError(error instanceof Error ? error.message : String(error));
-      drawMarzFrame(0);
     } finally {
       setNeuralLinkBusy(false);
     }
-  }, [drawMarzFrame, neuralSpeech, playBrowserFallbackSpeech, playNeuralSpeech, thoughtLines]);
+  }, [neuralSpeech, playBrowserFallbackSpeech, playNeuralSpeech, thoughtLines]);
 
   const handleKillSwitch = async () => {
     setSwitchBusy(true);
@@ -517,33 +452,6 @@ export default function NeuralDashboardClient({
     if (!terminalRef.current) return;
     terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
   }, [mounted, thoughtLines]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const canvas = marzCanvasRef.current;
-    if (!canvas) return;
-    if (typeof window === "undefined") return;
-
-    // Set initial canvas dimensions
-    canvas.width = 900;
-    canvas.height = 1200;
-
-    const image = new window.Image();
-    image.src = "/MARZ_Headshot.png";
-    image.crossOrigin = "anonymous"; // Enable CORS for the image
-    image.loading = "eager";
-    (image as HTMLImageElement & { fetchPriority?: "high" | "low" | "auto" }).fetchPriority = "high";
-    image.onload = () => {
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      marzImageRef.current = image;
-      drawMarzFrame(0);
-    };
-    
-    image.onerror = () => {
-      console.error("Failed to load MARZ headshot image");
-    };
-  }, [drawMarzFrame, mounted]);
 
   useEffect(() => {
     return () => {
@@ -631,15 +539,10 @@ export default function NeuralDashboardClient({
               </div>
 
               <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
-                <div className="marz-sovereign-frame marz-breathe">
-                  <div className="marz-parallax-layer h-full w-full">
-                    <canvas
-                      ref={marzCanvasRef}
-                      className="object-contain w-full h-full p-6"
-                      aria-label="MARZ avatar media canvas"
-                    />
-                  </div>
-                </div>
+                <MarzPresence
+                  isSpeaking={neuralLinkActive || neuralLinkBusy}
+                  onSummon={() => appendAutonomousThought("> MARZ Summoned: Intro sequence initiated")}
+                />
               </div>
 
               <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
@@ -681,7 +584,7 @@ export default function NeuralDashboardClient({
 
               <div
                 ref={terminalRef}
-                className="h-full min-h-[400px] max-h-[500px] overflow-y-auto rounded-xl border border-amber-500/20 bg-black px-4 py-3 font-mono text-sm leading-6 text-emerald-300"
+                className="h-full min-h-[400px] max-h-[60vh] overflow-y-auto rounded-xl border border-amber-500/20 bg-black px-4 py-3 font-mono text-sm leading-6 text-emerald-300"
               >
                 {thoughtLines.length === 0 ? (
                   <p className="text-slate-500">Awaiting neural thought stream...</p>
