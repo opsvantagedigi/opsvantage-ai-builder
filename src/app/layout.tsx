@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { SiteShell } from "@/components/layout/SiteShell";
+import PWARegister from "@/components/PWARegister";
 import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
 
@@ -17,6 +18,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  manifest: "/manifest.json",
   title: "OpsVantage Digital | Sovereign Enterprise AI",
   description:
     "OpsVantage Digital is an autonomous AI website builder for high-performance brands. Design, deploy, host, secure, and scale from one platform.",
@@ -58,6 +60,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
         <ThemeProvider>
+          <PWARegister />
           <SiteShell>{children}</SiteShell>
         </ThemeProvider>
       </body>

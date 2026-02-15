@@ -9,9 +9,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import chromadb
 import httpx
 import soundfile as sf
 import torch
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -30,6 +32,10 @@ class Settings(BaseSettings):
     wav2lip_checkpoint_path: str = "/opt/Wav2Lip/checkpoints/wav2lip_gan.pth"
     wav2lip_repo_path: str = "/opt/Wav2Lip"
     default_avatar_video: str = "/workspace/neural-core/assets/marz-face.mp4"
+    constitution_path: str = "/workspace/neural-core/constitution.md"
+    vector_store_path: str = "/workspace/neural-core/data/chroma"
+    target_audio_video_offset_ms: int = 35
+    max_audio_video_offset_ms: int = 50
 
     host: str = "0.0.0.0"
     port: int = 8080
@@ -52,6 +58,8 @@ class GatewayRequest(BaseModel):
     voice_text: str | None = None
     request_id: str | None = None
     avatar_video_path: str | None = None
+    awakening: bool | None = None
+    action: str | None = None
 
 
 class ActivityTracker:
@@ -79,6 +87,52 @@ class ActivityTracker:
 activity_tracker = ActivityTracker()
 
 
+def load_constitution_text() -> str:
+    path = Path(settings.constitution_path)
+    if not path.exists():
+        return "Constitution missing. Operate with safety, dignity, and non-harm as the highest constraints."
+    return path.read_text(encoding="utf-8").strip()
+
+
+class SovereignMemoryStore:
+    def __init__(self) -> None:
+        Path(settings.vector_store_path).mkdir(parents=True, exist_ok=True)
+        self.client = chromadb.PersistentClient(path=settings.vector_store_path)
+        self.collection = self.client.get_or_create_collection(
+            name="marz_memory",
+            embedding_function=DefaultEmbeddingFunction(),
+        )
+
+    def add_interaction(self, user_text: str, response_text: str) -> None:
+        if not user_text.strip() and not response_text.strip():
+            return
+
+        entry_id = str(uuid.uuid4())
+        doc = f"USER: {user_text}\nMARZ: {response_text}"
+        self.collection.add(
+            ids=[entry_id],
+            documents=[doc],
+            metadatas=[{"timestamp": int(time.time())}],
+        )
+
+    def query_context(self, prompt: str, top_k: int = 3) -> list[str]:
+        if not prompt.strip():
+            return []
+
+        results = self.collection.query(
+            query_texts=[prompt],
+            n_results=top_k,
+        )
+        docs = results.get("documents") or []
+        if not docs:
+            return []
+        return [str(item) for item in docs[0] if item]
+
+
+memory_store = SovereignMemoryStore()
+CONSTITUTION_TEXT = load_constitution_text()
+
+
 class BrainEngine:
     def __init__(self) -> None:
         self._llm: LLM | None = None
@@ -96,8 +150,15 @@ class BrainEngine:
     async def infer(self, prompt: str) -> str:
         def _run() -> str:
             llm = self._load()
+            memory_context = memory_store.query_context(prompt, top_k=3)
+            memory_block = "\n".join(memory_context) if memory_context else "No prior memory context available."
+            constrained_prompt = (
+                f"[PRIMARY CONSTITUTION]\n{CONSTITUTION_TEXT}\n\n"
+                f"[SOVEREIGN MEMORY]\n{memory_block}\n\n"
+                f"[CURRENT REQUEST]\n{prompt}\n"
+            )
             params = SamplingParams(temperature=0.6, top_p=0.9, max_tokens=420)
-            outputs = llm.generate([prompt], params)
+            outputs = llm.generate([constrained_prompt], params)
             if not outputs or not outputs[0].outputs:
                 return "No response generated."
             return outputs[0].outputs[0].text.strip()
@@ -186,6 +247,114 @@ class LipSyncEngine:
         if process.returncode != 0:
             details = stderr.decode("utf-8", errors="ignore")
             raise RuntimeError(f"Wav2Lip failed: {details}")
+
+
+def is_awakening_trigger(incoming: GatewayRequest) -> bool:
+    if incoming.awakening:
+        return True
+    if incoming.action and incoming.action.lower() in {"awakening", "awaken", "wake"}:
+        return True
+    if incoming.text and "awakening" in incoming.text.lower():
+        return True
+    return False
+
+
+def _guess_video_format(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".webm":
+        return "webm"
+    return "mp4"
+
+
+async def prepare_awakening_stream(avatar_path: Path) -> tuple[bytes, str]:
+    if avatar_path.exists() and avatar_path.suffix.lower() in {".mp4", ".webm"}:
+        return avatar_path.read_bytes(), _guess_video_format(avatar_path)
+
+    if avatar_path.exists():
+        with tempfile.TemporaryDirectory(prefix="marz-awakening-") as temp_dir:
+            temp_output = Path(temp_dir) / "awakening.webm"
+            process = await asyncio.create_subprocess_exec(
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(avatar_path),
+                "-t",
+                "2",
+                "-c:v",
+                "libvpx-vp9",
+                "-an",
+                str(temp_output),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            await process.communicate()
+            if process.returncode == 0 and temp_output.exists():
+                return temp_output.read_bytes(), "webm"
+
+    raise FileNotFoundError("Unable to prepare awakening stream; avatar file missing or invalid.")
+
+
+async def probe_duration_seconds(media_path: Path) -> float:
+    process = await asyncio.create_subprocess_exec(
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        str(media_path),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await process.communicate()
+    if process.returncode != 0:
+        return 0.0
+    try:
+        return float(stdout.decode("utf-8", errors="ignore").strip() or "0")
+    except ValueError:
+        return 0.0
+
+
+async def calibrate_sync(video_path: Path, audio_wav: Path, calibrated_path: Path) -> Path:
+    offset_sec = max(
+        -settings.max_audio_video_offset_ms / 1000.0,
+        min(settings.target_audio_video_offset_ms / 1000.0, settings.max_audio_video_offset_ms / 1000.0),
+    )
+
+    process = await asyncio.create_subprocess_exec(
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(video_path),
+        "-itsoffset",
+        str(offset_sec),
+        "-i",
+        str(audio_wav),
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-shortest",
+        str(calibrated_path),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await process.communicate()
+    if process.returncode != 0 or not calibrated_path.exists():
+        return video_path
+
+    video_dur = await probe_duration_seconds(calibrated_path)
+    audio_dur = await probe_duration_seconds(audio_wav)
+    delta = abs(audio_dur - video_dur)
+    if delta > 0.05:
+        return video_path
+
+    return calibrated_path
 
 
 brain = BrainEngine()
@@ -301,6 +470,33 @@ async def neural_core_socket(websocket: WebSocket) -> None:
 
             try:
                 text_prompt = await decode_voice_to_text(incoming)
+                avatar_path = Path(incoming.avatar_video_path) if incoming.avatar_video_path else Path(settings.default_avatar_video)
+
+                if is_awakening_trigger(incoming):
+                    try:
+                        awakening_bytes, awakening_format = await prepare_awakening_stream(avatar_path)
+                        await websocket.send_text(
+                            safe_json(
+                                {
+                                    "type": "video_stream",
+                                    "request_id": request_id,
+                                    "stage": "awakening",
+                                    "video_b64": base64.b64encode(awakening_bytes).decode("utf-8"),
+                                    "video_format": awakening_format,
+                                }
+                            )
+                        )
+                    except Exception:
+                        await websocket.send_text(
+                            safe_json(
+                                {
+                                    "type": "status",
+                                    "request_id": request_id,
+                                    "stage": "awakening",
+                                    "message": "Awakening trigger received; preparing live stream.",
+                                }
+                            )
+                        )
 
                 await websocket.send_text(
                     safe_json(
@@ -329,6 +525,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                     work = Path(workdir)
                     wav_path = work / "voice.wav"
                     video_path = work / "lipsync.mp4"
+                    calibrated_video_path = work / "lipsync-calibrated.mp4"
 
                     await voice.synthesize(voiced_output, wav_path)
 
@@ -342,11 +539,11 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                         )
                     )
 
-                    avatar_path = Path(incoming.avatar_video_path) if incoming.avatar_video_path else Path(settings.default_avatar_video)
                     await lipsync.render(avatar_path, wav_path, video_path)
+                    final_video_path = await calibrate_sync(video_path, wav_path, calibrated_video_path)
 
                     audio_bytes = wav_path.read_bytes()
-                    video_bytes = video_path.read_bytes()
+                    video_bytes = final_video_path.read_bytes()
 
                     await websocket.send_text(
                         safe_json(
@@ -361,6 +558,8 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                             }
                         )
                     )
+
+                    await asyncio.to_thread(memory_store.add_interaction, text_prompt, voiced_output)
 
                 await activity_tracker.touch()
             except Exception as pipeline_error:

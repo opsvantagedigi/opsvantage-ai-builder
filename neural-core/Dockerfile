@@ -22,6 +22,8 @@ RUN pip install --upgrade pip setuptools wheel && \
 RUN git clone https://github.com/Rudrabha/Wav2Lip.git /opt/Wav2Lip
 
 COPY gateway.py ./gateway.py
+COPY voice_config.py ./voice_config.py
+COPY constitution.md ./constitution.md
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 

@@ -19,12 +19,27 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [messageText, setMessageText] = useState('');
   const [chat, setChat] = useState<ChatItem[]>([]);
+  const [isAwakening, setIsAwakening] = useState(false);
 
-  const { status, stream, lastError, connect, sendMessage, wakeContainer } = useNeuralLink({
+  const { status, stream, lastEvent, lastError, connect, sendMessage, wakeContainer } = useNeuralLink({
     wsUrl,
     wakeUrl,
     autoConnect: true,
   });
+
+  useEffect(() => {
+    const eventType = String(lastEvent?.type || '').toLowerCase();
+    const eventStage = String(lastEvent?.stage || '').toLowerCase();
+
+    if (eventType === 'video_stream' || eventStage === 'awakening' || status === 'waking') {
+      setIsAwakening(true);
+      return;
+    }
+
+    if (eventType === 'result' || status === 'connected') {
+      setIsAwakening(false);
+    }
+  }, [lastEvent, status]);
 
   useEffect(() => {
     if (!audioRef.current || !stream.audioUrl) {
@@ -97,7 +112,10 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   };
 
   return (
-    <div className={className}>
+    <>
+      {isAwakening && <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />}
+
+      <div className={`${className || ''} ${isAwakening ? 'fixed inset-6 z-50 rounded-2xl border border-cyan-400/40 bg-slate-950/95 p-4 shadow-[0_0_40px_rgba(34,211,238,0.25)]' : ''}`}>
       <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/40">
         {stream.videoUrl ? (
           <video
@@ -171,6 +189,7 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
       </form>
 
       {lastError && <p className="mt-2 text-xs text-rose-300">{lastError}</p>}
-    </div>
+      </div>
+    </>
   );
 }
