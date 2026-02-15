@@ -10,18 +10,43 @@ const milestones = [
   "Production onboarding experience under review",
 ];
 
+const intrigueOptions = [
+  {
+    headline: "Something New Is Coming for Founders Who Refuse the Status Quo",
+    description:
+      "A new kind of digital power is about to shift hands. Not an agency. Not a builder. Not another tool. Something different — designed for founders who want control without complexity.",
+  },
+  {
+    headline: "A Different Operating Layer Is About to Open",
+    description:
+      "The next phase is not louder software. It is quieter leverage. Built for founders who need velocity, ownership, and execution without surrendering control.",
+  },
+];
+
+const INTRIGUE_ROTATION_START_UTC = Date.UTC(2026, 1, 15);
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+
+function getIntrigueIndex() {
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const elapsed = Math.max(0, todayUtc - INTRIGUE_ROTATION_START_UTC);
+  const index = Math.floor(elapsed / TWO_DAYS_MS) % intrigueOptions.length;
+  return index;
+}
+
 export default function ComingSoonPage() {
+  const activeIntrigue = intrigueOptions[getIntrigueIndex()];
+
   return (
     <div className="mesh-gradient py-10 md:py-14">
       <section className="section-shell">
         <div className="surface-glass p-8 md:p-12">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Launch Update</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-slate-100">
-            OpsVantage Platform Launching Soon
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gradient-sovereign animate-fade-in md:text-5xl">
+            {activeIntrigue.headline}
           </h1>
-          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
-            The core platform is in final activation. We are completing release hardening, observability, and launch
-            readiness checks before opening access broadly.
+          <p className="mt-5 max-w-3xl animate-fade-in text-base leading-7 text-slate-600 dark:text-slate-300">
+            {activeIntrigue.description}
           </p>
 
           <div className="mt-8 inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-800 dark:border-cyan-900/70 dark:bg-cyan-950/40 dark:text-cyan-200">

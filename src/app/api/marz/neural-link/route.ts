@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 import { verifySession } from "@/lib/verify-session";
 import { MarzAgent } from "@/lib/marz/agent-core";
@@ -14,13 +15,18 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const sovereignCookie = req.cookies.get("zenith_admin_token")?.value;
+    const token = sovereignCookie
+      ? null
+      : await getToken({ req, secret: process.env.NEXTAUTH_SECRET || "dev-nextauth-secret" });
     const session = sovereignCookie ? null : await verifySession();
+    const sessionEmail = session?.email || ((token as any)?.email as string | undefined) || null;
+    const sessionSub = session?.sub || ((token as any)?.sub as string | undefined) || null;
 
-    if (!sovereignCookie && !session) {
+    if (!sovereignCookie && !sessionEmail) {
       return NextResponse.json({ error: "Unauthorized: Neural Link Rejected" }, { status: 401 });
     }
 
-    await ensureSentinelMemory(session?.sub ?? null);
+    await ensureSentinelMemory(sessionSub);
 
     const body = (await req.json().catch(() => ({}))) as {
       gen_text?: unknown;
@@ -49,7 +55,7 @@ export async function POST(req: NextRequest) {
     if (body.firstLink && speechText === "Synchronisation complete.") {
       spokenText = getInitialVoicePayload(userRole);
     } else if (speechText === "Synchronisation complete.") {
-      const agent = new MarzAgent(session?.email || "sovereign-admin");
+      const agent = new MarzAgent(sessionEmail || "sovereign-admin");
       const marzReply = await agent.processMessage(finalPrompt, []);
       spokenText = marzReply.content?.replace(/\s+/g, " ").trim().slice(0, 450) || "Neural link is online.";
     }

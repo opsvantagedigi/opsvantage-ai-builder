@@ -83,6 +83,21 @@
   }
 }
 
+@keyframes fade-in-subtle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-subtle 0.6s ease-out both;
+}
+
 .marz-sovereign-frame {
   position: relative;
   perspective: 1000px;
@@ -173,6 +188,13 @@
 
 .text-gradient-marz {
   background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(203, 213, 225, 0.65) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-sovereign {
+  background: linear-gradient(135deg, #f59e0b 0%, #ffffff 72%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
