@@ -1,7 +1,7 @@
 steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--build-arg', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true', '--build-arg', 'NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL}', '-t', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder', '.']
+  args: ['build', '--build-arg', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true', '--build-arg', 'NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL}', '--build-arg', 'NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL}', '--build-arg', 'NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN}', '-t', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder', '.']
 
 # Push the container image
 - name: 'gcr.io/cloud-builders/docker'
@@ -14,7 +14,7 @@ steps:
          '--region', 'us-central1',
          '--platform', 'managed',
          '--allow-unauthenticated',
-         '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL},SOVEREIGN_PASSWORD=ZenithOwner2026',
+         '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN},SOVEREIGN_PASSWORD=ZenithOwner2026',
          '--port', '8080',
          '--memory', '1Gi',
          '--cpu', '1']
@@ -24,5 +24,7 @@ images:
 
 substitutions:
   _NEXT_PUBLIC_NEURAL_CORE_URL: ''
+  _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL: ''
+  _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN: ''
 
 timeout: '1600s'
