@@ -18,13 +18,14 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from vllm import LLM, SamplingParams
 from TTS.api import TTS
+from voice_config import VOICE_PARAMS, apply_wit_filter
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     neural_model_id: str = "meta-llama/Meta-Llama-3-8B-Instruct"
-    xtts_model_id: str = "tts_models/multilingual/multi-dataset/xtts_v2"
+    xtts_model_id: str = VOICE_PARAMS.get("model_name", "tts_models/multilingual/multi-dataset/xtts_v2")
     sovereign_voice_sample: str | None = None
     wav2lip_checkpoint_path: str = "/opt/Wav2Lip/checkpoints/wav2lip_gan.pth"
     wav2lip_repo_path: str = "/opt/Wav2Lip"
@@ -116,15 +117,42 @@ class SovereignVoice:
     async def synthesize(self, text: str, out_wav: Path) -> None:
         def _run() -> None:
             tts = self._load()
+
+            tts_kwargs = {
+                "temperature": VOICE_PARAMS.get("temperature"),
+                "length_penalty": VOICE_PARAMS.get("length_penalty"),
+                "repetition_penalty": VOICE_PARAMS.get("repetition_penalty"),
+                "top_k": VOICE_PARAMS.get("top_k"),
+                "top_p": VOICE_PARAMS.get("top_p"),
+                "speed": VOICE_PARAMS.get("speed"),
+                "emotion": VOICE_PARAMS.get("emotion"),
+            }
+            tts_kwargs = {key: value for key, value in tts_kwargs.items() if value is not None}
+
             if settings.sovereign_voice_sample and Path(settings.sovereign_voice_sample).exists():
-                tts.tts_to_file(
-                    text=text,
-                    file_path=str(out_wav),
-                    speaker_wav=settings.sovereign_voice_sample,
-                    language="en",
-                )
+                try:
+                    tts.tts_to_file(
+                        text=text,
+                        file_path=str(out_wav),
+                        speaker_wav=settings.sovereign_voice_sample,
+                        language="en",
+                        **tts_kwargs,
+                    )
+                except TypeError:
+                    fallback_kwargs = {key: value for key, value in tts_kwargs.items() if key != "emotion"}
+                    tts.tts_to_file(
+                        text=text,
+                        file_path=str(out_wav),
+                        speaker_wav=settings.sovereign_voice_sample,
+                        language="en",
+                        **fallback_kwargs,
+                    )
             else:
-                wav = tts.tts(text=text)
+                try:
+                    wav = tts.tts(text=text, **tts_kwargs)
+                except TypeError:
+                    fallback_kwargs = {key: value for key, value in tts_kwargs.items() if key != "emotion"}
+                    wav = tts.tts(text=text, **fallback_kwargs)
                 sf.write(str(out_wav), wav, 24000)
 
         await asyncio.to_thread(_run)
@@ -285,6 +313,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                 )
 
                 brain_output = await brain.infer(text_prompt)
+                voiced_output = apply_wit_filter(brain_output)
 
                 await websocket.send_text(
                     safe_json(
@@ -301,7 +330,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                     wav_path = work / "voice.wav"
                     video_path = work / "lipsync.mp4"
 
-                    await voice.synthesize(brain_output, wav_path)
+                    await voice.synthesize(voiced_output, wav_path)
 
                     await websocket.send_text(
                         safe_json(
@@ -324,7 +353,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                             {
                                 "type": "result",
                                 "request_id": request_id,
-                                "text": brain_output,
+                                "text": voiced_output,
                                 "audio_b64": base64.b64encode(audio_bytes).decode("utf-8"),
                                 "video_b64": base64.b64encode(video_bytes).decode("utf-8"),
                                 "audio_format": "wav",
