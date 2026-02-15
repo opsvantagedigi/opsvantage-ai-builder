@@ -769,15 +769,11 @@ export default function NeuralDashboardClient({
               <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
                 <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
                 <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
-                <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkStatus === "active" ? "Active" : neuralLinkStatus === "degraded" ? "Degraded" : "Idle"}
                 <span className={`ml-3 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${voiceEngineBadge.className}`}>
                   {voiceEngineBadge.label}
                 </span>
                 <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-slate-400">updated {engineUpdatedAtLabel}</span>
               </div>
-
-              <p className="mt-3 text-sm text-slate-400">{neuralSpeech}</p>
-              {neuralLinkError && <p className="mt-2 text-sm text-red-300">{neuralLinkError}</p>}
             </section>
 
             <LegacyGuidebook />
@@ -785,17 +781,8 @@ export default function NeuralDashboardClient({
 
           <div className="lg:col-span-5 space-y-6 flex flex-col">
             <section className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5 h-full min-h-[400px]">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex items-center">
                 <h2 className="text-lg font-semibold text-amber-200">Marz Autonomous Thoughts</h2>
-                <button
-                  onClick={() => {
-                    void activateNeuralLink();
-                  }}
-                  disabled={neuralLinkBusy}
-                  className="rounded-lg border border-amber-400/40 bg-slate-950 px-3 py-2 text-sm font-medium text-amber-200 transition hover:bg-slate-800 disabled:opacity-50"
-                >
-                  {neuralLinkBusy ? "Connecting Neural Link..." : "Activate Neural Link"}
-                </button>
               </div>
               <div className="mb-4 flex items-center gap-3">
                 {welcomePinned && (
