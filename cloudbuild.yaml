@@ -1,7 +1,7 @@
 steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--build-arg', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true', '-t', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder', '.']
+  args: ['build', '--build-arg', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true', '--build-arg', 'NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL}', '-t', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder', '.']
 
 # Push the container image
 - name: 'gcr.io/cloud-builders/docker'
@@ -14,12 +14,15 @@ steps:
          '--region', 'us-central1',
          '--platform', 'managed',
          '--allow-unauthenticated',
-         '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,SOVEREIGN_PASSWORD=ZenithOwner2026',
+         '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL},SOVEREIGN_PASSWORD=ZenithOwner2026',
          '--port', '8080',
          '--memory', '1Gi',
          '--cpu', '1']
 
 images:
 - 'gcr.io/$PROJECT_ID/opsvantage-ai-builder'
+
+substitutions:
+  _NEXT_PUBLIC_NEURAL_CORE_URL: ''
 
 timeout: '1600s'
