@@ -81,19 +81,14 @@ function decodeBase64ToBlobUrl(encoded: string, mimeType: string): string {
   return URL.createObjectURL(blob);
 }
 
-function normalizeHistoryForSdk(history: unknown): unknown {
+function formatHistory(history: unknown): unknown {
   if (!Array.isArray(history)) {
     return history;
   }
 
   const sanitized = [...(history as ChatHistoryItem[])];
-  const first = sanitized[0];
-
-  if (first?.role === 'model') {
-    sanitized.unshift({
-      role: 'user',
-      parts: [{ text: 'system-init' }],
-    });
+  while (sanitized.length > 0 && sanitized[0]?.role === 'model') {
+    sanitized.shift();
   }
 
   return sanitized;
@@ -320,7 +315,7 @@ export function useNeuralLink({
 
     const normalizedPayload = {
       ...payload,
-      history: normalizeHistoryForSdk(payload.history),
+      history: formatHistory(payload.history),
     };
 
     websocketRef.current.send(JSON.stringify(normalizedPayload));

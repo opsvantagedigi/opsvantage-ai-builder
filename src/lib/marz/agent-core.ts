@@ -71,6 +71,78 @@ function inferResponseLanguageDirective(userMessage: string): string {
     return "Respond in English unless asked otherwise.";
 }
 
+function formatHistory(history: Array<{ role: string; content: string }>) {
+    const normalized = history
+        .slice(-8)
+        .map(h => ({
+            role: h.role === "user" ? "user" : "model",
+            parts: [{ text: h.content }],
+        }));
+
+    while (normalized.length > 0 && normalized[0]?.role === "model") {
+        normalized.shift();
+    }
+
+    return normalized;
+}
+
+const siteManagementTools = [
+    {
+        functionDeclarations: [
+            {
+                name: "create_site_page",
+                description: "Create a new website page for the active site workspace.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING" },
+                        slug: { type: "STRING" },
+                        summary: { type: "STRING" },
+                    },
+                    required: ["title", "slug"],
+                },
+            },
+            {
+                name: "update_site_content",
+                description: "Update content blocks or copy on an existing page.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        pageId: { type: "STRING" },
+                        instructions: { type: "STRING" },
+                    },
+                    required: ["pageId", "instructions"],
+                },
+            },
+            {
+                name: "publish_site_changes",
+                description: "Publish staged site updates to production.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        siteId: { type: "STRING" },
+                        note: { type: "STRING" },
+                    },
+                    required: ["siteId"],
+                },
+            },
+            {
+                name: "manage_domain_settings",
+                description: "Manage domain mapping, DNS verification, or SSL settings.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        domain: { type: "STRING" },
+                        action: { type: "STRING" },
+                        value: { type: "STRING" },
+                    },
+                    required: ["domain", "action"],
+                },
+            },
+        ],
+    },
+];
+
 export class MarzAgent {
     private model: any;
     private userEmail: string;
@@ -81,6 +153,7 @@ export class MarzAgent {
         this.model = genAI.getGenerativeModel({
             model: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash-latest",
             systemInstruction: createSystemPrompt(privateMode),
+            tools: siteManagementTools,
         });
         logger.info(`[MARZ] Agent initialized for user: ${this.userEmail}`);
     }
@@ -97,16 +170,12 @@ export class MarzAgent {
 
             // 1. Start a chat session with conversation history
             const chat = this.model.startChat({
-                history: history
-                    .slice(-5) // Keep last 5 messages for context
-                    .map(h => ({
-                        role: h.role === "user" ? "user" : "model",
-                        parts: [{ text: h.content }],
-                    })),
+                history: formatHistory(history),
                 generationConfig: {
                     maxOutputTokens: 500,
                     temperature: 0.6,
                 },
+                tools: siteManagementTools,
             });
 
             // 2. Send the message
