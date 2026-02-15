@@ -9,8 +9,8 @@ import { LegacyGuidebook } from "@/components/admin/LegacyGuidebook";
 import { Fortune500Metrics } from "@/components/admin/Fortune500Metrics";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardFooter } from "@/components/admin/DashboardFooter";
-import { MarzPresence } from "@/components/admin/MarzPresence";
 import { MarzCommandConsoleClient } from "@/components/admin/MarzCommandConsoleClient";
+import MarzDisplay from "@/components/MarzDisplay";
 import { io, type Socket } from "socket.io-client";
 
 type Thought = {
@@ -764,14 +764,7 @@ export default function NeuralDashboardClient({
                 <h2 className="text-lg font-semibold text-amber-200">MARZ Neural Presence</h2>
               </div>
 
-              <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
-                <MarzPresence
-                  isSpeaking={neuralLinkActive || neuralLinkBusy}
-                  autoPlayIntro={marzIntroReady}
-                  forceComingSoon={neuralCoreBridgeState === "unreachable"}
-                  onSummon={() => appendAutonomousThought("> MARZ Summoned: Intro sequence initiated")}
-                />
-              </div>
+              <MarzDisplay className="relative w-full" />
 
               <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
                 <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
@@ -795,7 +788,9 @@ export default function NeuralDashboardClient({
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-amber-200">Marz Autonomous Thoughts</h2>
                 <button
-                  onClick={activateNeuralLink}
+                  onClick={() => {
+                    void activateNeuralLink();
+                  }}
                   disabled={neuralLinkBusy}
                   className="rounded-lg border border-amber-400/40 bg-slate-950 px-3 py-2 text-sm font-medium text-amber-200 transition hover:bg-slate-800 disabled:opacity-50"
                 >
