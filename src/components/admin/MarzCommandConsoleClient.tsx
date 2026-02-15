@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   Lock,
   Loader2,
+  Mic,
+  Radio,
 } from 'lucide-react';
 
 interface ChatMessage {
@@ -40,7 +42,66 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
   const [revenueToday, setRevenueToday] = useState(1250);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  const appendLog = (message: ChatMessage) => {
+    setLogs((prev) => [...prev, message]);
+  };
+
+  const sendCommand = async (commandText: string) => {
+    const normalized = commandText.trim();
+    if (!normalized) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: normalized,
+      timestamp: new Date().toISOString(),
+    };
+
+    appendLog(userMessage);
+    setInputValue('');
+    setIsProcessing(true);
+
+    try {
+      const response = await fetch('/api/marz/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: normalized,
+          history: logs.slice(-10),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: data.content,
+        timestamp: data.timestamp,
+        isError: data.isError,
+      };
+      appendLog(assistantMessage);
+    } catch (error) {
+      const errorContent = `⚠️ NEURAL LINK DEGRADED\nError: ${error instanceof Error ? error.message : String(error)}\nMARZ is attempting recovery...`;
+      appendLog({
+        role: 'system',
+        content: errorContent,
+        timestamp: new Date().toISOString(),
+        isError: true,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,58 +119,152 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    setVoiceSupported(true);
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'en-NZ';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: any) => {
+      const transcript = String(event?.results?.[0]?.[0]?.transcript || '').trim();
+      if (!transcript) {
+        return;
+      }
+
+      setInputValue(transcript);
+      void sendCommand(transcript);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      appendLog({
+        role: 'system',
+        content: '[MARZ]: Voice command capture failed. Switch to chat input and retry.',
+        timestamp: new Date().toISOString(),
+        isError: true,
+      });
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+      }
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  const handleActivateMarz = async () => {
+    if (isActivating) {
+      return;
+    }
+
+    setIsActivating(true);
+    appendLog({
+      role: 'system',
+      content: '[MARZ]: Activation sequence initiated...',
+      timestamp: new Date().toISOString(),
+    });
+
+    try {
+      const response = await fetch('/api/marz/neural-link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          text: 'Welcome, Ajay. Command console online.',
+          gen_text: 'Welcome, Ajay. Command console online.',
+          prompt: 'Deliver a concise activation greeting for Ajay.',
+          firstLink: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Activation failed: ${response.status}`);
+      }
+
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+      const engine = response.headers.get('x-marz-engine') || 'hybrid';
+      const marzTextHeader = response.headers.get('x-marz-text');
+
+      if (contentType.includes('application/json')) {
+        const payload = (await response.json().catch(() => null)) as { text?: string } | null;
+        const text = payload?.text || (marzTextHeader ? decodeURIComponent(marzTextHeader) : 'Activation complete.');
+        appendLog({
+          role: 'system',
+          content: `[MARZ]: ${text} [engine=${engine}]`,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        const audioBuffer = await response.arrayBuffer();
+        const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        try {
+          const audio = new Audio(audioUrl);
+          await audio.play();
+        } catch {
+        } finally {
+          setTimeout(() => URL.revokeObjectURL(audioUrl), 3000);
+        }
+        const spokenText = marzTextHeader ? decodeURIComponent(marzTextHeader) : 'Activation complete.';
+        appendLog({
+          role: 'system',
+          content: `[MARZ]: ${spokenText} [engine=${engine}]`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      appendLog({
+        role: 'system',
+        content: `[MARZ]: Activation degraded. ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: new Date().toISOString(),
+        isError: true,
+      });
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
+  const handleVoiceCommand = () => {
+    if (!voiceSupported || isListening) {
+      return;
+    }
+
+    try {
+      setIsListening(true);
+      recognitionRef.current?.start();
+      appendLog({
+        role: 'system',
+        content: '[MARZ]: Listening for voice command...',
+        timestamp: new Date().toISOString(),
+      });
+    } catch {
+      setIsListening(false);
+    }
+  };
+
   const handleSendMessage = async (event?: React.FormEvent) => {
     event?.preventDefault();
     if (!inputValue.trim() || isProcessing) {
       return;
     }
-
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: inputValue,
-      timestamp: new Date().toISOString(),
-    };
-
-    setLogs((prev) => [...prev, userMessage]);
-    setInputValue('');
-    setIsProcessing(true);
-
-    try {
-      const response = await fetch('/api/marz/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: inputValue,
-          history: logs.slice(-10),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: data.content,
-        timestamp: data.timestamp,
-        isError: data.isError,
-      };
-      setLogs((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorContent = `⚠️ NEURAL LINK DEGRADED\nError: ${error instanceof Error ? error.message : String(error)}\nMARZ is attempting recovery...`;
-      setLogs((prev) => [
-        ...prev,
-        {
-          role: 'system',
-          content: errorContent,
-          timestamp: new Date().toISOString(),
-          isError: true,
-        },
-      ]);
-    } finally {
-      setIsProcessing(false);
-    }
+    await sendCommand(inputValue);
   };
 
   return (
@@ -167,7 +322,15 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
               <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
                 <Terminal className="h-4 w-4" /> LIVE NEURAL LOGS
               </span>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleActivateMarz}
+                  disabled={isActivating}
+                  className="inline-flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-50"
+                >
+                  {isActivating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Radio className="h-3 w-3" />} Activate MARZ
+                </button>
                 <div className="h-2 w-2 rounded-full bg-red-500/50" />
                 <div className="h-2 w-2 rounded-full bg-yellow-500/50" />
                 <div className="h-2 w-2 rounded-full bg-green-500/50" />
@@ -218,6 +381,16 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
                 className="flex-1 border-none bg-transparent text-white outline-none placeholder:text-slate-600"
                 disabled={isProcessing}
               />
+              <button
+                type="button"
+                onClick={handleVoiceCommand}
+                disabled={!voiceSupported || isProcessing || isListening}
+                className="rounded border border-cyan-500/50 bg-cyan-600/20 px-3 py-2 text-cyan-300 transition-all hover:bg-cyan-600/35 disabled:opacity-50"
+                aria-label="Voice command"
+                title={voiceSupported ? 'Speak command' : 'Voice command not supported in this browser'}
+              >
+                <Mic className={`h-4 w-4 ${isListening ? 'animate-pulse text-emerald-300' : ''}`} />
+              </button>
               <button
                 type="submit"
                 disabled={isProcessing || !inputValue.trim()}
