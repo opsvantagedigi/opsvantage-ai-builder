@@ -10,6 +10,7 @@ import { Fortune500Metrics } from "@/components/admin/Fortune500Metrics";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardFooter } from "@/components/admin/DashboardFooter";
 import { MarzPresence } from "@/components/admin/MarzPresence";
+import { MarzCommandConsoleClient } from "@/components/admin/MarzCommandConsoleClient";
 
 type Thought = {
   category: string;
@@ -64,6 +65,7 @@ export default function NeuralDashboardClient({
   const [neuralLinkActive, setNeuralLinkActive] = useState(false);
   const [neuralLinkBusy, setNeuralLinkBusy] = useState(false);
   const [neuralLinkError, setNeuralLinkError] = useState<string | null>(null);
+  const [neuralLinkStatus, setNeuralLinkStatus] = useState<"idle" | "active" | "degraded">("idle");
   const [neuralSpeech, setNeuralSpeech] = useState("Idle. MARZ awaiting Neural Link activation.");
   const [voiceModelLabel, setVoiceModelLabel] = useState("NZ-Aria");
   const [welcomePinned, setWelcomePinned] = useState(true);
@@ -83,6 +85,17 @@ export default function NeuralDashboardClient({
   const hasRedirectedRef = useRef(false);
   const hasEstablishedNeuralLinkRef = useRef(false);
   const hasAutoActivatedNeuralLinkRef = useRef(false);
+  const hasUserInteractedRef = useRef(false);
+  const pendingFallbackSpeechRef = useRef<string | null>(null);
+  const [engineUpdatedAtLabel, setEngineUpdatedAtLabel] = useState(() => {
+    return new Intl.DateTimeFormat("en-NZ", {
+      timeZone: "Pacific/Auckland",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZoneName: "short",
+    }).format(new Date());
+  });
 
   React.useEffect(() => setMounted(true), []);
 
@@ -246,6 +259,17 @@ export default function NeuralDashboardClient({
     };
   }, [voiceModelLabel]);
 
+  useEffect(() => {
+    const formatted = new Intl.DateTimeFormat("en-NZ", {
+      timeZone: "Pacific/Auckland",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZoneName: "short",
+    }).format(new Date());
+    setEngineUpdatedAtLabel(formatted);
+  }, [voiceModelLabel]);
+
   const stopLipSync = React.useCallback(() => {
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -377,6 +401,64 @@ export default function NeuralDashboardClient({
     }
   }, []);
 
+  const requestFallbackSpeech = React.useCallback((text: string) => {
+    if (hasUserInteractedRef.current) {
+      playBrowserFallbackSpeech(text);
+      return;
+    }
+
+    pendingFallbackSpeechRef.current = text;
+  }, [playBrowserFallbackSpeech]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleFirstInteraction = () => {
+      hasUserInteractedRef.current = true;
+      if (pendingFallbackSpeechRef.current) {
+        playBrowserFallbackSpeech(pendingFallbackSpeechRef.current);
+        pendingFallbackSpeechRef.current = null;
+      }
+      window.removeEventListener("pointerdown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+    };
+
+    window.addEventListener("pointerdown", handleFirstInteraction, { once: true });
+    window.addEventListener("keydown", handleFirstInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+    };
+  }, [mounted, playBrowserFallbackSpeech]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    let cancelled = false;
+    const runHeartbeat = async () => {
+      try {
+        const response = await fetch("/api/marz/chat", { method: "GET", cache: "no-store", credentials: "include" });
+        if (cancelled) return;
+        setNeuralLinkStatus(response.ok ? "active" : "degraded");
+      } catch {
+        if (!cancelled) {
+          setNeuralLinkStatus("degraded");
+        }
+      }
+    };
+
+    void runHeartbeat();
+    const interval = setInterval(() => {
+      void runHeartbeat();
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [mounted]);
+
   const activateNeuralLink = React.useCallback(async (options?: {
     text?: string;
     prompt?: string;
@@ -470,11 +552,11 @@ export default function NeuralDashboardClient({
       setVoiceModelLabel("Browser TTS Fallback");
       setNeuralSpeech(fallbackText);
       setNeuralLinkError(error instanceof Error ? error.message : String(error));
-      playBrowserFallbackSpeech(fallbackText);
+      requestFallbackSpeech(fallbackText);
     } finally {
       setNeuralLinkBusy(false);
     }
-  }, [neuralSpeech, playBrowserFallbackSpeech, playNeuralSpeech, thoughtLines]);
+  }, [neuralSpeech, playNeuralSpeech, requestFallbackSpeech, thoughtLines]);
 
   useEffect(() => {
     if (!mounted || hasAutoActivatedNeuralLinkRef.current || neuralLinkBusy) {
@@ -614,10 +696,11 @@ export default function NeuralDashboardClient({
               <div className="mt-3 rounded-lg border border-amber-500/20 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
                 <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
                 <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
-                <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
+                <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkStatus === "active" ? "Active" : neuralLinkStatus === "degraded" ? "Degraded" : "Idle"}
                 <span className={`ml-3 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${voiceEngineBadge.className}`}>
                   {voiceEngineBadge.label}
                 </span>
+                <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-slate-400">updated {engineUpdatedAtLabel}</span>
               </div>
 
               <p className="mt-3 text-sm text-slate-400">{neuralSpeech}</p>
@@ -689,6 +772,10 @@ export default function NeuralDashboardClient({
         </div>
 
         <MentorLog entries={initialJournal} />
+
+        <div className="mt-8 rounded-2xl border border-cyan-500/20 bg-slate-950/70 p-2">
+          <MarzCommandConsoleClient authorizedEmail="sovereign@opsvantage.local" />
+        </div>
 
         {hasUrgentTask && (
           <div className="fixed bottom-4 left-1/2 z-40 w-full max-w-3xl -translate-x-1/2 px-4">

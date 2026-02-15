@@ -25,6 +25,7 @@ export function MarzPresence({
   const [videoAvailable, setVideoAvailable] = useState(videoModeEnabled);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasAutoPlayedIntroRef = useRef(false);
+  const hasAttemptedIdleFallbackRef = useRef(false);
 
   useEffect(() => {
     if (mode === "intro") return;
@@ -79,7 +80,16 @@ export function MarzPresence({
             loop={mode !== "intro"}
             playsInline
             onEnded={() => setMode(isSpeaking ? "speaking" : "idle")}
-            onError={() => setVideoAvailable(false)}
+            onError={() => {
+              if (mode !== "idle" && !hasAttemptedIdleFallbackRef.current) {
+                hasAttemptedIdleFallbackRef.current = true;
+                setMode("idle");
+                setVideoAvailable(true);
+                return;
+              }
+
+              setVideoAvailable(false);
+            }}
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center text-xs text-slate-300">
