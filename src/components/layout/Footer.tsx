@@ -79,7 +79,7 @@ function FooterSocialColumn() {
       icon: Twitter,
     },
     {
-      href: "https://www.facebook.com/OpsVantageDigital",
+      href: "https://www.facebook.com/profile.php?id=61575556306321",
       label: "OpsVantage Digital",
       icon: Facebook,
     },

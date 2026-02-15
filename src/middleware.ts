@@ -24,7 +24,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const allowPrefixes = ["/api", "/_next"];
-  const allowExact = new Set(["/", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/sovereign-access"]);
+  const allowExact = new Set(["/", "/coming-soon", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/sovereign-access"]);
 
   let globalLaunchActive = false;
   if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
