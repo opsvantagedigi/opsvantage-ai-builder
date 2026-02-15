@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useNeuralLink } from '@/hooks/useNeuralLink';
 
 type MarzDisplayProps = {
@@ -9,10 +9,18 @@ type MarzDisplayProps = {
   wakeUrl?: string;
 };
 
+type ChatItem = {
+  role: 'user' | 'assistant';
+  text: string;
+  id: string;
+};
+
 export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [chat, setChat] = useState<ChatItem[]>([]);
 
-  const { status, stream, lastError, connect, send, wakeContainer } = useNeuralLink({
+  const { status, stream, lastError, connect, sendMessage, wakeContainer } = useNeuralLink({
     wsUrl,
     wakeUrl,
     autoConnect: true,
@@ -30,11 +38,62 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
       });
   }, [stream.audioUrl]);
 
-  const handlePing = () => {
-    send({
-      text: 'Neural link heartbeat ping from dashboard.',
-      request_id: `ping-${Date.now()}`,
+  useEffect(() => {
+    if (!stream.text) {
+      return;
+    }
+
+    setChat((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === 'assistant' && last.text === stream.text) {
+        return prev;
+      }
+
+      return [
+        ...prev,
+        {
+          role: 'assistant',
+          text: stream.text,
+          id: `assistant-${Date.now()}`,
+        },
+      ];
     });
+  }, [stream.text]);
+
+  const handleSend = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = messageText.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    if (status === 'hibernated') {
+      void wakeContainer();
+      return;
+    }
+
+    const nextChat = [
+      ...chat,
+      {
+        role: 'user' as const,
+        text: trimmed,
+        id: `user-${Date.now()}`,
+      },
+    ];
+    setChat(nextChat);
+
+    const recentHistory = nextChat.slice(-8).map((item) => ({
+      role: item.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: item.text }],
+    }));
+
+    sendMessage({
+      text: trimmed,
+      request_id: `chat-${Date.now()}`,
+      history: recentHistory,
+    });
+
+    setMessageText('');
   };
 
   return (
@@ -75,13 +134,6 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
           </button>
           <button
             type="button"
-            onClick={handlePing}
-            className="rounded border border-emerald-400/40 bg-emerald-500/10 px-2 py-1 text-emerald-200 hover:bg-emerald-500/20"
-          >
-            Ping
-          </button>
-          <button
-            type="button"
             onClick={() => void wakeContainer()}
             className="rounded border border-amber-400/40 bg-amber-500/10 px-2 py-1 text-amber-200 hover:bg-amber-500/20"
           >
@@ -90,7 +142,34 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
         </div>
       </div>
 
-      {stream.text && <p className="mt-2 text-sm text-slate-200">{stream.text}</p>}
+      <div className="mt-3 max-h-40 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/60 p-2 text-xs">
+        {chat.length === 0 ? (
+          <p className="text-slate-400">Start a live chat to animate MARZ in real time.</p>
+        ) : (
+          chat.map((item) => (
+            <p key={item.id} className={item.role === 'user' ? 'text-cyan-200' : 'text-emerald-200'}>
+              <span className="font-semibold uppercase tracking-[0.08em]">{item.role === 'user' ? 'You' : 'MARZ'}:</span> {item.text}
+            </p>
+          ))
+        )}
+      </div>
+
+      <form onSubmit={handleSend} className="mt-2 flex items-center gap-2">
+        <input
+          type="text"
+          value={messageText}
+          onChange={(event) => setMessageText(event.target.value)}
+          placeholder="Speak to MARZ..."
+          className="w-full rounded border border-white/15 bg-slate-900/80 px-2 py-1 text-sm text-slate-100 placeholder:text-slate-500"
+        />
+        <button
+          type="submit"
+          className="rounded border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20"
+        >
+          Send
+        </button>
+      </form>
+
       {lastError && <p className="mt-2 text-xs text-rose-300">{lastError}</p>}
     </div>
   );

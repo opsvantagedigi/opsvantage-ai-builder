@@ -32,6 +32,11 @@ type UseNeuralLinkOptions = {
   onMessage?: (event: NeuralLinkEvent) => void;
 };
 
+type ChatHistoryItem = {
+  role?: string;
+  parts?: Array<{ text?: string }>;
+};
+
 const WAKE_COOLDOWN_MS = 60_000;
 
 function resolveDefaultWsUrl(): string {
@@ -74,6 +79,24 @@ function decodeBase64ToBlobUrl(encoded: string, mimeType: string): string {
   }
   const blob = new Blob([bytes], { type: mimeType });
   return URL.createObjectURL(blob);
+}
+
+function normalizeHistoryForSdk(history: unknown): unknown {
+  if (!Array.isArray(history)) {
+    return history;
+  }
+
+  const sanitized = [...(history as ChatHistoryItem[])];
+  const first = sanitized[0];
+
+  if (first?.role === 'model') {
+    sanitized.unshift({
+      role: 'user',
+      parts: [{ text: 'system-init' }],
+    });
+  }
+
+  return sanitized;
 }
 
 export function useNeuralLink({
@@ -294,8 +317,18 @@ export function useNeuralLink({
     if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
       throw new Error('Neural link is not connected');
     }
-    websocketRef.current.send(JSON.stringify(payload));
+
+    const normalizedPayload = {
+      ...payload,
+      history: normalizeHistoryForSdk(payload.history),
+    };
+
+    websocketRef.current.send(JSON.stringify(normalizedPayload));
   }, []);
+
+  const sendMessage = useCallback((payload: Record<string, unknown>) => {
+    send(payload);
+  }, [send]);
 
   useEffect(() => {
     if (!autoConnect) {
@@ -322,8 +355,9 @@ export function useNeuralLink({
       connect,
       disconnect,
       send,
+      sendMessage,
       wakeContainer,
     }),
-    [status, stream, lastEvent, lastError, connect, disconnect, send, wakeContainer]
+    [status, stream, lastEvent, lastError, connect, disconnect, send, sendMessage, wakeContainer]
   );
 }
