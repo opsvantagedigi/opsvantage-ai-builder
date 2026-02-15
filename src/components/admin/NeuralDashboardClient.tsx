@@ -68,6 +68,7 @@ export default function NeuralDashboardClient({
   const [voiceModelLabel, setVoiceModelLabel] = useState("NZ-Aria");
   const [welcomePinned, setWelcomePinned] = useState(true);
   const [hasUrgentTask, setHasUrgentTask] = useState(false);
+  const [marzIntroReady, setMarzIntroReady] = useState(false);
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -81,6 +82,7 @@ export default function NeuralDashboardClient({
   const launchSnapshotRef = useRef<boolean>(false);
   const hasRedirectedRef = useRef(false);
   const hasEstablishedNeuralLinkRef = useRef(false);
+  const hasAutoActivatedNeuralLinkRef = useRef(false);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -353,18 +355,24 @@ export default function NeuralDashboardClient({
     }
   }, []);
 
-  const activateNeuralLink = React.useCallback(async () => {
+  const activateNeuralLink = React.useCallback(async (options?: {
+    text?: string;
+    prompt?: string;
+    forceFirstLink?: boolean;
+  }) => {
     setNeuralLinkBusy(true);
     setNeuralLinkError(null);
 
     try {
-      const isFirstLink = !hasEstablishedNeuralLinkRef.current;
-      const inputText = thoughtLines[0];
+      const isFirstLink = options?.forceFirstLink ?? !hasEstablishedNeuralLinkRef.current;
+      const inputText = options?.text || thoughtLines[0];
       const fallbackSpeechText = "Neural Link Established. System online.";
       const safeSpeechText = String(inputText || fallbackSpeechText);
-      const promptSeed = thoughtLines[0]
-        ? `Using this latest neural thought, speak a grounded update: ${thoughtLines[0]}`
-        : "Provide a grounded operational update for today.";
+      const promptSeed = options?.prompt
+        ? options.prompt
+        : thoughtLines[0]
+          ? `Using this latest neural thought, speak a grounded update: ${thoughtLines[0]}`
+          : "Provide a grounded operational update for today.";
       const configuredNeuralLinkEndpoint = process.env.NEXT_PUBLIC_NEURAL_LINK_ENDPOINT;
       let neuralLinkEndpoint = "/api/marz/neural-link";
 
@@ -436,11 +444,29 @@ export default function NeuralDashboardClient({
       await playNeuralSpeech(new Uint8Array(audioBuffer));
     } catch (error) {
       setNeuralLinkActive(false);
+      const fallbackText = "Welcome, Ajay. Neural link online. Running browser fallback voice while AllTalk XTTS stabilizes.";
+      setVoiceModelLabel("Browser TTS Fallback");
+      setNeuralSpeech(fallbackText);
       setNeuralLinkError(error instanceof Error ? error.message : String(error));
+      playBrowserFallbackSpeech(fallbackText);
     } finally {
       setNeuralLinkBusy(false);
     }
   }, [neuralSpeech, playBrowserFallbackSpeech, playNeuralSpeech, thoughtLines]);
+
+  useEffect(() => {
+    if (!mounted || hasAutoActivatedNeuralLinkRef.current || neuralLinkBusy) {
+      return;
+    }
+
+    hasAutoActivatedNeuralLinkRef.current = true;
+    setMarzIntroReady(true);
+    void activateNeuralLink({
+      forceFirstLink: true,
+      text: "Welcome, Ajay. Neural link established. MARZ systems are online.",
+      prompt: "Deliver the welcome back script for Ajay with calm confidence.",
+    });
+  }, [activateNeuralLink, mounted, neuralLinkBusy]);
 
   const handleKillSwitch = async () => {
     setSwitchBusy(true);
@@ -558,6 +584,7 @@ export default function NeuralDashboardClient({
               <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
                 <MarzPresence
                   isSpeaking={neuralLinkActive || neuralLinkBusy}
+                  autoPlayIntro={marzIntroReady}
                   onSummon={() => appendAutonomousThought("> MARZ Summoned: Intro sequence initiated")}
                 />
               </div>

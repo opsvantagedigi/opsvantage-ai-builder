@@ -14,7 +14,7 @@ steps:
          '--region', 'us-central1',
          '--platform', 'managed',
          '--allow-unauthenticated',
-         '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true',
+         '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,SOVEREIGN_PASSWORD=ZenithOwner2026',
          '--port', '8080',
          '--memory', '1Gi',
          '--cpu', '1']

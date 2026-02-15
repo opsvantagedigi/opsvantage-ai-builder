@@ -14,19 +14,39 @@ const SOURCES = {
 export function MarzPresence({
   isSpeaking,
   onSummon,
+  autoPlayIntro = false,
 }: {
   isSpeaking: boolean;
   onSummon?: () => void;
+  autoPlayIntro?: boolean;
 }) {
-  const videoModeEnabled = process.env.NEXT_PUBLIC_MARZ_VIDEO_MODE === "true";
+  const videoModeEnabled = process.env.NEXT_PUBLIC_MARZ_VIDEO_MODE !== "false";
   const [mode, setMode] = useState<Mode>("idle");
   const [videoAvailable, setVideoAvailable] = useState(videoModeEnabled);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const hasAutoPlayedIntroRef = useRef(false);
 
   useEffect(() => {
     if (mode === "intro") return;
     setMode(isSpeaking ? "speaking" : "idle");
   }, [isSpeaking, mode]);
+
+  useEffect(() => {
+    if (!autoPlayIntro || !videoModeEnabled || hasAutoPlayedIntroRef.current) {
+      return;
+    }
+
+    hasAutoPlayedIntroRef.current = true;
+    setVideoAvailable(true);
+    setMode("intro");
+
+    requestAnimationFrame(async () => {
+      try {
+        await videoRef.current?.play();
+      } catch {
+      }
+    });
+  }, [autoPlayIntro, videoModeEnabled]);
 
   const activeSrc = useMemo(() => SOURCES[mode], [mode]);
 
