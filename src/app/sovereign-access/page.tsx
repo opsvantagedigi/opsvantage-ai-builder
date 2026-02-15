@@ -6,9 +6,9 @@ async function grantSovereignAccess(formData: FormData) {
   "use server";
 
   const input = String(formData.get("password") ?? "");
-  const adminPassword = process.env.ADMIN_BYPASS_PASSWORD;
+  const sovereignPassword = process.env.SOVEREIGN_PASSWORD || process.env.ADMIN_BYPASS_PASSWORD;
 
-  if (!adminPassword || input !== adminPassword) {
+  if (!sovereignPassword || input !== sovereignPassword) {
     redirect("/sovereign-access?error=invalid");
   }
 
