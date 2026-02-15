@@ -90,53 +90,52 @@ const siteManagementTools = [
     {
         functionDeclarations: [
             {
-                name: "create_site_page",
-                description: "Create a new website page for the active site workspace.",
+                name: "onboardUser",
+                description: "Automates the welcome sequence and database entry for new subscribers.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        title: { type: "STRING" },
-                        slug: { type: "STRING" },
-                        summary: { type: "STRING" },
+                        name: { type: "STRING" },
+                        email: { type: "STRING" },
+                        plan: { type: "STRING" },
                     },
-                    required: ["title", "slug"],
+                    required: ["name", "email"],
                 },
             },
             {
-                name: "update_site_content",
-                description: "Update content blocks or copy on an existing page.",
+                name: "updateWebContent",
+                description: "Directly mutates dashboard or landing page copy via secure API bridge.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        pageId: { type: "STRING" },
-                        instructions: { type: "STRING" },
+                        component: { type: "STRING" },
+                        newContent: { type: "STRING" },
                     },
-                    required: ["pageId", "instructions"],
+                    required: ["component", "newContent"],
                 },
             },
             {
-                name: "publish_site_changes",
-                description: "Publish staged site updates to production.",
+                name: "handleSupportTicket",
+                description: "Categorizes and resolves subscriber issues using the Legacy knowledge base.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        siteId: { type: "STRING" },
-                        note: { type: "STRING" },
+                        query: { type: "STRING" },
+                        priority: { type: "STRING" },
                     },
-                    required: ["siteId"],
+                    required: ["query"],
                 },
             },
             {
-                name: "manage_domain_settings",
-                description: "Manage domain mapping, DNS verification, or SSL settings.",
+                name: "manageNeuralCore",
+                description: "Manages the GPU container lifecycle including wake, hibernate, and scale.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        domain: { type: "STRING" },
                         action: { type: "STRING" },
-                        value: { type: "STRING" },
+                        targetScale: { type: "NUMBER" },
                     },
-                    required: ["domain", "action"],
+                    required: ["action"],
                 },
             },
         ],

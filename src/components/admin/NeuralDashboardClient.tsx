@@ -10,6 +10,8 @@ import { Fortune500Metrics } from "@/components/admin/Fortune500Metrics";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardFooter } from "@/components/admin/DashboardFooter";
 import { MarzCommandConsoleClient } from "@/components/admin/MarzCommandConsoleClient";
+import GovernanceLog from "@/components/admin/GovernanceLog";
+import ManualOverlay from "@/components/admin/ManualOverlay";
 import MarzDisplay from "@/components/MarzDisplay";
 import { io, type Socket } from "socket.io-client";
 
@@ -60,6 +62,7 @@ export default function NeuralDashboardClient({
   const [nzdSaved, setNzdSaved] = useState(0);
   const [loading, setLoading] = useState(true);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [confirmCode, setConfirmCode] = useState("");
   const [globalLaunchActive, setGlobalLaunchActive] = useState(false);
   const [switchBusy, setSwitchBusy] = useState(false);
@@ -702,12 +705,21 @@ export default function NeuralDashboardClient({
             <h1 className="mt-2 text-3xl font-semibold text-amber-200">Neural Thought Dashboard</h1>
             <p className="mt-2 text-sm text-slate-400">Fortune-grade oversight for sovereign infrastructure operations.</p>
           </div>
-          <Link
-            href="/services"
-            className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-400/20"
-          >
-            View Public Services
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setManualOpen(true)}
+              className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+            >
+              Open Manual
+            </button>
+            <Link
+              href="/services"
+              className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-400/20"
+            >
+              View Public Services
+            </Link>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-4">
@@ -830,6 +842,8 @@ export default function NeuralDashboardClient({
               onUrgentStateChange={setHasUrgentTask}
               title="Sovereign TODO List"
             />
+
+            <GovernanceLog />
           </div>
         </div>
 
@@ -881,6 +895,11 @@ export default function NeuralDashboardClient({
             </div>
           </div>
         )}
+
+        <ManualOverlay
+          open={manualOpen}
+          onClose={() => setManualOpen(false)}
+        />
       </div>
       <DashboardFooter />
     </main>

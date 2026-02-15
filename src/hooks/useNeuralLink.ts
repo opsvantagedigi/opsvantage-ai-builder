@@ -7,6 +7,12 @@ type NeuralLinkEvent = {
   stage?: string;
   state?: string;
   message?: string;
+  action?: string;
+  tool_call?: {
+    name?: string;
+    arguments?: Record<string, unknown>;
+    status?: string;
+  };
   request_id?: string;
   requestId?: string;
   text?: string;
@@ -92,6 +98,22 @@ function formatHistory(history: unknown): unknown {
   }
 
   return sanitized;
+}
+
+function broadcastNeuralLinkEvent(payload: NeuralLinkEvent) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent('neural-link-event', {
+      detail: {
+        type: payload.type || 'message',
+        timestamp: new Date().toISOString(),
+        payload,
+      },
+    })
+  );
 }
 
 export function useNeuralLink({
@@ -238,8 +260,17 @@ export function useNeuralLink({
         setLastEvent(payload);
         onMessage?.(payload);
 
+        const hasToolCall = payload.type === 'tool_call' || Boolean(payload.tool_call);
+        if (hasToolCall) {
+          broadcastNeuralLinkEvent({
+            ...payload,
+            type: 'tool_call',
+          });
+        }
+
         if (payload.type === 'error') {
           setLastError(payload.message || 'Neural core returned an error.');
+          broadcastNeuralLinkEvent(payload);
           return;
         }
 
@@ -268,6 +299,7 @@ export function useNeuralLink({
           }
 
           setStream(nextStream);
+          broadcastNeuralLinkEvent(payload);
         }
       } catch (error) {
         setLastError(error instanceof Error ? error.message : 'Invalid message payload');
