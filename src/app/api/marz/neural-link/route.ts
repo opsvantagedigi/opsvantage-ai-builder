@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const sessionEmail = session?.email || ((token as any)?.email as string | undefined) || null;
     const sessionSub = session?.sub || ((token as any)?.sub as string | undefined) || null;
 
-    if (!sovereignCookie && !sessionEmail) {
+    if (!sovereignCookie && !sessionEmail && !sessionSub) {
       return NextResponse.json({ error: "Unauthorized: Neural Link Rejected" }, { status: 401 });
     }
 
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     if (body.firstLink && speechText === "Synchronisation complete.") {
       spokenText = getInitialVoicePayload(userRole);
     } else if (speechText === "Synchronisation complete.") {
-      const agent = new MarzAgent(sessionEmail || "sovereign-admin");
+      const agent = new MarzAgent(sessionEmail || sessionSub || "sovereign-admin");
       const marzReply = await agent.processMessage(finalPrompt, []);
       spokenText = marzReply.content?.replace(/\s+/g, " ").trim().slice(0, 450) || "Neural link is online.";
     }

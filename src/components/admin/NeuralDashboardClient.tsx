@@ -365,10 +365,27 @@ export default function NeuralDashboardClient({
       const promptSeed = thoughtLines[0]
         ? `Using this latest neural thought, speak a grounded update: ${thoughtLines[0]}`
         : "Provide a grounded operational update for today.";
-      const neuralLinkEndpoint = process.env.NEXT_PUBLIC_NEURAL_LINK_ENDPOINT || "/api/marz/neural-link";
+      const configuredNeuralLinkEndpoint = process.env.NEXT_PUBLIC_NEURAL_LINK_ENDPOINT;
+      let neuralLinkEndpoint = "/api/marz/neural-link";
+
+      if (configuredNeuralLinkEndpoint) {
+        if (configuredNeuralLinkEndpoint.startsWith("/")) {
+          neuralLinkEndpoint = configuredNeuralLinkEndpoint;
+        } else if (typeof window !== "undefined") {
+          try {
+            const parsed = new URL(configuredNeuralLinkEndpoint, window.location.origin);
+            if (parsed.origin === window.location.origin) {
+              neuralLinkEndpoint = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+            }
+          } catch {
+            neuralLinkEndpoint = "/api/marz/neural-link";
+          }
+        }
+      }
 
       const response = await fetch(neuralLinkEndpoint, {
         method: "POST",
+        credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           text: safeSpeechText,

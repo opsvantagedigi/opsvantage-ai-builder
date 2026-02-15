@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { verifySession } from "@/lib/verify-session";
 import { MarzAgent } from "@/lib/marz/agent-core";
 import { logger } from "@/lib/logger";
@@ -11,8 +12,14 @@ export async function POST(req: NextRequest) {
     const sovereignToken = req.cookies.get("zenith_admin_token")?.value;
     const isSovereign = Boolean(sovereignToken);
 
+    const token = isSovereign
+      ? null
+      : await getToken({ req, secret: process.env.NEXTAUTH_SECRET || "dev-nextauth-secret" });
     const session = isSovereign ? null : await verifySession();
-    if (!isSovereign && !session) {
+    const sessionEmail = session?.email || ((token as any)?.email as string | undefined) || null;
+    const sessionSub = session?.sub || ((token as any)?.sub as string | undefined) || null;
+
+    if (!isSovereign && !sessionEmail && !sessionSub) {
       logger.warn("[MARZ Chat] Unauthorized access attempt");
       return NextResponse.json(
         { error: "Unauthorized: Neural Link Rejected" },
@@ -30,14 +37,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const actorEmail = sessionEmail ?? "sovereign";
+    const actorSub = sessionSub ?? null;
+
     logger.info(
-      `[MARZ Chat] Message received from ${session?.email ?? "sovereign"}: "${message.substring(0, 50)}..."`
+      `[MARZ Chat] Message received from ${actorEmail}: "${message.substring(0, 50)}..."`
     );
 
-    await ensureSentinelMemory(session?.sub ?? null);
+    await ensureSentinelMemory(actorSub);
 
     // 3. Initialize MARZ Agent with user context
-    const agent = new MarzAgent(session?.email || "sovereign-papa");
+    const agent = new MarzAgent(sessionEmail || sessionSub || "sovereign-papa");
 
     // 4. Process message with MARZ
     const response = await agent.processMessage(
@@ -46,14 +56,14 @@ export async function POST(req: NextRequest) {
     );
 
     logger.info(
-      `[MARZ Chat] Response sent to ${session?.email ?? "sovereign"}: "${response.content.substring(0, 50)}..."`
+      `[MARZ Chat] Response sent to ${actorEmail}: "${response.content.substring(0, 50)}..."`
     );
 
     // 5. Return response
     return NextResponse.json({
       ...response,
-      userId: session?.sub,
-      userEmail: session?.email ?? "sovereign-papa",
+      userId: actorSub,
+      userEmail: sessionEmail || sessionSub || "sovereign-papa",
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
