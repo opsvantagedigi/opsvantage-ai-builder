@@ -224,6 +224,28 @@ export default function NeuralDashboardClient({
     return inPhaseOne ? "Phase 1: Visual Lockdown" : "Phase Tracking";
   }, []);
 
+  const voiceEngineBadge = useMemo(() => {
+    const normalizedLabel = voiceModelLabel.toLowerCase();
+    if (normalizedLabel.includes("browser")) {
+      return {
+        label: "Engine: Browser Fallback",
+        className: "border-amber-400/30 bg-amber-500/10 text-amber-200",
+      };
+    }
+
+    if (normalizedLabel.includes("alltalk")) {
+      return {
+        label: "Engine: AllTalk XTTS v2",
+        className: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
+      };
+    }
+
+    return {
+      label: "Engine: Hybrid",
+      className: "border-cyan-400/30 bg-cyan-500/10 text-cyan-200",
+    };
+  }, [voiceModelLabel]);
+
   const stopLipSync = React.useCallback(() => {
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -593,6 +615,9 @@ export default function NeuralDashboardClient({
                 <span className="font-semibold text-amber-200">Voice Profile:</span> Sovereign Hybrid <span className="font-mono">AllTalk + Edge-TTS</span>
                 <span className="ml-3 font-semibold text-amber-200">Model:</span> {voiceModelLabel}
                 <span className="ml-3 font-semibold text-amber-200">Status:</span> {neuralLinkActive ? "Neural Link Active" : "Idle"}
+                <span className={`ml-3 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${voiceEngineBadge.className}`}>
+                  {voiceEngineBadge.label}
+                </span>
               </div>
 
               <p className="mt-3 text-sm text-slate-400">{neuralSpeech}</p>
