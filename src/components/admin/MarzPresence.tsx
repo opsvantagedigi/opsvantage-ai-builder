@@ -15,10 +15,12 @@ export function MarzPresence({
   isSpeaking,
   onSummon,
   autoPlayIntro = false,
+  forceComingSoon = false,
 }: {
   isSpeaking: boolean;
   onSummon?: () => void;
   autoPlayIntro?: boolean;
+  forceComingSoon?: boolean;
 }) {
   const videoModeEnabled = process.env.NEXT_PUBLIC_MARZ_VIDEO_MODE !== "false";
   const [mode, setMode] = useState<Mode>("idle");
@@ -69,7 +71,7 @@ export function MarzPresence({
   return (
     <div className="space-y-3">
       <div className="relative w-full aspect-square bg-black/20 rounded-lg overflow-hidden border border-gold/10">
-        {videoModeEnabled && videoAvailable ? (
+        {!forceComingSoon && videoModeEnabled && videoAvailable ? (
           <video
             ref={videoRef}
             key={activeSrc}
@@ -100,7 +102,9 @@ export function MarzPresence({
               height={280}
               className="h-full max-h-[220px] w-auto rounded-md object-contain"
             />
-            <p className="text-[11px] text-slate-300/90">MARZ visual standby mode active.</p>
+            <p className="text-[11px] text-slate-300/90">
+              {forceComingSoon ? "MARZ live stream coming soon. Neural Core bridge unavailable." : "MARZ visual standby mode active."}
+            </p>
           </div>
         )}
       </div>

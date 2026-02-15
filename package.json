@@ -59,6 +59,7 @@
     "resend": "^3.5.0",
     "sanity": "3.25.0",
     "semver": "^7.6.2",
+    "socket.io-client": "^4.8.3",
     "stripe": "^20.3.1",
     "styled-components": "^6.3.8",
     "swr": "^2.4.0",

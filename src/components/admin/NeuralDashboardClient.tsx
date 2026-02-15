@@ -11,6 +11,7 @@ import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardFooter } from "@/components/admin/DashboardFooter";
 import { MarzPresence } from "@/components/admin/MarzPresence";
 import { MarzCommandConsoleClient } from "@/components/admin/MarzCommandConsoleClient";
+import { io, type Socket } from "socket.io-client";
 
 type Thought = {
   category: string;
@@ -71,6 +72,7 @@ export default function NeuralDashboardClient({
   const [welcomePinned, setWelcomePinned] = useState(true);
   const [hasUrgentTask, setHasUrgentTask] = useState(false);
   const [marzIntroReady, setMarzIntroReady] = useState(false);
+  const [neuralCoreBridgeState, setNeuralCoreBridgeState] = useState<"disabled" | "connecting" | "connected" | "unreachable">("disabled");
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -87,6 +89,7 @@ export default function NeuralDashboardClient({
   const hasAutoActivatedNeuralLinkRef = useRef(false);
   const hasUserInteractedRef = useRef(false);
   const pendingFallbackSpeechRef = useRef<string | null>(null);
+  const neuralCoreSocketRef = useRef<Socket | null>(null);
   const [engineUpdatedAtLabel, setEngineUpdatedAtLabel] = useState(() => {
     return new Intl.DateTimeFormat("en-NZ", {
       timeZone: "Pacific/Auckland",
@@ -168,6 +171,82 @@ export default function NeuralDashboardClient({
     return () => {
       isActive = false;
       clearInterval(interval);
+    };
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const neuralCoreUrl = process.env.NEXT_PUBLIC_NEURAL_CORE_URL;
+    if (!neuralCoreUrl) {
+      setNeuralCoreBridgeState("disabled");
+      return;
+    }
+
+    setNeuralCoreBridgeState("connecting");
+    const socket = io(neuralCoreUrl, {
+      transports: ["websocket"],
+      timeout: 3000,
+      reconnection: true,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 1000,
+      withCredentials: true,
+    });
+    neuralCoreSocketRef.current = socket;
+
+    const handleCoreStream = (payload: { text?: string; insight?: string; category?: string } | string) => {
+      const text = typeof payload === "string"
+        ? payload
+        : String(payload?.text || payload?.insight || "").trim();
+
+      if (!text) {
+        return;
+      }
+
+      setThoughts((prev) => {
+        const next = [
+          {
+            category: "NEURAL_CORE",
+            insight: text,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev,
+        ].slice(0, 50);
+        thoughtsSnapshotRef.current = JSON.stringify(next);
+        return next;
+      });
+      setNeuralLinkStatus("active");
+      setNeuralSpeech(text);
+    };
+
+    socket.on("connect", () => {
+      setNeuralCoreBridgeState("connected");
+      setNeuralLinkStatus("active");
+    });
+
+    socket.on("connect_error", () => {
+      setNeuralCoreBridgeState("unreachable");
+      setMarzIntroReady(false);
+      setNeuralSpeech("Neural Core bridge unavailable. MARZ video stream is in Coming Soon state.");
+      setNeuralLinkStatus("degraded");
+    });
+
+    socket.on("disconnect", () => {
+      setNeuralCoreBridgeState("unreachable");
+      setMarzIntroReady(false);
+    });
+
+    socket.on("neural-core-stream", handleCoreStream);
+    socket.on("Neural Core", handleCoreStream);
+
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("disconnect");
+      socket.off("neural-core-stream", handleCoreStream);
+      socket.off("Neural Core", handleCoreStream);
+      socket.disconnect();
+      neuralCoreSocketRef.current = null;
     };
   }, [mounted]);
 
@@ -689,6 +768,7 @@ export default function NeuralDashboardClient({
                 <MarzPresence
                   isSpeaking={neuralLinkActive || neuralLinkBusy}
                   autoPlayIntro={marzIntroReady}
+                  forceComingSoon={neuralCoreBridgeState === "unreachable"}
                   onSummon={() => appendAutonomousThought("> MARZ Summoned: Intro sequence initiated")}
                 />
               </div>
