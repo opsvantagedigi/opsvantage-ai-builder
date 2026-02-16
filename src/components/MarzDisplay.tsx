@@ -54,13 +54,14 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   }, [stream.audioUrl]);
 
   useEffect(() => {
-    if (!stream.text) {
+    const streamText = typeof stream.text === 'string' ? stream.text.trim() : '';
+    if (!streamText) {
       return;
     }
 
     setChat((prev) => {
       const last = prev[prev.length - 1];
-      if (last?.role === 'assistant' && last.text === stream.text) {
+      if (last?.role === 'assistant' && last.text === streamText) {
         return prev;
       }
 
@@ -68,7 +69,7 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
         ...prev,
         {
           role: 'assistant',
-          text: stream.text,
+          text: streamText,
           id: `assistant-${Date.now()}`,
         },
       ];

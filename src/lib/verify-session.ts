@@ -37,14 +37,14 @@ export async function verifySession(inputPassword?: string): Promise<SessionPayl
     const session = await getServerSession(authOptions);
     const email = session?.user?.email;
     const userId = (session?.user as { id?: string } | undefined)?.id;
-    if (!email || !userId) {
+    if (typeof email !== 'string' || typeof userId !== 'string' || !email || !userId) {
       return null;
     }
 
     return {
+      ...session.user,
       email,
       sub: userId,
-      ...session.user,
     };
   } catch (error) {
     console.error('Error resolving server session:', error);

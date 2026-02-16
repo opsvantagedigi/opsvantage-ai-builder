@@ -49,6 +49,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -57,6 +58,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -81,6 +84,8 @@ model Subscription {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Project {
@@ -100,6 +105,8 @@ model Project {
   onboarding    Onboarding?
   pages         Page[]
   workspace     Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }
 
 model Domain {
@@ -202,6 +209,8 @@ model Workspace {
   usage                  Usage?
   owner                  User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   members                WorkspaceMember[]
+
+  @@index([ownerId])
 }
 
 model WorkspaceMember {
@@ -230,6 +239,8 @@ model Invitation {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([email, workspaceId])
+  @@index([workspaceId])
+  @@index([inviterId])
 }
 
 model AgencyClient {
@@ -272,6 +283,9 @@ model AuditLog {
   ipAddress   String?
   userAgent   String?
   workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([actorId])
 }
 
 model Usage {
@@ -322,6 +336,8 @@ model MarzMemory {
   insight   String
   category  String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 enum Status {

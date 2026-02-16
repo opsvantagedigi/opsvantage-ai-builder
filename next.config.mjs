@@ -1,12 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Allow production builds to complete even if type errors exist
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    // Allow production builds to complete even if lint errors exist
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   generateBuildId: () => 'zenith-build-' + Date.now(),
   webpack: (config, { isServer }) => {

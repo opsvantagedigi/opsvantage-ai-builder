@@ -493,7 +493,7 @@ export function InfrastructureWizard() {
                           <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{String(item.name || item.title || item.brand_name || "Service item")}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{String(item.category || item.product || item.status || "OpenProvider data")}</p>
                         </div>
-                        <span className="text-sm font-bold text-green-600 dark:text-green-400">${item.price || item.amount || item.cost || "TBD"}/year</span>
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400">${String(item.price ?? item.amount ?? item.cost ?? "TBD")}/year</span>
                       </div>
                       <button 
                         onClick={() => addToStack(String(item.name || item.title || "Service"), Number(item.price) || 0)}

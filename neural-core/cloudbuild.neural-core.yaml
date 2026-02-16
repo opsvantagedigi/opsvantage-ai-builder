@@ -22,7 +22,8 @@ steps:
       '--min-instances', '0',
       '--max-instances', '1',
       '--port', '8080',
-      '--set-env-vars', 'CONSTITUTION_PATH=${_CONSTITUTION_PATH},MEMORY_VAULT_URL=${_MEMORY_VAULT_URL},VECTOR_STORE_PATH=${_VECTOR_STORE_PATH},TAVILY_API_KEY=${_TAVILY_API_KEY}',
+      '--set-env-vars', 'CONSTITUTION_PATH=${_CONSTITUTION_PATH},VECTOR_STORE_PATH=${_VECTOR_STORE_PATH},PUSH_SERVICE_URL=${_PUSH_SERVICE_URL}',
+      '--set-secrets', 'MEMORY_VAULT_URL=${_MEMORY_VAULT_URL_SECRET}:latest,TAVILY_API_KEY=${_TAVILY_API_KEY_SECRET}:latest,PUSH_SERVICE_TOKEN=${_PUSH_SERVICE_TOKEN_SECRET}:latest',
     ]
 
 - name: 'gcr.io/cloud-builders/gcloud'
@@ -36,18 +37,21 @@ steps:
       '--task-timeout', '900s',
       '--command', 'python',
       '--args', 'reflection_engine.py',
-      '--set-env-vars', 'CONSTITUTION_PATH=${_CONSTITUTION_PATH},MEMORY_VAULT_URL=${_MEMORY_VAULT_URL},VECTOR_STORE_PATH=${_VECTOR_STORE_PATH},TAVILY_API_KEY=${_TAVILY_API_KEY}',
+      '--set-env-vars', 'CONSTITUTION_PATH=${_CONSTITUTION_PATH},VECTOR_STORE_PATH=${_VECTOR_STORE_PATH},PUSH_SERVICE_URL=${_PUSH_SERVICE_URL}',
+      '--set-secrets', 'MEMORY_VAULT_URL=${_MEMORY_VAULT_URL_SECRET}:latest,TAVILY_API_KEY=${_TAVILY_API_KEY_SECRET}:latest,PUSH_SERVICE_TOKEN=${_PUSH_SERVICE_TOKEN_SECRET}:latest',
     ]
 
 images:
 - 'gcr.io/$PROJECT_ID/marz-neural-core'
 
 substitutions:
-  _NEURAL_CORE_REGION: 'us-central1'
+  _NEURAL_CORE_REGION: 'europe-west4'
   _GPU_TYPE: 'nvidia-l4'
   _CONSTITUTION_PATH: '/workspace/neural-core/constitution.md'
-  _MEMORY_VAULT_URL: ''
+  _MEMORY_VAULT_URL_SECRET: 'MEMORY_VAULT_URL'
   _VECTOR_STORE_PATH: '/workspace/neural-core/data/chroma'
-  _TAVILY_API_KEY: ''
+  _TAVILY_API_KEY_SECRET: 'TAVILY_API_KEY'
+  _PUSH_SERVICE_URL: 'https://opsvantage-ai-builder-1018462465472.us-central1.run.app/api/marz/push/dispatch'
+  _PUSH_SERVICE_TOKEN_SECRET: 'PUSH_SERVICE_TOKEN'
 
 timeout: '3600s'

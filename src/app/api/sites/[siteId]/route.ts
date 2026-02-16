@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCache, setCache } from '@/lib/cache/memory-store';
 
 interface RouteParams {
   params: Promise<{
@@ -24,6 +25,17 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         { error: 'Site ID is required' },
         { status: 400 }
       );
+    }
+
+    const cacheKey = `site:published:${siteId}`;
+    const cachedContent = await getCache<any>(cacheKey);
+    if (cachedContent) {
+      return NextResponse.json(cachedContent, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+          'x-cache': 'hit',
+        },
+      });
     }
 
     // Search for project by either subdomain or custom domain
@@ -78,9 +90,11 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // Return the site content with cache headers
+    await setCache(cacheKey, project.content, 300);
     return NextResponse.json(project.content, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        'x-cache': 'miss',
       },
     });
   } catch (error) {

@@ -7,6 +7,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 import soundfile as sf
@@ -44,6 +45,19 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+ALLOWED_OUTBOUND_HOSTS = {
+    "api.tavily.com",
+    "opsvantage-ai-builder-1018462465472.us-central1.run.app",
+}
+
+
+def is_allowed_outbound_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme == "https" and parsed.hostname in ALLOWED_OUTBOUND_HOSTS
+    except Exception:
+        return False
 
 app = FastAPI(title="MARZ Neural Core", version="1.0.0")
 
@@ -192,7 +206,10 @@ async def web_research(query: str) -> dict[str, Any]:
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post("https://api.tavily.com/search", json=payload)
+            tavily_url = "https://api.tavily.com/search"
+            if not is_allowed_outbound_url(tavily_url):
+                raise ValueError("Blocked outbound request by allowlist policy.")
+            response = await client.post(tavily_url, json=payload)
             response.raise_for_status()
             data = response.json()
             return {
@@ -257,8 +274,11 @@ class SovereignMemoryStore:
         if settings.memory_vault_url:
             try:
                 with httpx.Client(timeout=8.0) as client:
+                    append_url = f"{settings.memory_vault_url.rstrip('/')}/append"
+                    if not is_allowed_outbound_url(append_url):
+                        return
                     client.post(
-                        f"{settings.memory_vault_url.rstrip('/')}/append",
+                        append_url,
                         json={
                             "id": entry_id,
                             "document": doc,
@@ -289,8 +309,11 @@ class SovereignMemoryStore:
         if settings.memory_vault_url:
             try:
                 with httpx.Client(timeout=8.0) as client:
+                    query_url = f"{settings.memory_vault_url.rstrip('/')}/query"
+                    if not is_allowed_outbound_url(query_url):
+                        return local_docs
                     response = client.post(
-                        f"{settings.memory_vault_url.rstrip('/')}/query",
+                        query_url,
                         json={"query": prompt, "top_k": top_k},
                     )
                     if response.status_code < 400:

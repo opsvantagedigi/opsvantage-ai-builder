@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { validateOutboundUrl } from "@/lib/security/outbound-allowlist";
 import { getSentinelJournalContext } from "@/lib/marz/sentinel-memory";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -89,7 +90,7 @@ function formatHistory(history: Array<{ role: string; content: string }>) {
     return normalized;
 }
 
-const siteManagementTools = [
+const siteManagementTools: any[] = [
     {
         functionDeclarations: [
             {
@@ -180,7 +181,8 @@ async function callTavily(query: string) {
         return { ok: false, query, summary: "Tavily API key not configured.", results: [] };
     }
 
-    const response = await fetch("https://api.tavily.com/search", {
+    const tavilyUrl = validateOutboundUrl("https://api.tavily.com/search").toString();
+    const response = await fetch(tavilyUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

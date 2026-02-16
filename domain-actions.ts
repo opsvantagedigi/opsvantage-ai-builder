@@ -23,8 +23,9 @@ export async function checkDomainAvailabilityAction(fullDomain: string) {
 
     const result = res.data.results[0];
 
-    if (result.price?.reseller) {
-      const retailPrice = (result.price.reseller.price * MARKUP).toFixed(2);
+    const resellerPrice = result.price?.reseller?.price;
+    if (result.price?.reseller && typeof resellerPrice === 'number') {
+      const retailPrice = (resellerPrice * MARKUP).toFixed(2);
       return {
         status: result.status,
         domain: result.domain,

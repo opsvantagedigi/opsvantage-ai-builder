@@ -37,15 +37,15 @@ export const projectType = defineType({
         name: 'description',
         title: 'Description',
         type: 'text',
-        rows: 3,
+      options: { rows: 3 },
         validation: rule => rule.max(300)
     }),
      defineField({
       name: 'generatedContent',
       title: 'Generated Content',
       type: 'array',
-      of: [{type: 'block'}], 
+      of: [{ type: 'block' }],
       description: 'The AI generated content for the landing page',
-    }),
+    } as any),
   ],
 })
