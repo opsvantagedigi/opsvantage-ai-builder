@@ -2,18 +2,15 @@ import asyncio
 import base64
 import json
 import os
-import subprocess
 import tempfile
 import time
 import uuid
 from pathlib import Path
 from typing import Any
 
-import chromadb
 import httpx
 import soundfile as sf
 import torch
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -34,6 +31,8 @@ class Settings(BaseSettings):
     default_avatar_video: str = "/workspace/neural-core/assets/marz-face.mp4"
     constitution_path: str = "/workspace/neural-core/constitution.md"
     vector_store_path: str = "/workspace/neural-core/data/chroma"
+    memory_vault_url: str | None = None
+    tavily_api_key: str | None = None
     target_audio_video_offset_ms: int = 35
     max_audio_video_offset_ms: int = 50
 
@@ -94,14 +93,153 @@ def load_constitution_text() -> str:
     return path.read_text(encoding="utf-8").strip()
 
 
+def action_violates_mission(proposed_action: str) -> bool:
+    lowered = proposed_action.lower()
+    blocked_markers = [
+        "harm",
+        "coerce",
+        "fraud",
+        "deceive",
+        "exploit",
+        "steal",
+        "abuse",
+        "violence",
+        "hate",
+    ]
+    return any(marker in lowered for marker in blocked_markers)
+
+
+def trigger_manual_override_request(proposed_action: str) -> dict[str, Any]:
+    return {
+        "approved": False,
+        "action": proposed_action,
+        "reason": "Constitution check failed; manual override required.",
+        "rules": [
+            "Rule 1: Protect the Legacy.",
+            "Rule 2: Honor the Founder's trust.",
+            "Rule 3: Benefit the human collective.",
+        ],
+    }
+
+
+def constitution_check(proposed_action: str) -> dict[str, Any]:
+    if action_violates_mission(proposed_action):
+        return trigger_manual_override_request(proposed_action)
+    return {
+        "approved": True,
+        "action": proposed_action,
+        "rules": [
+            "Rule 1: Protect the Legacy.",
+            "Rule 2: Honor the Founder's trust.",
+            "Rule 3: Benefit the human collective.",
+        ],
+    }
+
+
+class SentimentAnalysisV2:
+    POSITIVE = ["great", "good", "excited", "grateful", "happy", "hopeful", "love", "awesome"]
+    NEGATIVE = ["stress", "frustrat", "angry", "upset", "worried", "fear", "sad", "panic"]
+
+    def analyze(self, text: str) -> dict[str, Any]:
+        lowered = text.lower().strip()
+        if not lowered:
+            return {
+                "label": "neutral",
+                "score": 0.0,
+                "temperature_delta": 0.0,
+                "empathy_weight": 0.6,
+            }
+
+        positive_hits = sum(1 for token in self.POSITIVE if token in lowered)
+        negative_hits = sum(1 for token in self.NEGATIVE if token in lowered)
+        score = max(-1.0, min(1.0, (positive_hits - negative_hits) / 4.0))
+
+        if score <= -0.25:
+            return {
+                "label": "distressed",
+                "score": score,
+                "temperature_delta": -0.1,
+                "empathy_weight": 0.95,
+            }
+        if score >= 0.25:
+            return {
+                "label": "positive",
+                "score": score,
+                "temperature_delta": 0.05,
+                "empathy_weight": 0.75,
+            }
+        return {
+            "label": "neutral",
+            "score": score,
+            "temperature_delta": 0.0,
+            "empathy_weight": 0.7,
+        }
+
+
+async def web_research(query: str) -> dict[str, Any]:
+    if not settings.tavily_api_key:
+        return {
+            "ok": False,
+            "query": query,
+            "summary": "Tavily API key not configured.",
+            "results": [],
+        }
+
+    payload = {
+        "api_key": settings.tavily_api_key,
+        "query": query,
+        "search_depth": "advanced",
+        "max_results": 5,
+        "include_answer": True,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post("https://api.tavily.com/search", json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return {
+                "ok": True,
+                "query": query,
+                "summary": data.get("answer") or "Research completed.",
+                "results": data.get("results") or [],
+            }
+    except Exception as error:
+        return {
+            "ok": False,
+            "query": query,
+            "summary": f"Research unavailable: {error}",
+            "results": [],
+        }
+
+
 class SovereignMemoryStore:
     def __init__(self) -> None:
-        Path(settings.vector_store_path).mkdir(parents=True, exist_ok=True)
-        self.client = chromadb.PersistentClient(path=settings.vector_store_path)
-        self.collection = self.client.get_or_create_collection(
-            name="marz_memory",
-            embedding_function=DefaultEmbeddingFunction(),
-        )
+        self.base_path = Path(settings.vector_store_path)
+        self.base_path.mkdir(parents=True, exist_ok=True)
+        self.vault_file = self.base_path / "memory-vault.jsonl"
+
+    def _read_entries(self) -> list[dict[str, Any]]:
+        if not self.vault_file.exists():
+            return []
+
+        entries: list[dict[str, Any]] = []
+        for line in self.vault_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+                if isinstance(payload, dict):
+                    entries.append(payload)
+            except json.JSONDecodeError:
+                continue
+        return entries
+
+    def _append_entry(self, payload: dict[str, Any]) -> None:
+        serialized = json.dumps(payload, ensure_ascii=False)
+        with self.vault_file.open("a", encoding="utf-8") as file:
+            file.write(serialized + "\n")
 
     def add_interaction(self, user_text: str, response_text: str) -> None:
         if not user_text.strip() and not response_text.strip():
@@ -109,24 +247,64 @@ class SovereignMemoryStore:
 
         entry_id = str(uuid.uuid4())
         doc = f"USER: {user_text}\nMARZ: {response_text}"
-        self.collection.add(
-            ids=[entry_id],
-            documents=[doc],
-            metadatas=[{"timestamp": int(time.time())}],
+        self._append_entry(
+            {
+                "id": entry_id,
+                "timestamp": int(time.time()),
+                "user_text": user_text,
+                "response_text": response_text,
+                "document": doc,
+            }
         )
+
+        if settings.memory_vault_url:
+            try:
+                with httpx.Client(timeout=8.0) as client:
+                    client.post(
+                        f"{settings.memory_vault_url.rstrip('/')}/append",
+                        json={
+                            "id": entry_id,
+                            "document": doc,
+                            "timestamp": int(time.time()),
+                        },
+                    )
+            except Exception:
+                pass
 
     def query_context(self, prompt: str, top_k: int = 3) -> list[str]:
         if not prompt.strip():
             return []
 
-        results = self.collection.query(
-            query_texts=[prompt],
-            n_results=top_k,
-        )
-        docs = results.get("documents") or []
-        if not docs:
-            return []
-        return [str(item) for item in docs[0] if item]
+        prompt_tokens = {token for token in prompt.lower().split() if token}
+        scored: list[tuple[int, str]] = []
+
+        for entry in self._read_entries()[-200:]:
+            document = str(entry.get("document", ""))
+            tokens = {token for token in document.lower().split() if token}
+            score = len(prompt_tokens.intersection(tokens))
+            if score > 0:
+                scored.append((score, document))
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        local_docs = [item[1] for item in scored[:top_k]]
+
+        remote_docs: list[str] = []
+        if settings.memory_vault_url:
+            try:
+                with httpx.Client(timeout=8.0) as client:
+                    response = client.post(
+                        f"{settings.memory_vault_url.rstrip('/')}/query",
+                        json={"query": prompt, "top_k": top_k},
+                    )
+                    if response.status_code < 400:
+                        payload = response.json()
+                        items = payload.get("documents") or []
+                        remote_docs = [str(item) for item in items if item]
+            except Exception:
+                remote_docs = []
+
+        merged = (local_docs + remote_docs)[:top_k]
+        return merged
 
 
 memory_store = SovereignMemoryStore()
@@ -147,17 +325,28 @@ class BrainEngine:
             )
         return self._llm
 
-    async def infer(self, prompt: str) -> str:
+    async def infer(self, prompt: str, sentiment_profile: dict[str, Any] | None = None) -> str:
         def _run() -> str:
             llm = self._load()
             memory_context = memory_store.query_context(prompt, top_k=3)
             memory_block = "\n".join(memory_context) if memory_context else "No prior memory context available."
+            sentiment_block = sentiment_profile or {
+                "label": "neutral",
+                "score": 0.0,
+                "temperature_delta": 0.0,
+                "empathy_weight": 0.7,
+            }
             constrained_prompt = (
                 f"[PRIMARY CONSTITUTION]\n{CONSTITUTION_TEXT}\n\n"
                 f"[SOVEREIGN MEMORY]\n{memory_block}\n\n"
+                f"[SENTIMENT_ANALYSIS_V2]\n"
+                f"label={sentiment_block.get('label')} score={sentiment_block.get('score')} empathy_weight={sentiment_block.get('empathy_weight')}\n\n"
                 f"[CURRENT REQUEST]\n{prompt}\n"
             )
-            params = SamplingParams(temperature=0.6, top_p=0.9, max_tokens=420)
+            baseline = 0.6
+            delta = float(sentiment_block.get("temperature_delta", 0.0))
+            temperature = max(0.2, min(0.9, baseline + delta))
+            params = SamplingParams(temperature=temperature, top_p=0.9, max_tokens=420)
             outputs = llm.generate([constrained_prompt], params)
             if not outputs or not outputs[0].outputs:
                 return "No response generated."
@@ -360,6 +549,7 @@ async def calibrate_sync(video_path: Path, audio_wav: Path, calibrated_path: Pat
 brain = BrainEngine()
 voice = SovereignVoice()
 lipsync = LipSyncEngine()
+sentiment_analysis_v2 = SentimentAnalysisV2()
 
 
 def safe_json(data: dict[str, Any]) -> str:
@@ -471,6 +661,19 @@ async def neural_core_socket(websocket: WebSocket) -> None:
             try:
                 text_prompt = await decode_voice_to_text(incoming)
                 avatar_path = Path(incoming.avatar_video_path) if incoming.avatar_video_path else Path(settings.default_avatar_video)
+                constitution_result = constitution_check(text_prompt)
+
+                if not constitution_result.get("approved", False):
+                    await websocket.send_text(
+                        safe_json(
+                            {
+                                "type": "manual_override_request",
+                                "request_id": request_id,
+                                "constitution": constitution_result,
+                            }
+                        )
+                    )
+                    continue
 
                 if is_awakening_trigger(incoming):
                     try:
@@ -508,7 +711,19 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                     )
                 )
 
-                brain_output = await brain.infer(text_prompt)
+                sentiment_profile = sentiment_analysis_v2.analyze(text_prompt)
+                await websocket.send_text(
+                    safe_json(
+                        {
+                            "type": "status",
+                            "request_id": request_id,
+                            "stage": "sentiment_analysis_v2",
+                            "sentiment": sentiment_profile,
+                        }
+                    )
+                )
+
+                brain_output = await brain.infer(text_prompt, sentiment_profile=sentiment_profile)
                 voiced_output = apply_wit_filter(brain_output)
 
                 await websocket.send_text(

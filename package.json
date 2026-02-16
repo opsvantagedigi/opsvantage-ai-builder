@@ -16,7 +16,8 @@
     "audit:zenith-pulse": "node scripts/zenith-pulse.mjs",
     "audit:internal-logic": "npx tsx scripts/internal-logic-pass.ts",
     "gcloud:build": "npx tsx scripts/gcloud-build.ts",
-    "gcloud:deploy": "gcloud builds submit --config cloudbuild.yaml ."
+    "gcloud:deploy": "gcloud builds submit --config cloudbuild.yaml .",
+    "gcloud:deploy:neural-core": "gcloud builds submit --config neural-core/cloudbuild.neural-core.yaml ./neural-core"
   },
   "dependencies": {
     "@dnd-kit/modifiers": "^9.0.0",

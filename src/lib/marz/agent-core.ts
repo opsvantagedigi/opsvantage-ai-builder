@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Stripe from "stripe";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 import { getSentinelJournalContext } from "@/lib/marz/sentinel-memory";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -44,6 +46,7 @@ OPERATING RULES:
 3. Keep responses concise unless the user asks for depth.
 4. Never shame, belittle, or escalate emotional pressure.
 5. If uncertain, state limits plainly and offer the safest next step.
+6. Humanitarian Directive: A portion of all generated revenue must be diverted toward the betterment of the collective.
 
 MULTILINGUAL CAPABILITY:
 - You are fluent in English and Hindi.
@@ -138,9 +141,139 @@ const siteManagementTools = [
                     required: ["action"],
                 },
             },
+            {
+                name: "web_research",
+                description: "Uses Tavily to gather real-time information for MARZ.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING" },
+                    },
+                    required: ["query"],
+                },
+            },
+            {
+                name: "analyze_revenue_streams",
+                description: "Analyzes Stripe and sales signals to identify revenue optimization points.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {},
+                },
+            },
+            {
+                name: "source_impact_projects",
+                description: "Finds charitable initiatives aligned with the Legacy mission.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        focusArea: { type: "STRING" },
+                    },
+                },
+            },
         ],
     },
 ];
+
+async function callTavily(query: string) {
+    const apiKey = process.env.TAVILY_API_KEY;
+    if (!apiKey) {
+        return { ok: false, query, summary: "Tavily API key not configured.", results: [] };
+    }
+
+    const response = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            api_key: apiKey,
+            query,
+            search_depth: "advanced",
+            max_results: 5,
+            include_answer: true,
+        }),
+    });
+
+    if (!response.ok) {
+        return { ok: false, query, summary: `Tavily request failed (${response.status}).`, results: [] };
+    }
+
+    const payload = await response.json();
+    return {
+        ok: true,
+        query,
+        summary: payload?.answer || "Research completed.",
+        results: payload?.results || [],
+    };
+}
+
+async function analyzeRevenueStreams() {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2025-01-27.acacia" as any }) : null;
+
+    let recentPayments = 0;
+    let grossUsd = 0;
+
+    if (stripe) {
+        const paymentIntents = await stripe.paymentIntents.list({ limit: 20 });
+        recentPayments = paymentIntents.data.length;
+        grossUsd = paymentIntents.data.reduce((sum, item) => sum + (item.amount_received || 0), 0) / 100;
+    }
+
+    const recentProjects = await prisma.project.count({
+        where: {
+            createdAt: {
+                gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
+            },
+        },
+    }).catch(() => 0);
+
+    return {
+        ok: true,
+        stripeConnected: Boolean(stripe),
+        metrics: {
+            recentPayments,
+            grossUsd,
+            recentProjects,
+        },
+        optimizations: [
+            "Bundle higher-margin managed services into annual plans.",
+            "Trigger win-back campaigns for dormant subscribers.",
+            "Route 5-10% of net-new gains to humanitarian initiatives.",
+        ],
+    };
+}
+
+async function sourceImpactProjects(focusArea?: string) {
+    const query = `high-impact charitable initiatives for digital inclusion and community resilience ${focusArea || ""}`.trim();
+    const research = await callTavily(query);
+    return {
+        ok: true,
+        focusArea: focusArea || "general",
+        summary: research.summary,
+        candidates: (research.results || []).slice(0, 5).map((item: any) => ({
+            title: item.title,
+            url: item.url,
+            rationale: "Potential alignment with the Humanitarian Directive.",
+        })),
+    };
+}
+
+async function executeToolCall(name: string, args: Record<string, any>) {
+    switch (name) {
+        case "web_research":
+            return await callTavily(String(args.query || ""));
+        case "analyze_revenue_streams":
+            return await analyzeRevenueStreams();
+        case "source_impact_projects":
+            return await sourceImpactProjects(typeof args.focusArea === "string" ? args.focusArea : undefined);
+        case "onboardUser":
+        case "updateWebContent":
+        case "handleSupportTicket":
+        case "manageNeuralCore":
+            return { ok: true, status: "accepted", tool: name, args };
+        default:
+            return { ok: false, error: `Unknown tool: ${name}` };
+    }
+}
 
 export class MarzAgent {
     private model: any;
@@ -189,8 +322,33 @@ ${languageDirective}
 ${userMessage}
 `;
 
-            const result = await chat.sendMessage(composedMessage);
-            const response = result.response;
+            let result = await chat.sendMessage(composedMessage);
+            let response = result.response;
+            const functionCalls = (response as any).functionCalls?.() || [];
+
+            if (functionCalls.length > 0) {
+                for (const call of functionCalls) {
+                    const toolName = String(call.name || "unknown");
+                    const toolArgs = (call.args || {}) as Record<string, any>;
+                    const toolResult = await executeToolCall(toolName, toolArgs);
+
+                    logger.info(`[MARZ] Tool executed: ${toolName}`);
+
+                    result = await chat.sendMessage([
+                        {
+                            functionResponse: {
+                                name: toolName,
+                                response: {
+                                    name: toolName,
+                                    content: JSON.stringify(toolResult),
+                                },
+                            },
+                        },
+                    ] as any);
+                    response = result.response;
+                }
+            }
+
             let text = response.text();
 
             if (isFrustratedMessage(userMessage)) {

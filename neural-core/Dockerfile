@@ -16,14 +16,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./requirements.txt
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt
+RUN pip install --ignore-installed --use-deprecated=legacy-resolver -r requirements.txt
 
 RUN git clone https://github.com/Rudrabha/Wav2Lip.git /opt/Wav2Lip
 
 COPY gateway.py ./gateway.py
 COPY voice_config.py ./voice_config.py
 COPY constitution.md ./constitution.md
+COPY reflection_engine.py ./reflection_engine.py
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
