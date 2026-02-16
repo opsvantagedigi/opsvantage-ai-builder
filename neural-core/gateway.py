@@ -10,13 +10,10 @@ from typing import Any
 
 import httpx
 import soundfile as sf
-import torch
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from vllm import LLM, SamplingParams
-from TTS.api import TTS
 from voice_config import VOICE_PARAMS, apply_wit_filter
 
 
@@ -313,9 +310,11 @@ CONSTITUTION_TEXT = load_constitution_text()
 
 class BrainEngine:
     def __init__(self) -> None:
-        self._llm: LLM | None = None
+        self._llm: Any | None = None
 
-    def _load(self) -> LLM:
+    def _load(self) -> Any:
+        from vllm import LLM
+
         if self._llm is None:
             self._llm = LLM(
                 model=settings.neural_model_id,
@@ -327,6 +326,8 @@ class BrainEngine:
 
     async def infer(self, prompt: str, sentiment_profile: dict[str, Any] | None = None) -> str:
         def _run() -> str:
+            from vllm import SamplingParams
+
             llm = self._load()
             memory_context = memory_store.query_context(prompt, top_k=3)
             memory_block = "\n".join(memory_context) if memory_context else "No prior memory context available."
@@ -357,9 +358,11 @@ class BrainEngine:
 
 class SovereignVoice:
     def __init__(self) -> None:
-        self._tts: TTS | None = None
+        self._tts: Any | None = None
 
-    def _load(self) -> TTS:
+    def _load(self) -> Any:
+        from TTS.api import TTS
+
         if self._tts is None:
             self._tts = TTS(settings.xtts_model_id)
         return self._tts
