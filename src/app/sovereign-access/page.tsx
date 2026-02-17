@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isValidSovereignKey } from "@/lib/sovereign-auth";
 
 async function grantSovereignAccess(formData: FormData) {
   "use server";
 
   const input = String(formData.get("password") ?? "");
-  const sovereignPassword = process.env.SOVEREIGN_PASSWORD || process.env.ADMIN_BYPASS_PASSWORD;
 
-  if (!sovereignPassword || input !== sovereignPassword) {
+  if (!isValidSovereignKey(input)) {
     redirect("/sovereign-access?error=invalid");
   }
 

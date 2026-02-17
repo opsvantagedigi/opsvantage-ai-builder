@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth';
+import { isValidSovereignKey } from '@/lib/sovereign-auth';
 
 export interface SessionPayload {
   email: string;
@@ -16,7 +17,7 @@ const SOVEREIGN_EMAIL = 'sovereign@opsvantage.local';
  */
 export async function verifySession(inputPassword?: string): Promise<SessionPayload | null> {
   try {
-    if (inputPassword === process.env.SOVEREIGN_PASSWORD) {
+    if (isValidSovereignKey(inputPassword ?? '')) {
       return {
         email: SOVEREIGN_EMAIL,
         sub: SOVEREIGN_SUB,

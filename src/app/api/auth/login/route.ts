@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { isValidSovereignKey } from '@/lib/sovereign-auth';
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as { password?: unknown };
     const inputPassword = String(body.password ?? '');
 
-    if (inputPassword === process.env.SOVEREIGN_PASSWORD) {
+    if (isValidSovereignKey(inputPassword)) {
       const response = NextResponse.json({ ok: true, granted: true });
       response.cookies.set('zenith_admin_token', 'sovereign', {
         httpOnly: true,
