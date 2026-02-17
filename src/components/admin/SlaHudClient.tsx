@@ -25,6 +25,12 @@ type SlaPayload = {
       sampledAt: string;
     };
     saturation: SaturationReading[];
+    ux?: {
+      windowMinutes: number;
+      samples: number;
+      lcpP75Ms: number | null;
+      clsP75: number | null;
+    };
   };
   suite: {
     suite: string;
@@ -43,6 +49,11 @@ function formatPercent(value: number) {
 function formatMs(value: number | null) {
   if (value === null) return "n/a";
   return `${value}ms`;
+}
+
+function formatCls(value: number | null) {
+  if (value === null) return "n/a";
+  return value.toFixed(3);
 }
 
 function SaturationValue({ value }: { value: number | null }) {
@@ -133,6 +144,23 @@ export function SlaHudClient() {
           <p className="text-sm text-slate-400">Status: {payload.suite.status}</p>
           <p className="text-sm text-slate-400">Video Link: {payload.suite.videoLinkUnlocked ? "UNLOCKED" : "LOCKED"}</p>
         </article>
+      </section>
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+        <p className="text-xs uppercase tracking-wide text-slate-400">User Experience (Web Vitals)</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-sm text-slate-200">
+            <p className="font-medium text-slate-200">LCP (p75)</p>
+            <p className="mt-1 text-2xl font-semibold text-cyan-300">{formatMs(payload.snapshot.ux?.lcpP75Ms ?? null)}</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-sm text-slate-200">
+            <p className="font-medium text-slate-200">CLS (p75)</p>
+            <p className="mt-1 text-2xl font-semibold text-cyan-300">{formatCls(payload.snapshot.ux?.clsP75 ?? null)}</p>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Window: {payload.snapshot.ux?.windowMinutes ?? 10}m · Samples: {payload.snapshot.ux?.samples ?? 0}
+        </p>
       </section>
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">

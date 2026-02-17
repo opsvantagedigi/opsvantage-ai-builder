@@ -4,22 +4,80 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { AuthGuardedCta } from "@/components/auth/AuthGuardedCta";
 import { MARKETING_NAV, SITE_DOMAIN } from "@/lib/site-config";
 
+type BrandOverrideResponse = {
+  ok: boolean;
+  override: null | {
+    workspaceName: string;
+    logoUrl: string | null;
+    colors: {
+      primary?: string;
+      secondary?: string;
+    };
+  };
+};
+
+function applyBrandCssVars(override: BrandOverrideResponse["override"]) {
+  if (!override) return;
+
+  const root = document.documentElement;
+
+  if (override.colors?.primary) {
+    root.style.setProperty("--primary", override.colors.primary);
+  }
+
+  if (override.colors?.secondary) {
+    root.style.setProperty("--accent", override.colors.secondary);
+  }
+}
+
 export function PublicHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [brandOverride, setBrandOverride] = useState<BrandOverrideResponse["override"]>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadOverride = async () => {
+      try {
+        const res = await fetch("/api/branding/resolve", { cache: "no-store" });
+        if (!res.ok) return;
+        const payload = (await res.json()) as BrandOverrideResponse;
+        if (!active) return;
+        setBrandOverride(payload.override);
+        applyBrandCssVars(payload.override);
+      } catch {
+        // ignore
+      }
+    };
+
+    void loadOverride();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
         <Link href="/" className="group flex items-center gap-4" onClick={() => setMenuOpen(false)}>
           <Image src="/icon.png" alt="OpsVantage Icon" width={44} height={44} className="h-11 w-11 aspect-square hover:opacity-80 transition-all duration-300" priority />
-          <Image src="/logo.svg" alt="OpsVantage Digital" width={204} height={40} className="h-10 w-auto hover:opacity-80 transition-all duration-300" priority />
-          <span className="hidden text-xs font-medium text-slate-500 md:inline dark:text-slate-400">{SITE_DOMAIN}</span>
+          {brandOverride?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brandOverride.logoUrl}
+              alt={`${brandOverride.workspaceName} Logo`}
+              className="h-10 w-auto hover:opacity-80 transition-all duration-300"
+            />
+          ) : (
+            <Image src="/logo.svg" alt="OpsVantage Digital" width={204} height={40} className="h-10 w-auto hover:opacity-80 transition-all duration-300" priority />
+          )}
+          <span className="hidden text-xs font-medium text-slate-500 md:inline dark:text-slate-400">{brandOverride?.workspaceName ?? SITE_DOMAIN}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex relative">
@@ -93,7 +151,7 @@ export function PublicHeader() {
           <AuthGuardedCta
             label="Book a Consultation"
             href="/concierge/spec-intake"
-            className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400"
+            className="inline-flex items-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
           />
         </div>
 
@@ -174,7 +232,7 @@ export function PublicHeader() {
               <AuthGuardedCta
                 label="Book a Consultation"
                 href="/concierge/spec-intake"
-                className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-cyan-500 dark:text-slate-950"
+                className="inline-flex items-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-slate-950"
               />
             </div>
           </nav>

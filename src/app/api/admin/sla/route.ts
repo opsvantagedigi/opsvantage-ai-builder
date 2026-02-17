@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { MonitoringService } from "@/lib/monitoring/MonitoringService";
+import { getUxVitalsSummary } from "@/lib/monitoring/ux-vitals";
 
 export const runtime = "nodejs";
 
@@ -68,14 +69,18 @@ export async function GET(req: NextRequest) {
     "https://opsvantage-ai-builder-1018462465472.europe-west4.run.app";
 
   const monitoringService = new MonitoringService();
-  const [snapshot, suite] = await Promise.all([
+  const [snapshot, suite, ux] = await Promise.all([
     monitoringService.getSlaSnapshot(appBaseUrl),
     Promise.resolve(getSuiteReport()),
+    getUxVitalsSummary(),
   ]);
 
   return NextResponse.json({
     ok: true,
-    snapshot,
+    snapshot: {
+      ...snapshot,
+      ux,
+    },
     suite,
     sampledAt: new Date().toISOString(),
   });

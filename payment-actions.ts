@@ -6,6 +6,7 @@ import { nowPayments } from '@/lib/nowpayments/client';
 import { cookies } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import { verifySession } from '@/lib/verify-session';
+import { appendLedgerEvent } from '@/lib/enterprise-ledger';
 
 interface PaymentDetails {
   domain: string;
@@ -23,6 +24,8 @@ export async function createPaymentAction(details: PaymentDetails, userId: strin
   }
 
   try {
+    const member = await prisma.workspaceMember.findFirst({ where: { userId } });
+
     // 1. Create an order record in your database
     const order = await prisma.order.create({
       data: {
@@ -34,6 +37,23 @@ export async function createPaymentAction(details: PaymentDetails, userId: strin
         priceCurrency: details.price.currency.toLowerCase(),
       },
     });
+
+    if (member) {
+      await appendLedgerEvent({
+        workspaceId: member.workspaceId,
+        actorId: userId,
+        category: 'FINANCIAL',
+        event: 'ORDER_CREATED',
+        entity: { type: 'ORDER', id: order.id },
+        metadata: {
+          productType: order.productType,
+          productId: order.productId,
+          status: order.status,
+          priceAmount: order.priceAmount,
+          priceCurrency: order.priceCurrency,
+        },
+      });
+    }
 
     // 2. Create an invoice with NowPayments
     const invoice = await nowPayments.createInvoice({
@@ -52,6 +72,19 @@ export async function createPaymentAction(details: PaymentDetails, userId: strin
       where: { id: order.id },
       data: { nowPaymentsInvoiceId: invoice.id },
     });
+
+    if (member) {
+      await appendLedgerEvent({
+        workspaceId: member.workspaceId,
+        actorId: userId,
+        category: 'FINANCIAL',
+        event: 'INVOICE_LINKED',
+        entity: { type: 'ORDER', id: order.id },
+        metadata: {
+          nowPaymentsInvoiceId: invoice.id,
+        },
+      });
+    }
 
     // 4. Return the payment URL to the client for redirection
     return { paymentUrl: invoice.invoice_url };

@@ -3,6 +3,7 @@ import { Manrope, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { SiteShell } from "@/components/layout/SiteShell";
 import PWARegister from "@/components/PWARegister";
+import { WebVitalsReporter } from "@/components/monitoring/WebVitalsReporter";
 import { SITE_URL } from "@/lib/site-config";
 import { resolveBrandOverrideFromRequest } from "@/lib/branding/brand-override";
 import "./globals.css";
@@ -91,6 +92,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
         <ThemeProvider>
           <PWARegister />
+          <WebVitalsReporter />
           <SiteShell>{children}</SiteShell>
         </ThemeProvider>
       </body>

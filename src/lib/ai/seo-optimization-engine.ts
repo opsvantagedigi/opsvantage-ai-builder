@@ -18,6 +18,7 @@ export type SeoOptimizationResult = {
   metaDescription: string;
   canonicalUrl: string;
   keywords: string[];
+  keywordDensity: Array<{ keyword: string; count: number; density: number }>;
   openGraph: {
     title: string;
     description: string;
@@ -64,6 +65,28 @@ function collectSectionText(sections: GeneratedSection[] = []): string {
     }
   }
   return fragments.join(" ");
+}
+
+function analyzeKeywordDensity(text: string, keywords: string[]) {
+  const normalized = normalize(text);
+  const tokens = normalized.split(/\s+/g).filter(Boolean);
+  const total = tokens.length;
+
+  if (total === 0) {
+    return keywords.map((keyword) => ({ keyword, count: 0, density: 0 }));
+  }
+
+  const counts = new Map<string, number>();
+  for (const token of tokens) {
+    counts.set(token, (counts.get(token) ?? 0) + 1);
+  }
+
+  return keywords.map((keyword) => {
+    const key = normalize(keyword);
+    const count = counts.get(key) ?? 0;
+    const density = Number(((count / total) * 100).toFixed(3));
+    return { keyword: keyword.trim(), count, density };
+  });
 }
 
 function extractKeywordCandidates(page: GeneratedPageLike, onboarding: Partial<OnboardingData>): string[] {
@@ -119,6 +142,10 @@ export function buildSeoOptimization(page: GeneratedPageLike, onboarding: Partia
   const metaDescription = truncate(baseDescription, 160);
 
   const keywords = extractKeywordCandidates(page, onboarding);
+  const keywordDensity = analyzeKeywordDensity(
+    [page.title, page.metaDescription ?? "", collectSectionText(page.sections)].join(" "),
+    keywords
+  );
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -140,6 +167,7 @@ export function buildSeoOptimization(page: GeneratedPageLike, onboarding: Partia
     metaDescription,
     canonicalUrl,
     keywords,
+    keywordDensity,
     openGraph: {
       title: metaTitle,
       description: metaDescription,

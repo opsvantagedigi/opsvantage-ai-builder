@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import { verifySession } from '@/lib/verify-session';
+import { appendLedgerEvent } from '@/lib/enterprise-ledger';
 
 export type CustomerData = {
   email: string;
@@ -22,6 +23,8 @@ export async function createCustomerHandleAction(data: CustomerData, userId: str
   }
 
   try {
+    const member = await prisma.workspaceMember.findFirst({ where: { userId } });
+
     const res = await openProvider.createCustomer(data);
     if (res.code !== 0 || !res.data?.handle) {
       throw new Error(res.desc || 'Failed to create customer handle.');
@@ -34,6 +37,19 @@ export async function createCustomerHandleAction(data: CustomerData, userId: str
       where: { id: userId },
       data: { openProviderHandle: handle },
     });
+
+    if (member) {
+      await appendLedgerEvent({
+        workspaceId: member.workspaceId,
+        actorId: userId,
+        category: 'USER',
+        event: 'OPENPROVIDER_HANDLE_CREATED',
+        entity: { type: 'USER', id: userId },
+        metadata: {
+          openProviderHandle: handle,
+        },
+      });
+    }
 
     return { success: true, handle };
   } catch (error) {

@@ -1,5 +1,6 @@
 function parseConfiguredKeys(): string[] {
   const sources = [
+    process.env.MASTER_KEY,
     process.env.SOVEREIGN_PASSWORD,
     process.env.ADMIN_BYPASS_PASSWORD,
   ];

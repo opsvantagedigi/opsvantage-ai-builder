@@ -1,117 +1,135 @@
-'use client';
+import type { Metadata } from "next";
+import { headers } from "next/headers";
 
-import { useEffect, useState } from 'react';
-import { RenderEngine } from '@/components/builder/render-engine';
-import { Loader2 } from 'lucide-react';
+import { RenderEngine } from "@/components/builder/render-engine";
+import { db } from "@/lib/db";
+import { optimizeGeneratedPageSeo } from "@/lib/ai/seo-optimization-engine";
 
-interface SitePageProps {
-  params: Promise<{
+type RouteParams = {
+  params: {
     siteId: string;
-  }>;
-}
-
-interface Section {
-  id: string;
-  type: string;
-  content: Record<string, any>;
-}
-
-interface Page {
-  id: string;
-  name: string;
-  sections: Section[];
-}
-
-interface SiteData {
-  siteConfig: {
-    title: string;
-    description: string;
-    theme: string;
   };
-  pages: Page[];
+};
+
+type SiteData = {
+  siteConfig?: {
+    title?: string;
+    description?: string;
+    theme?: string;
+  };
+  pages?: Array<{
+    id?: string;
+    name?: string;
+    sections?: Array<{ id: string; type: string; content: Record<string, unknown> }>;
+    seo?: unknown;
+    metaDescription?: string;
+    title?: string;
+    slug?: string;
+  }>;
+};
+
+function normalizeHost(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  return trimmed.split(":")[0] || null;
 }
 
-/**
- * 🌍 PUBLIC STAGE: Renders live websites from published projects
- *
- * This page receives rewritten requests from middleware:
- * - nexus.opsvantagedigital.online → /sites/nexus
- * - my-bakery.com → /sites/my-bakery.com
- *
- * Features:
- * - Loads published project data
- * - Renders via RenderEngine (read-only mode)
- * - Handles unpublished/non-existent projects
- * - SEO metadata support
- */
-export default function SitePage({ params }: SitePageProps) {
-  const [siteData, setSiteData] = useState<SiteData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [siteId, setSiteId] = useState<string | null>(null);
+async function fetchPublishedSite(siteId: string): Promise<SiteData | null> {
+  const project = await db.project.findFirst({
+    where: {
+      OR: [{ subdomain: siteId }, { customDomain: siteId }],
+      published: true,
+    },
+    select: {
+      content: true,
+    },
+  });
 
-  useEffect(() => {
-    const loadSiteData = async () => {
-      try {
-        const resolvedParams = await params;
-        setSiteId(resolvedParams.siteId);
-        setIsLoading(true);
-        setError(null);
+  if (!project?.content) return null;
+  return project.content as unknown as SiteData;
+}
 
-        // Fetch the published project from the API
-        // The siteId could be either a subdomain (nexus) or a custom domain (my-bakery.com)
-        const response = await fetch(`/api/sites/${encodeURIComponent(resolvedParams.siteId)}`);
+async function getCanonicalUrl(siteId: string): Promise<string> {
+  const headerStore = await headers();
+  const host = normalizeHost(headerStore.get("x-forwarded-host") || headerStore.get("host"));
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Site not found or not published');
-          } else if (response.status === 403) {
-            setError('This site is not yet published');
-          } else {
-            setError('Failed to load site');
-          }
-          setSiteData(null);
-          return;
-        }
-
-        const data = await response.json() as SiteData;
-        setSiteData(data);
-      } catch (err) {
-        console.error('[MARZ] Failed to load site:', err);
-        setError('Failed to load site data');
-        setSiteData(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSiteData();
-  }, [siteId]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-500 mx-auto mb-4" />
-          <p className="text-gray-600">Loading site...</p>
-        </div>
-      </div>
-    );
+  // If requests are rewritten from a custom domain, the host is the true canonical.
+  if (host && host !== "localhost") {
+    return `https://${host}`;
   }
 
-  if (error || !siteData) {
+  // Fallback (direct access /sites/{id})
+  const base = process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://opsvantagedigital.online";
+  return `${base.replace(/\/$/, "")}/sites/${encodeURIComponent(siteId)}`;
+}
+
+export async function generateMetadata({ params }: RouteParams): Promise<Metadata> {
+  const siteId = params.siteId;
+  const siteData = await fetchPublishedSite(siteId);
+  if (!siteData?.siteConfig) {
+    return {
+      title: "Site Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const canonicalUrl = await getCanonicalUrl(siteId);
+
+  const rawTitle = siteData.siteConfig.title?.trim() || "Untitled Site";
+  const rawDescription = siteData.siteConfig.description?.trim() || "";
+
+  const pageLike = {
+    title: rawTitle,
+    slug: "home",
+    metaDescription: rawDescription,
+    sections: (siteData.pages?.[0]?.sections || []).map((section) => ({
+      heading: typeof section.content?.headline === "string" ? (section.content.headline as string) : undefined,
+      body: typeof section.content?.subheadline === "string" ? (section.content.subheadline as string) : undefined,
+      items: Array.isArray(section.content?.items)
+        ? (section.content.items as Array<{ title?: string; description?: string }>).map((item) => ({
+            title: item?.title,
+            description: item?.description,
+          }))
+        : undefined,
+    })),
+  };
+
+  const optimized = optimizeGeneratedPageSeo({
+    page: pageLike,
+    onboarding: {},
+    siteUrl: canonicalUrl,
+  });
+
+  return {
+    title: optimized.seo.metaTitle,
+    description: optimized.seo.metaDescription,
+    alternates: {
+      canonical: optimized.seo.canonicalUrl,
+    },
+    keywords: optimized.seo.keywords,
+    openGraph: {
+      title: optimized.seo.openGraph.title,
+      description: optimized.seo.openGraph.description,
+      url: optimized.seo.canonicalUrl,
+      type: "website",
+    },
+    robots: optimized.seo.preindexHints.robots,
+  };
+}
+
+export default async function SitePage({ params }: RouteParams) {
+  const siteId = params.siteId;
+  const siteData = await fetchPublishedSite(siteId);
+
+  if (!siteData) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {error === 'This site is not yet published'
-              ? 'Site Not Published'
-              : 'Site Not Found'}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Site Not Found</h1>
           <p className="text-gray-600 mb-6">
-            {error ||
-              'The site you are looking for does not exist or has not been published yet.'}
+            The site you are looking for does not exist or has not been published yet.
           </p>
           <div className="text-sm text-gray-500">
             <p>Site ID: {siteId}</p>
@@ -121,16 +139,7 @@ export default function SitePage({ params }: SitePageProps) {
     );
   }
 
-  return (
-    <>
-      {/* Next.js Head equivalent - metadata would be set via Next.js metadata API in production */}
-      <title>{siteData.siteConfig.title}</title>
-      <meta name="description" content={siteData.siteConfig.description} />
+  const sections = siteData.pages?.[0]?.sections || [];
 
-      {/* Render the first page's sections */}
-      <RenderEngine
-        sections={siteData.pages[0]?.sections || []}
-      />
-    </>
-  );
+  return <RenderEngine sections={sections as any} />;
 }
