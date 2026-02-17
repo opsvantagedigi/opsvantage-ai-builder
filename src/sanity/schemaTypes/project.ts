@@ -37,7 +37,6 @@ export const projectType = defineType({
         name: 'description',
         title: 'Description',
         type: 'text',
-      options: { rows: 3 },
         validation: rule => rule.max(300)
     }),
      defineField({

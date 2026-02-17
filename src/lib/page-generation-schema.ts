@@ -26,7 +26,7 @@ export const pageGenerationResponseSchema = z.object({
         description: z.string(),
         type: z.literal("website"),
       }),
-      structuredData: z.record(z.any()),
+      structuredData: z.record(z.string(), z.any()),
       preindexHints: z.object({
         robots: z.string(),
         priority: z.number(),

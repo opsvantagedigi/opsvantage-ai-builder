@@ -1,24 +1,16 @@
 import { PrismaClient } from "@prisma/client"
-import { Pool } from "@neondatabase/serverless"
 import { PrismaNeon } from "@prisma/adapter-neon"
 import { logger } from "./logger"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
-  prismaPool: Pool | undefined
 }
 
 const databaseUrl =
   process.env.DATABASE_URL ||
   "postgresql://placeholder:placeholder@localhost:5432/placeholder?sslmode=require";
 
-const pool =
-  globalForPrisma.prismaPool ??
-  new Pool({
-    connectionString: databaseUrl,
-  });
-
-const adapter = new PrismaNeon(pool);
+const adapter = new PrismaNeon({ connectionString: databaseUrl });
 
 export const prisma =
   globalForPrisma.prisma ??
@@ -39,7 +31,6 @@ if (process.env.NODE_ENV === "development") {
 }
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prismaPool = pool
   globalForPrisma.prisma = prisma
 }
 
