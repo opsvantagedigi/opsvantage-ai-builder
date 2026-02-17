@@ -14,6 +14,7 @@
     "test:save-flow": "npx tsx scripts/test-save-flow.ts",
     "test:e2e": "npx playwright test",
     "audit:zenith-pulse": "node scripts/zenith-pulse.mjs",
+    "audit:ci": "npm audit --audit-level=high",
     "audit:internal-logic": "npx tsx scripts/internal-logic-pass.ts",
     "gcloud:build": "npx tsx scripts/gcloud-build.ts",
     "gcloud:deploy": "gcloud builds submit --config cloudbuild.yaml .",
