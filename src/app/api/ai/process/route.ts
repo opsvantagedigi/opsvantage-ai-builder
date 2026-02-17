@@ -5,6 +5,7 @@ import { createSanityClient } from "@/lib/sanity"
 import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 import { rateLimit } from "@/lib/rate-limit"
+import { optimizeGeneratedPageSeo } from "@/lib/ai/seo-optimization-engine"
 
 // Basic rate limiter: 10 requests per minute
 const limiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
@@ -101,13 +102,27 @@ ${JSON.stringify(task.payload, null, 2)}
     if (task.project.sanityDataset) {
         const sanity = createSanityClient(task.project.sanityDataset!)
         for (const page of ai.pages) {
+            const optimizedPage = optimizeGeneratedPageSeo({
+              page: {
+                title: page.title,
+                slug: page.slug,
+                metaDescription: page?.seo?.metaDescription,
+                sections: page.sections,
+              },
+              onboarding: (task.payload ?? {}) as Record<string, unknown>,
+              siteUrl: process.env.NEXT_PUBLIC_APP_URL,
+            });
+
             await sanity.createOrReplace({
                 _id: page.slug === "home" ? "home" : `page-${page.slug}`,
                 _type: "page",
                 title: page.title,
                 slug: { current: page.slug },
                 sections: page.sections,
-                seo: page.seo || {}
+                seo: {
+                  ...(page.seo || {}),
+                  ...optimizedPage.seo,
+                }
             })
         }
     } else {

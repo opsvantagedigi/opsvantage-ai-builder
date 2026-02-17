@@ -35,8 +35,9 @@ yarn-error.log*
 pnpm-lock.yaml
 .pnpm
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files (secrets)
+.env
+.env.*
 
 # vercel
 .vercel
@@ -47,12 +48,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
-.env*.local
-
 # Ignore temporary build directories and Claude Code temporary files
 tmpclaude-*/
 tmpclaude-*
 
 .vercel
-.env*.local
 /playwright-report/

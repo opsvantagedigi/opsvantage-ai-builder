@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: '.next-build',
+  turbopack: {},
   typescript: {
     ignoreBuildErrors: false,
-  },
-  eslint: {
-    ignoreDuringBuilds: false,
   },
   generateBuildId: () => 'zenith-build-' + Date.now(),
   webpack: (config, { isServer }) => {

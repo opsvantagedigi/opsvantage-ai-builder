@@ -1,8 +1,4 @@
-import nextDynamic from "next/dynamic";
-
-const StudioClient = nextDynamic(() => import("./studio-client"), {
-  ssr: false,
-});
+import StudioClient from "./studio-client";
 
 export const dynamic = "force-dynamic";
 

@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { SiteShell } from "@/components/layout/SiteShell";
 import PWARegister from "@/components/PWARegister";
 import { SITE_URL } from "@/lib/site-config";
+import { resolveBrandOverrideFromRequest } from "@/lib/branding/brand-override";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -16,7 +17,7 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   manifest: "/manifest.json",
   title: "OpsVantage Digital | Sovereign Enterprise AI",
@@ -45,19 +46,48 @@ export const metadata: Metadata = {
   },
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const brandOverride = await resolveBrandOverrideFromRequest();
+  if (!brandOverride) {
+    return baseMetadata;
+  }
+
+  const brandTitle = `${brandOverride.workspaceName} | Powered by OpsVantage`;
+  const brandDescription = `${brandOverride.workspaceName} dashboard experience powered by OpsVantage autonomous infrastructure.`;
+
+  return {
+    ...baseMetadata,
+    title: brandTitle,
+    description: brandDescription,
+    openGraph: {
+      ...baseMetadata.openGraph,
+      title: brandTitle,
+      description: brandDescription,
+      siteName: brandOverride.workspaceName,
+    },
+    twitter: {
+      ...baseMetadata.twitter,
+      title: brandTitle,
+      description: brandDescription,
+    },
+  };
+}
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#0A0A0A",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const brandOverride = await resolveBrandOverrideFromRequest();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-brand-workspace={brandOverride?.workspaceId ?? "default"}>
       <body suppressHydrationWarning className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
         <ThemeProvider>
           <PWARegister />

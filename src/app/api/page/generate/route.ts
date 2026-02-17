@@ -8,6 +8,7 @@ import { withErrorHandling } from "@/lib/api-error"
 import { logger } from "@/lib/logger"
 import generateValidatedJSON from "@/lib/ai"
 import { pageGenerationResponseSchema } from "@/lib/page-generation-schema"
+import { optimizeGeneratedPageSeo } from "@/lib/ai/seo-optimization-engine"
 
 export const POST = withErrorHandling(async (req) => {
   // Lazily instantiate AI client to avoid import-time failures
@@ -43,6 +44,8 @@ export const POST = withErrorHandling(async (req) => {
   sitemapNodeRef = sitemapNode ?? null;
   userPromptRef = userPrompt ?? null;
 
+  const onboarding = await prisma.onboarding.findUnique({ where: { projectId: project.id } })
+
   // Build prompt
   let prompt = "Generate a website page JSON."
   if (sitemapNode) {
@@ -51,12 +54,26 @@ export const POST = withErrorHandling(async (req) => {
   if (userPrompt) {
     prompt += `\nUser prompt: ${userPrompt}`
   }
+  prompt += `\nAlso include SEO intent in the copy so the page is index-ready.`
   prompt += `\nRespond ONLY with valid JSON matching this schema: ${pageGenerationResponseSchema.toString()}`
 
   logger.info(`Page generation prompt. Project ID: ${project.id}`)
 
   try {
     const validated = await generateValidatedJSON(genAI, prompt, pageGenerationResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
+    const optimizedPage = optimizeGeneratedPageSeo({
+      page: validated,
+      onboarding: {
+        businessName: onboarding?.businessName ?? undefined,
+        businessType: onboarding?.businessType ?? undefined,
+        industry: onboarding?.industry ?? undefined,
+        description: onboarding?.description ?? undefined,
+        brandVoice: onboarding?.brandVoice ?? undefined,
+        targetAudience: onboarding?.targetAudience ?? undefined,
+        goals: onboarding?.goals ?? undefined,
+      },
+      siteUrl: process.env.NEXT_PUBLIC_APP_URL,
+    })
 
     // Persist AiTask
     const aiTask = await prisma.aiTask.create({
@@ -65,12 +82,12 @@ export const POST = withErrorHandling(async (req) => {
         type: "SITEMAP_TO_PAGES",
         provider: "GEMINI",
         payload: { sitemapNode: sitemapNodeRef as any, prompt: userPromptRef },
-        result: validated,
+        result: optimizedPage as any,
         status: "COMPLETED",
       }
     })
 
-    return NextResponse.json({ ok: true, page: validated, aiTaskId: aiTask.id })
+    return NextResponse.json({ ok: true, page: optimizedPage, aiTaskId: aiTask.id })
   } catch (err: unknown) {
     const e = err as Error
     logger.error(`Page generation failed. Error: ${String(e)}`)

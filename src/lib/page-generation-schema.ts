@@ -15,6 +15,25 @@ export const pageGenerationResponseSchema = z.object({
   metaDescription: z.string().optional(),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   sections: z.array(pageSectionSchema),
+  seo: z
+    .object({
+      metaTitle: z.string(),
+      metaDescription: z.string(),
+      canonicalUrl: z.string().url(),
+      keywords: z.array(z.string()),
+      openGraph: z.object({
+        title: z.string(),
+        description: z.string(),
+        type: z.literal("website"),
+      }),
+      structuredData: z.record(z.any()),
+      preindexHints: z.object({
+        robots: z.string(),
+        priority: z.number(),
+        changeFrequency: z.enum(["daily", "weekly", "monthly"]),
+      }),
+    })
+    .optional(),
 })
 
 export type PageGenerationResponse = z.infer<typeof pageGenerationResponseSchema>
