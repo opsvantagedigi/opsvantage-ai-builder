@@ -1,29 +1,4 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { isValidSovereignKey } from "@/lib/sovereign-auth";
-
-async function grantSovereignAccess(formData: FormData) {
-  "use server";
-
-  const input = String(formData.get("password") ?? "");
-
-  if (!isValidSovereignKey(input)) {
-    redirect("/sovereign-access?error=invalid");
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set("zenith_admin_token", "sovereign", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    domain: process.env.NODE_ENV === "production" ? ".opsvantagedigital.online" : undefined,
-    path: "/",
-    maxAge: 60 * 60 * 12,
-  });
-
-  redirect("/admin/dashboard");
-}
 
 export default async function SovereignAccessPage({
   searchParams,
@@ -41,7 +16,7 @@ export default async function SovereignAccessPage({
           <h1 className="mt-3 text-3xl font-semibold text-amber-200">Command Center Access</h1>
           <p className="mt-2 text-sm text-slate-400">Authenticate with your master key to unlock Sovereign controls.</p>
 
-          <form action={grantSovereignAccess} className="mt-8 space-y-4">
+          <form method="post" action="/sovereign-access/submit" className="mt-8 space-y-4">
             <input
               id="username"
               name="username"
