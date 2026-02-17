@@ -6,21 +6,41 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-const databaseUrl =
-  process.env.DATABASE_URL ||
+const primaryDatabaseUrl = process.env.DATABASE_URL || "";
+const fallbackDatabaseUrl = process.env.DATABASE_URL_FALLBACK || "";
+
+let activeDatabaseUrl =
+  primaryDatabaseUrl ||
+  fallbackDatabaseUrl ||
   "postgresql://placeholder:placeholder@localhost:5432/placeholder?sslmode=require";
 
-const adapter = new PrismaNeon({ connectionString: databaseUrl });
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createClient(connectionString: string) {
+  const adapter = new PrismaNeon({ connectionString });
+  return new PrismaClient({
     adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
-  })
+  });
+}
+
+export let prisma: PrismaClient = globalForPrisma.prisma ?? createClient(activeDatabaseUrl);
+
+function failoverToFallback() {
+  if (!fallbackDatabaseUrl) return false;
+  if (activeDatabaseUrl === fallbackDatabaseUrl) return false;
+
+  activeDatabaseUrl = fallbackDatabaseUrl;
+  prisma = createClient(activeDatabaseUrl);
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = prisma;
+  }
+
+  logger.warn("Prisma failover engaged: switched to DATABASE_URL_FALLBACK");
+  return true;
+}
 
 // Add connection monitoring/logging for dev
 if (process.env.NODE_ENV === "development") {
@@ -40,6 +60,7 @@ export async function withRetry<T>(
   delay = 100
 ): Promise<T> {
   let lastError: unknown;
+  let attemptedFailover = false;
   
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -56,6 +77,15 @@ export async function withRetry<T>(
         errAny?.code === 'P1017' || // Server closed connection
         errAny?.message?.includes('connection closed') ||
         errAny?.message?.includes('Client has already been released');
+
+      if (isTransient && !attemptedFailover && fallbackDatabaseUrl) {
+        attemptedFailover = true;
+        const swapped = failoverToFallback();
+        if (swapped) {
+          logger.warn(`Retrying database operation after failover (${i + 1}/${maxRetries}).`);
+          continue;
+        }
+      }
 
       if (!isTransient || i === maxRetries - 1) {
         throw error;
