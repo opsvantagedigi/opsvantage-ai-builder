@@ -1,16 +1,13 @@
-name: Security Audit
+name: Security Audit Gate
 
 on:
   push:
     branches: ["main"]
   pull_request:
-  schedule:
-    - cron: "0 5 * * 1"
 
 jobs:
-  npm-audit:
+  audit:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,11 +15,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit high/critical vulnerabilities
-        run: npm run audit:ci
+      - name: Audit gate (high/critical only)
+        run: npm run audit:strict

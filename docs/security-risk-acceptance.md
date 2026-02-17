@@ -1,30 +1,37 @@
-# Security Risk Acceptance (Current)
+# Security Risk Acceptance Register
 
-Date: 2026-02-17
+Date: 2026-02-17  
+Repository: opsvantage-ai-builder  
+Owner: Engineering
 
-## Current posture
-- `npm audit` reports 8 vulnerabilities.
-- Severity split: 0 critical, 0 high, 8 moderate.
-- CI gate is configured to fail only on high/critical via `npm run audit:ci`.
+## Scope
+This register documents currently accepted vulnerabilities after remediation and major-platform upgrades (Next 16, React 19, Prisma 7.4).
 
-## Accepted residual risk
-The remaining moderate vulnerabilities are transitive dependencies pulled by Prisma's current dev-tooling chain in the Prisma 7 line.
+## Current Security Posture
+- High vulnerabilities: 0
+- Critical vulnerabilities: 0
+- Remaining vulnerabilities: Moderate only (transitive)
 
-Observed chain:
-- `prisma` -> `@prisma/dev` -> `@mrleebo/prisma-ast` / `hono` / `chevrotain` / nested `lodash`
+## Accepted Residual Risk
+### Prisma Toolchain Transitive Moderates
+The remaining moderate advisories are introduced through Prisma internal development tooling (`@prisma/dev`) and its parser chain (`@mrleebo/prisma-ast`, `chevrotain`, transitive `lodash`) plus transitive `hono` advisories from that same path.
 
-## Rationale
-- Platform is intentionally pinned to Prisma 7+ for current architecture and compatibility.
-- Suggested npm remediation path attempts to move to Prisma 6.19.2, which is a major downgrade from our approved runtime stack.
-- No high/critical findings remain after hardening.
+#### Why accepted for now
+1. No high/critical findings remain.
+2. The vulnerable packages are transitive and not directly imported in application runtime code.
+3. npm recommends a downgrade path (`prisma@6.19.2`) as the automatic fix, which conflicts with the adopted Prisma 7.4 baseline.
+4. Build and runtime validations pass on the upgraded stack.
 
-## Controls in place
-- Automated GitHub Action audit on push/PR and weekly schedule.
-- CI fails on high/critical vulnerabilities.
-- Manual periodic review of moderate findings during dependency maintenance windows.
+#### Mitigations in place
+- CI audit gate fails on any high/critical findings (`npm run audit:strict`).
+- Dependency upgrades are tracked and applied regularly.
+- Runtime attack surface hardened via role checks, auth middleware/proxy, and outbound allowlists.
 
-## Exit criteria for this acceptance
-This acceptance should be revisited when any of the following occurs:
-1. Prisma upstream resolves the transitive moderate advisories in Prisma 7+.
-2. A moderate finding in this chain is upgraded to high/critical severity.
-3. A policy change requires zero moderate vulnerabilities.
+## Revisit Criteria
+Reassess this risk immediately when one of the following occurs:
+- Prisma publishes an upstream fix removing these transitive advisories in Prisma 7+.
+- A moderate advisory is reclassified to high/critical.
+- New exploitability evidence indicates practical runtime impact in this project context.
+
+## Next Review Date
+2026-03-17
