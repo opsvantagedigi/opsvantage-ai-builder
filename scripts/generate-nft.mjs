@@ -4,10 +4,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = process.env.NEXT_DIST_DIR || '.next-build';
 
-const nftPath = path.join(__dirname, '..', '.next', 'server', 'middleware.js.nft.json');
-const middlewareManifestPath = path.join(__dirname, '..', '.next', 'server', 'middleware-manifest.json');
-const middlewareJsPath = path.join(__dirname, '..', '.next', 'server', 'middleware.js');
+const nftPath = path.join(__dirname, '..', distDir, 'server', 'middleware.js.nft.json');
+const middlewareManifestPath = path.join(__dirname, '..', distDir, 'server', 'middleware-manifest.json');
+const middlewareJsPath = path.join(__dirname, '..', distDir, 'server', 'middleware.js');
 
 // Check if middleware.js.nft.json already exists
 if (fs.existsSync(nftPath)) {

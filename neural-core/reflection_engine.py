@@ -22,7 +22,9 @@ MIN_SENTINEL_INTERVAL_SECONDS = int(os.getenv("MIN_SENTINEL_INTERVAL_SECONDS", "
 
 ALLOWED_OUTBOUND_HOSTS = {
     "api.tavily.com",
+    "opsvantage-ai-builder-1018462465472.europe-west4.run.app",
     "opsvantage-ai-builder-1018462465472.us-central1.run.app",
+    "opsvantage-ai-builder-xge3xydmha-ez.a.run.app",
 }
 
 

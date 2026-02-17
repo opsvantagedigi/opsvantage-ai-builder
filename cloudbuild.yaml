@@ -11,9 +11,11 @@ steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   args: ['run', 'deploy', 'opsvantage-ai-builder',
          '--image', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder',
-         '--region', 'us-central1',
+         '--region', 'europe-west4',
          '--platform', 'managed',
          '--allow-unauthenticated',
+         '--min-instances', '1',
+         '--max-instances', '6',
          '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN},NEXT_PUBLIC_VAPID_PUBLIC_KEY=${_NEXT_PUBLIC_VAPID_PUBLIC_KEY}',
          '--set-secrets', 'SOVEREIGN_PASSWORD=${_SOVEREIGN_PASSWORD_SECRET}:latest,PUSH_SERVICE_TOKEN=${_PUSH_SERVICE_TOKEN_SECRET}:latest,VAPID_PRIVATE_KEY=${_VAPID_PRIVATE_KEY_SECRET}:latest,VAPID_SUBJECT=${_VAPID_SUBJECT_SECRET}:latest',
          '--port', '8080',
@@ -24,7 +26,7 @@ images:
 - 'gcr.io/$PROJECT_ID/opsvantage-ai-builder'
 
 substitutions:
-  _NEXT_PUBLIC_NEURAL_CORE_URL: 'https://marz-neural-core-xge3xydmha-ez.a.run.app'
+  _NEXT_PUBLIC_NEURAL_CORE_URL: 'https://marz-neural-core-1018462465472.europe-west4.run.app'
   _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL: ''
   _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN: ''
   _NEXT_PUBLIC_VAPID_PUBLIC_KEY: 'BBB9aV3pwuYlwNSk-KlYchgyBkxXVfOD76rMaeNK9xaP62DN_2PTIRhjTTeCXF3E1pR2wcV50RAhe4od2HFiDsE'

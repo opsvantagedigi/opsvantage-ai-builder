@@ -19,13 +19,16 @@
     "gcloud:deploy": "gcloud builds submit --config cloudbuild.yaml .",
     "gcloud:deploy:neural-core": "gcloud builds submit --config neural-core/cloudbuild.neural-core.yaml ./neural-core",
     "gcloud:scheduler:reflection": "pwsh -ExecutionPolicy Bypass -File ./scripts/setup-reflection-scheduler.ps1",
-    "test:jest": "jest --passWithNoTests",
+    "slo:probe": "pwsh -ExecutionPolicy Bypass -File ./scripts/uptime-probe.ps1",
+    "test:enterprise:v1": "node ./scripts/test-suite-enterprise-v1.mjs",
+    "test:jest": "jest --config jest.config.js --passWithNoTests",
     "test:cypress": "cypress run"
   },
   "dependencies": {
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@google-cloud/monitoring": "^5.3.1",
     "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^0.10.0",
     "@next/env": "^16.1.6",

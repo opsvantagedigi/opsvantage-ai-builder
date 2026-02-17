@@ -19,7 +19,7 @@ steps:
       '--gpu', '1',
       '--gpu-type', '${_GPU_TYPE}',
       '--concurrency', '1',
-      '--min-instances', '0',
+      '--min-instances', '1',
       '--max-instances', '1',
       '--port', '8080',
       '--set-env-vars', 'CONSTITUTION_PATH=${_CONSTITUTION_PATH},VECTOR_STORE_PATH=${_VECTOR_STORE_PATH},PUSH_SERVICE_URL=${_PUSH_SERVICE_URL}',
@@ -51,7 +51,7 @@ substitutions:
   _MEMORY_VAULT_URL_SECRET: 'MEMORY_VAULT_URL'
   _VECTOR_STORE_PATH: '/workspace/neural-core/data/chroma'
   _TAVILY_API_KEY_SECRET: 'TAVILY_API_KEY'
-  _PUSH_SERVICE_URL: 'https://opsvantage-ai-builder-1018462465472.us-central1.run.app/api/marz/push/dispatch'
+  _PUSH_SERVICE_URL: 'https://opsvantage-ai-builder-1018462465472.europe-west4.run.app/api/marz/push/dispatch'
   _PUSH_SERVICE_TOKEN_SECRET: 'PUSH_SERVICE_TOKEN'
 
 timeout: '3600s'

@@ -11,10 +11,11 @@ from urllib.parse import urlparse
 
 import httpx
 import soundfile as sf
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from reflection_engine import run_once as run_reflection_once
 from voice_config import VOICE_PARAMS, apply_wit_filter
 
 
@@ -48,7 +49,9 @@ settings = Settings()
 
 ALLOWED_OUTBOUND_HOSTS = {
     "api.tavily.com",
+    "opsvantage-ai-builder-1018462465472.europe-west4.run.app",
     "opsvantage-ai-builder-1018462465472.us-central1.run.app",
+    "opsvantage-ai-builder-xge3xydmha-ez.a.run.app",
 }
 
 
@@ -627,6 +630,18 @@ async def health() -> JSONResponse:
             "hibernate_configured": bool(settings.hibernate_webhook_url),
         }
     )
+
+
+@app.post("/api/reflection/trigger")
+async def reflection_trigger(request: Request) -> JSONResponse:
+    expected_token = os.getenv("REFLECTION_TRIGGER_TOKEN", "").strip()
+    if expected_token:
+        provided = request.headers.get("authorization", "")
+        if provided != f"Bearer {expected_token}":
+            return JSONResponse({"ok": False, "error": "Unauthorized"}, status_code=401)
+
+    result = await asyncio.to_thread(run_reflection_once)
+    return JSONResponse(result)
 
 
 async def decode_voice_to_text(payload: GatewayRequest) -> str:

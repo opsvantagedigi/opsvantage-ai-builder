@@ -1,0 +1,23 @@
+{
+  "suite": "TestSuite_Enterprise_V1",
+  "startedAt": "2026-02-16T11:40:44.218Z",
+  "finishedAt": "2026-02-16T11:42:32.079Z",
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "accuracy": 100,
+  "status": "PASS",
+  "videoLinkUnlocked": true,
+  "results": [
+    {
+      "check": "Build",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "check": "Jest",
+      "status": "PASS",
+      "exitCode": 0
+    }
+  ]
+}

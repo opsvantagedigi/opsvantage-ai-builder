@@ -1,85 +1,141 @@
 param(
+  [Parameter(Mandatory = $false)]
   [string]$ProjectId = "opsvantage-ai-builder",
-  [string]$RunRegion = "europe-west4",
-  [string]$SchedulerLocation = "us-central1"
+
+  [Parameter(Mandatory = $false)]
+  [string]$SchedulerLocation = "us-central1",
+
+  [Parameter(Mandatory = $false)]
+  [string]$JobName = "marz-reflection-trigger",
+
+  [Parameter(Mandatory = $false)]
+  [string]$Schedule = "0 * * * *",
+
+  [Parameter(Mandatory = $false)]
+  [string]$MarzNeuralCoreUrl = "https://marz-neural-core-1018462465472.europe-west4.run.app",
+
+  [Parameter(Mandatory = $false)]
+  [string]$MessageBody = "{}"
 )
 
 $ErrorActionPreference = "Stop"
 
-function Invoke-GCloudCommand {
+function Invoke-GCloud {
   param(
     [Parameter(Mandatory = $true)]
-    [string[]]$Arguments
+    [string[]]$Arguments,
+
+    [Parameter(Mandatory = $true)]
+    [int]$ExitCode
   )
 
-  & gcloud @Arguments
-  if ($LASTEXITCODE -ne 0) {
-    throw "gcloud command failed: gcloud $($Arguments -join ' ')"
+  try {
+    & gcloud @Arguments
+    if ($LASTEXITCODE -ne 0) {
+      throw "gcloud exited with code $LASTEXITCODE"
+    }
+  }
+  catch {
+    Write-Error "gcloud command failed: gcloud $($Arguments -join ' ')"
+    exit $ExitCode
   }
 }
 
-$projectNumber = (& gcloud projects describe $ProjectId --format="value(projectNumber)").Trim()
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($projectNumber)) {
-  throw "Unable to resolve project number for $ProjectId"
-}
-
-$serviceAccount = "$projectNumber-compute@developer.gserviceaccount.com"
-$runJobUri = "https://run.googleapis.com/v2/projects/$ProjectId/locations/$RunRegion/jobs/marz-reflection-engine:run"
-
-Write-Host "Enabling required APIs..."
-Invoke-GCloudCommand -Arguments @("services", "enable", "cloudscheduler.googleapis.com", "run.googleapis.com", "--project", $ProjectId)
-
-Write-Host "Granting Cloud Run job invoke role to $serviceAccount..."
-Invoke-GCloudCommand -Arguments @(
-  "run", "jobs", "add-iam-policy-binding", "marz-reflection-engine",
-  "--project", $ProjectId,
-  "--region", $RunRegion,
-  "--member", "serviceAccount:$serviceAccount",
-  "--role", "roles/run.invoker"
-)
-
-function Set-SchedulerJob {
+function Test-SchedulerJobExists {
   param(
     [Parameter(Mandatory = $true)]
     [string]$Name,
+
     [Parameter(Mandatory = $true)]
-    [string]$Schedule,
+    [string]$Project,
+
     [Parameter(Mandatory = $true)]
-    [string]$Description,
-    [Parameter(Mandatory = $true)]
-    [string]$MessageBody
+    [string]$Location
   )
 
-  & gcloud scheduler jobs describe $Name --project $ProjectId --location $SchedulerLocation | Out-Null
-  $exists = ($LASTEXITCODE -eq 0)
-  $action = "create"
-  if ($exists) {
-    $action = "update"
+  try {
+    & gcloud scheduler jobs describe $Name --project $Project --location $Location | Out-Null
+    return ($LASTEXITCODE -eq 0)
   }
-
-  $verb = "Creating"
-  if ($exists) {
-    $verb = "Updating"
+  catch {
+    return $false
   }
-
-  $baseArgs = @(
-    "scheduler", "jobs", $action, "http", $Name,
-    "--project", $ProjectId,
-    "--location", $SchedulerLocation,
-    "--schedule", $Schedule,
-    "--uri", $runJobUri,
-    "--http-method", "POST",
-    "--oauth-service-account-email", $serviceAccount,
-    "--oauth-token-scope", "https://www.googleapis.com/auth/cloud-platform",
-    "--description", $Description,
-    "--message-body", $MessageBody
-  )
-
-  Write-Host "$verb scheduler job: $Name"
-  Invoke-GCloudCommand -Arguments $baseArgs
 }
 
-Set-SchedulerJob -Name "marz-reflection-15m" -Schedule "*/15 * * * *" -Description "MARZ reflection loop every 15 minutes" -MessageBody "{}"
-Set-SchedulerJob -Name "marz-sentinel-4h" -Schedule "0 */4 * * *" -Description "MARZ sentinel pulse every 4 hours" -MessageBody "{}"
+function New-LegacySchedulerJob {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Name,
 
-Write-Host "Cloud Scheduler jobs configured successfully."
+    [Parameter(Mandatory = $true)]
+    [string]$Project,
+
+    [Parameter(Mandatory = $true)]
+    [string]$Location,
+
+    [Parameter(Mandatory = $true)]
+    [string]$Cron,
+
+    [Parameter(Mandatory = $true)]
+    [string]$TargetUrl,
+
+    [Parameter(Mandatory = $true)]
+    [string]$Body
+  )
+
+  $exists = Test-SchedulerJobExists -Name $Name -Project $Project -Location $Location
+  $action = if ($exists) { "update" } else { "create" }
+
+  $commandArgs = @(
+    "scheduler",
+    "jobs",
+    $action,
+    "http",
+    $Name,
+    "--project",
+    $Project,
+    "--location",
+    $Location,
+    "--schedule",
+    $Cron,
+    "--http-method",
+    "POST",
+    "--uri",
+    $TargetUrl,
+    "--description",
+    "MARZ hourly reflection trigger",
+    "--message-body",
+    $Body,
+    "--headers",
+    "Content-Type=application/json"
+  )
+
+  Write-Host "$(if ($exists) { 'Updating' } else { 'Creating' }) scheduler job: $Name"
+  Invoke-GCloud -Arguments $commandArgs -ExitCode 31
+}
+
+try {
+  Write-Host "Enabling Cloud Scheduler API..."
+  Invoke-GCloud -Arguments @("services", "enable", "cloudscheduler.googleapis.com", "--project", $ProjectId) -ExitCode 11
+
+  $normalizedCoreUrl = $MarzNeuralCoreUrl.TrimEnd("/")
+  $targetUrl = "$normalizedCoreUrl/api/reflection/trigger"
+
+  New-LegacySchedulerJob `
+    -Name $JobName `
+    -Project $ProjectId `
+    -Location $SchedulerLocation `
+    -Cron $Schedule `
+    -TargetUrl $targetUrl `
+    -Body $MessageBody
+
+  Write-Host "Scheduler reconstruction complete."
+  Write-Host "Job: $JobName"
+  Write-Host "Schedule: $Schedule"
+  Write-Host "Target: $targetUrl"
+  exit 0
+}
+catch {
+  Write-Error "Unhandled scheduler reconstruction error: $($_.Exception.Message)"
+  exit 99
+}
