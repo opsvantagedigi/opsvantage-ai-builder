@@ -17,6 +17,7 @@ async function grantSovereignAccess(formData: FormData) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
+    domain: process.env.NODE_ENV === "production" ? ".opsvantagedigital.online" : undefined,
     path: "/",
     maxAge: 60 * 60 * 12,
   });

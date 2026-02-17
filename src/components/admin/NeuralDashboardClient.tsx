@@ -107,7 +107,6 @@ export default function NeuralDashboardClient({
 
   useEffect(() => {
     if (!mounted) return;
-    if (process.env.NODE_ENV === "production") return;
 
     let isActive = true;
 
