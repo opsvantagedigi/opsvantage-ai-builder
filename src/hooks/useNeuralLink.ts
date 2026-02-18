@@ -139,7 +139,8 @@ export function useNeuralLink({
   const statusRef = useRef<NeuralLinkStatus>('idle');
 
   const effectiveWsUrl = wsUrl || resolveDefaultWsUrl();
-  const effectiveWakeUrl = wakeUrl || process.env.NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL || '';
+  const configuredWakeUrl = wakeUrl || process.env.NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL;
+  const effectiveWakeUrl = configuredWakeUrl?.trim() || '/api/orchestrator/wake';
   const effectiveWakeToken = wakeToken || process.env.NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN || '';
 
   useEffect(() => {

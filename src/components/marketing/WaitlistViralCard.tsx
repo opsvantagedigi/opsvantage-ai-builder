@@ -253,6 +253,8 @@ export function WaitlistViralCard() {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
+          id="waitlist-email"
+          name="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email address"

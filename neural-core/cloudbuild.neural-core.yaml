@@ -18,7 +18,7 @@ steps:
       '--memory', '32Gi',
       '--gpu', '1',
       '--gpu-type', '${_GPU_TYPE}',
-      '--concurrency', '1',
+      '--concurrency', '10',
       '--min-instances', '1',
       '--max-instances', '1',
       '--port', '8080',

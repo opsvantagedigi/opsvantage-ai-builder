@@ -7,7 +7,14 @@ export function WebVitalsReporter() {
     const name = String(metric.name ?? "");
     if (name !== "CLS" && name !== "LCP") return;
 
-    void fetch("/api/metrics/vitals", {
+    const metricsEndpoint = (process.env.NEXT_PUBLIC_METRICS_URL || "").trim();
+    const url = metricsEndpoint
+      ? metricsEndpoint.startsWith("http")
+        ? metricsEndpoint
+        : `${window.location.origin}${metricsEndpoint}`
+      : "/api/metrics/vitals";
+
+    void fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

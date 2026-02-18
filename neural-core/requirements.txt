@@ -11,3 +11,7 @@ httpx==0.28.1
 ffmpeg-python==0.2.0
 vllm==0.7.2
 TTS==0.22.0
+transformers==4.38.2
+tokenizers==0.15.2
+huggingface-hub==0.20.3
+sentencepiece==0.1.99
