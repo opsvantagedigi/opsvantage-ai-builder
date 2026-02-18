@@ -8,7 +8,6 @@ import {
   Mic,
   Radio,
 } from 'lucide-react';
-import { io, type Socket } from 'socket.io-client';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -38,10 +37,8 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
   const [isActivating, setIsActivating] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
-  const [socketReady, setSocketReady] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const neuralCoreSocketRef = useRef<Socket | null>(null);
 
   const appendLog = (message: ChatMessage) => {
     setLogs((prev) => [...prev, message]);
@@ -64,34 +61,6 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
     setIsProcessing(true);
 
     try {
-      const socket = neuralCoreSocketRef.current;
-      if (socket && socketReady) {
-        const socketResponse = await new Promise<{ content?: string; text?: string; timestamp?: string; isError?: boolean } | null>((resolve) => {
-          const timer = setTimeout(() => resolve(null), 1200);
-          socket.emit(
-            'neural-core-command',
-            {
-              message: normalized,
-              history: logs.slice(-10),
-            },
-            (ack: { content?: string; text?: string; timestamp?: string; isError?: boolean } | null) => {
-              clearTimeout(timer);
-              resolve(ack);
-            }
-          );
-        });
-
-        if (socketResponse && (socketResponse.content || socketResponse.text)) {
-          appendLog({
-            role: 'assistant',
-            content: String(socketResponse.content || socketResponse.text || ''),
-            timestamp: socketResponse.timestamp || new Date().toISOString(),
-            isError: Boolean(socketResponse.isError),
-          });
-          return;
-        }
-      }
-
       const response = await fetch('/api/marz/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,68 +112,7 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
   }, []);
 
   useEffect(() => {
-    const neuralCoreUrl = process.env.NEXT_PUBLIC_NEURAL_CORE_URL;
-    if (!neuralCoreUrl) {
-      setSocketReady(false);
-      return;
-    }
-
-    const socket = io(neuralCoreUrl, {
-      transports: ['websocket'],
-      timeout: 3000,
-      reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 1000,
-      withCredentials: true,
-    });
-
-    neuralCoreSocketRef.current = socket;
-
-    socket.on('connect', () => {
-      setSocketReady(true);
-      appendLog({
-        role: 'system',
-        content: '[MARZ]: Neural Core bridge connected. Commands routing over low-latency stream.',
-        timestamp: new Date().toISOString(),
-      });
-    });
-
-    socket.on('connect_error', () => {
-      setSocketReady(false);
-      appendLog({
-        role: 'system',
-        content: '[MARZ]: Neural Core bridge unavailable. Reverting to REST command path.',
-        timestamp: new Date().toISOString(),
-        isError: true,
-      });
-    });
-
-    socket.on('disconnect', () => {
-      setSocketReady(false);
-    });
-
-    socket.on('neural-core-stream', (payload: { content?: string; text?: string; timestamp?: string; isError?: boolean } | string) => {
-      const content = typeof payload === 'string' ? payload : String(payload?.content || payload?.text || '').trim();
-      if (!content) {
-        return;
-      }
-
-      appendLog({
-        role: 'assistant',
-        content,
-        timestamp: typeof payload === 'string' ? new Date().toISOString() : payload.timestamp || new Date().toISOString(),
-        isError: typeof payload === 'string' ? false : Boolean(payload.isError),
-      });
-    });
-
-    return () => {
-      socket.off('connect');
-      socket.off('connect_error');
-      socket.off('disconnect');
-      socket.off('neural-core-stream');
-      socket.disconnect();
-      neuralCoreSocketRef.current = null;
-    };
+    return;
   }, []);
 
   useEffect(() => {
@@ -360,8 +268,8 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 px-4 py-3">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
           <Terminal className="h-4 w-4" /> MARZ Operator Console
-          <span className={`ml-2 inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${socketReady ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-amber-500/30 bg-amber-500/10 text-amber-200'}`}>
-            Neural Core {socketReady ? 'Live' : 'Fallback'}
+          <span className="ml-2 inline-flex items-center rounded border border-slate-700 bg-slate-900/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-200">
+            REST Mode
           </span>
         </div>
 

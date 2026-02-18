@@ -20,12 +20,59 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   const [messageText, setMessageText] = useState('');
   const [chat, setChat] = useState<ChatItem[]>([]);
   const [isAwakening, setIsAwakening] = useState(false);
+  const [resolvedWsUrl, setResolvedWsUrl] = useState<string | undefined>(wsUrl);
+  const hasSentHandshakeRef = useRef(false);
 
   const { status, stream, lastEvent, lastError, connect, sendMessage, wakeContainer } = useNeuralLink({
-    wsUrl,
+    wsUrl: resolvedWsUrl,
     wakeUrl,
     autoConnect: true,
   });
+
+  useEffect(() => {
+    if (wsUrl) {
+      setResolvedWsUrl(wsUrl);
+      return;
+    }
+
+    let cancelled = false;
+    const loadRuntimeConfig = async () => {
+      try {
+        const response = await fetch('/api/config/public', { cache: 'no-store' });
+        if (!response.ok) return;
+        const payload = (await response.json().catch(() => null)) as { neuralCoreWsUrl?: string } | null;
+        const nextUrl = String(payload?.neuralCoreWsUrl || '').trim();
+        if (!cancelled && nextUrl) {
+          setResolvedWsUrl(nextUrl);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    void loadRuntimeConfig();
+    return () => {
+      cancelled = true;
+    };
+  }, [wsUrl]);
+
+  useEffect(() => {
+    if (status !== 'connected' || hasSentHandshakeRef.current) {
+      return;
+    }
+
+    hasSentHandshakeRef.current = true;
+    try {
+      sendMessage({
+        awakening: true,
+        request_id: `awakening-${Date.now()}`,
+        text: 'Awaken MARZ video presence.',
+      });
+    } catch {
+      // If the socket isn't ready yet, user can press Reconnect.
+      hasSentHandshakeRef.current = false;
+    }
+  }, [sendMessage, status]);
 
   useEffect(() => {
     const eventType = String(lastEvent?.type || '').toLowerCase();
