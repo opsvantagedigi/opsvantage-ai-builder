@@ -19,8 +19,8 @@ function toWsUrl(httpUrl: string) {
 }
 
 export async function GET() {
-  const neuralCoreUrl = String(process.env.NEXT_PUBLIC_NEURAL_CORE_URL || "").trim();
-  const neuralCoreWsUrl = String(process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL || "").trim();
+  const neuralCoreUrl = String(process.env["NEXT_PUBLIC_NEURAL_CORE_URL"] || "").trim();
+  const neuralCoreWsUrl = String(process.env["NEXT_PUBLIC_NEURAL_CORE_WS_URL"] || "").trim();
 
   const resolvedWsUrl = neuralCoreWsUrl || (neuralCoreUrl ? toWsUrl(neuralCoreUrl) : null) || "";
 
@@ -28,7 +28,7 @@ export async function GET() {
     {
       neuralCoreUrl,
       neuralCoreWsUrl: resolvedWsUrl,
-      marzVideoMode: String(process.env.NEXT_PUBLIC_MARZ_VIDEO_MODE || "").trim() || "true",
+      marzVideoMode: String(process.env["NEXT_PUBLIC_MARZ_VIDEO_MODE"] || "").trim() || "true",
     },
     {
       headers: {
