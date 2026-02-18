@@ -23,6 +23,7 @@ RUN git clone https://github.com/Rudrabha/Wav2Lip.git /opt/Wav2Lip
 COPY gateway.py ./gateway.py
 COPY voice_config.py ./voice_config.py
 COPY constitution.md ./constitution.md
+COPY assets ./assets
 COPY reflection_engine.py ./reflection_engine.py
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh

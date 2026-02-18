@@ -29,13 +29,15 @@ function createClient(connectionString: string) {
     model: {
       user: {
         async softDelete(where: Prisma.UserWhereUniqueInput) {
-          return this.update({
+          const ctx = Prisma.getExtensionContext(this);
+          return ctx.update({
             where,
             data: { deletedAt: new Date() },
           });
         },
         async restore(where: Prisma.UserWhereUniqueInput) {
-          return this.update({
+          const ctx = Prisma.getExtensionContext(this);
+          return ctx.update({
             where,
             data: { deletedAt: null },
           });
@@ -43,13 +45,15 @@ function createClient(connectionString: string) {
       },
       project: {
         async softDelete(where: Prisma.ProjectWhereUniqueInput) {
-          return this.update({
+          const ctx = Prisma.getExtensionContext(this);
+          return ctx.update({
             where,
             data: { deletedAt: new Date() },
           });
         },
         async restore(where: Prisma.ProjectWhereUniqueInput) {
-          return this.update({
+          const ctx = Prisma.getExtensionContext(this);
+          return ctx.update({
             where,
             data: { deletedAt: null },
           });
@@ -57,13 +61,15 @@ function createClient(connectionString: string) {
       },
       workspace: {
         async softDelete(where: Prisma.WorkspaceWhereUniqueInput) {
-          return this.update({
+          const ctx = Prisma.getExtensionContext(this);
+          return ctx.update({
             where,
             data: { deletedAt: new Date() },
           });
         },
         async restore(where: Prisma.WorkspaceWhereUniqueInput) {
-          return this.update({
+          const ctx = Prisma.getExtensionContext(this);
+          return ctx.update({
             where,
             data: { deletedAt: null },
           });

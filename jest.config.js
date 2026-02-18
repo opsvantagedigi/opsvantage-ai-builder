@@ -3,6 +3,9 @@ const config = {
   preset: "ts-jest",
   testEnvironment: "node",
   roots: ["<rootDir>/tests/jest"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
   collectCoverage: true,
   collectCoverageFrom: [
     "src/app/api/marz/**/*.ts",
