@@ -304,11 +304,25 @@ model Usage {
 }
 
 model LaunchLead {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  source    String?
-  createdAt DateTime @default(now())
-  notified  Boolean  @default(false)
+  id              String      @id @default(cuid())
+  email           String      @unique
+  source          String?
+  createdAt       DateTime    @default(now())
+  notified        Boolean     @default(false)
+
+  referralCode    String      @unique
+  referredById    String?
+  referredBy      LaunchLead? @relation("LaunchLeadReferrals", fields: [referredById], references: [id])
+  referrals       LaunchLead[] @relation("LaunchLeadReferrals")
+  referralsCount  Int         @default(0)
+
+  wheelPrize      String?
+  wheelPrizeAt    DateTime?
+
+  sovereignFounder Boolean    @default(false)
+
+  @@index([createdAt])
+  @@index([referredById])
 }
 
 model EarlyAccessSignup {

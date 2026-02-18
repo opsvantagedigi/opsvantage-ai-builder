@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, Cpu, Gauge, Globe2, ShieldCheck, Sparkles } f
 import { AuthGuardedCta } from "@/components/auth/AuthGuardedCta";
 import NexusCountdown from "@/components/marketing/NexusCountdown";
 import IntakeForm from "@/components/marketing/IntakeForm";
+import { WaitlistViralCard } from "@/components/marketing/WaitlistViralCard";
 
 const coreCapabilities = [
   {
@@ -47,6 +48,9 @@ function FullLanding() {
   return (
     <div className="mesh-gradient">
       <section className="hero-shell pt-8 pb-8">
+        <div className="mb-8">
+          <WaitlistViralCard />
+        </div>
         <div className="surface-glass p-8 md:p-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-300">
             <Sparkles className="h-3.5 w-3.5" />

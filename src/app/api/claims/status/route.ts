@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
 
   if (!offerId) {
     // Default: only the headline scarcity offer.
-    const wholesale = await getOfferStatus("wholesale-ghost");
-    return NextResponse.json({ offers: { [wholesale.offerId]: wholesale } }, { status: 200 });
+    const sovereign = await getOfferStatus("sovereign-25");
+    return NextResponse.json({ offers: { [sovereign.offerId]: sovereign } }, { status: 200 });
   }
 
   if (!isFoundersOfferId(offerId)) {

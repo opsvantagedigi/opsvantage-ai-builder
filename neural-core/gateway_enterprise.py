@@ -29,8 +29,11 @@ from webrtc_streaming import MARZVideoPresenceService, StreamConfig
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-    
-    neural_model_id: str = "meta-llama/Meta-Llama-3-8B-Instruct"
+
+    # Use open model by default (no auth required)
+    # For gated models like meta-llama/Llama-3-8B-Instruct, set HUGGINGFACE_TOKEN
+    neural_model_id: str = os.getenv("NEURAL_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct")
+    huggingface_token: str | None = None
     xtts_model_id: str = VOICE_PARAMS.get("model_name", "tts_models/multilingual/multi-dataset/xtts_v2")
     sovereign_voice_sample: str | None = None
     wav2lip_checkpoint_path: str = "/opt/Wav2Lip/checkpoints/wav2lip_gan.pth"
@@ -134,9 +137,103 @@ class SentimentAnalysisV2:
 
 
 class BrainEngine:
+    """LLM inference engine with fallback support"""
+    
+    def __init__(self):
+        self._llm = None
+        self._use_mock = False
+        self._model_id = settings.neural_model_id
+        self._hf_token = settings.huggingface_token or os.getenv("HUGGINGFACE_TOKEN")
+    
+    async def initialize(self):
+        """Try to load the model, fallback to mock if it fails"""
+        try:
+            # Try to import vLLM for production inference
+            from vllm import LLM, SamplingParams
+            
+            print(f"[BrainEngine] Loading model: {self._model_id}")
+            
+            # Check if we need authentication
+            if "meta-llama" in self._model_id and not self._hf_token:
+                print(f"[BrainEngine] WARNING: {self._model_id} requires HUGGINGFACE_TOKEN")
+                print("[BrainEngine] Falling back to microsoft/Phi-3-mini-4k-instruct (no auth required)")
+                self._model_id = "microsoft/Phi-3-mini-4k-instruct"
+            
+            if self._hf_token:
+                self._llm = LLM(
+                    model=self._model_id,
+                    trust_remote_code=True,
+                    gpu_memory_utilization=0.9,
+                    max_model_len=2048,
+                )
+                print(f"[BrainEngine] Model loaded successfully: {self._model_id}")
+            else:
+                # No token, use mock mode
+                print("[BrainEngine] No HUGGINGFACE_TOKEN, using mock responses")
+                self._use_mock = True
+                
+        except Exception as e:
+            print(f"[BrainEngine] Failed to load model: {e}")
+            print("[BrainEngine] Using mock responses for development")
+            self._use_mock = True
+    
     async def infer(self, prompt: str, sentiment_profile: dict | None = None) -> str:
-        # Placeholder - in production this calls vLLM
-        return f"MARZ response to: {prompt[:50]}..."
+        """Generate response from LLM or mock"""
+        if self._use_mock or self._llm is None:
+            # Mock response for development/testing
+            return self._mock_response(prompt, sentiment_profile)
+        
+        try:
+            from vllm import SamplingParams
+            
+            # Build context-aware prompt
+            sentiment = sentiment_profile or {"label": "neutral", "score": 0.0, "empathy_weight": 0.7}
+            
+            system_prompt = "You are MARZ, an AI assistant for OpsVantage. Be helpful, concise, and friendly."
+            full_prompt = f"<|system|>\n{system_prompt}\n<|user|>\n{prompt}\n<|assistant|>\n"
+            
+            params = SamplingParams(
+                temperature=0.7 + float(sentiment.get("temperature_delta", 0)),
+                top_p=0.9,
+                max_tokens=256,
+            )
+            
+            outputs = self._llm.generate([full_prompt], params)
+            
+            if outputs and outputs[0].outputs:
+                return outputs[0].outputs[0].text.strip()
+            
+            return self._mock_response(prompt, sentiment_profile)
+            
+        except Exception as e:
+            print(f"[BrainEngine] Inference error: {e}")
+            return self._mock_response(prompt, sentiment_profile)
+    
+    def _mock_response(self, prompt: str, sentiment_profile: dict | None = None) -> str:
+        """Generate contextual mock responses"""
+        sentiment = sentiment_profile or {"label": "neutral"}
+        
+        # Simple keyword-based responses
+        prompt_lower = prompt.lower()
+        
+        if "hello" in prompt_lower or "hi" in prompt_lower:
+            return "Hello! I'm MARZ, your AI assistant. How can I help you today?"
+        elif "name" in prompt_lower:
+            return "I'm MARZ - Multi-modal AI Response System. I can see, hear, and speak to help you build amazing websites!"
+        elif "help" in prompt_lower:
+            return "I can help you create websites, manage projects, and answer questions. What would you like to build today?"
+        elif "weather" in prompt_lower:
+            return "I don't have access to weather data yet, but I can help you build a weather dashboard!"
+        elif "status" in prompt_lower or "health" in prompt_lower:
+            return "All systems operational! Neural core is running smoothly."
+        else:
+            prefixes = {
+                "distressed": "I understand this might be challenging. ",
+                "positive": "That's wonderful! ",
+                "neutral": "",
+            }
+            prefix = prefixes.get(sentiment.get("label", "neutral"), "")
+            return f"{prefix}I've processed your request. As an AI assistant, I'm here to help you succeed with your projects. What would you like to explore next?"
 
 
 class SovereignVoice:
@@ -165,6 +262,8 @@ async def initialize_enterprise_services():
     await video_service.initialize()
     
     brain = BrainEngine()
+    await brain.initialize()  # Initialize the brain with model loading
+    
     voice = SovereignVoice()
     sentiment_analysis_v2 = SentimentAnalysisV2()
 

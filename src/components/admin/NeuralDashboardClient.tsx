@@ -39,6 +39,20 @@ type JournalEntry = {
   createdAt?: string;
 };
 
+type MarketingGeneratePayload = {
+  ok?: boolean;
+  cacheKey?: string;
+  generatedAt?: string;
+  mode?: 'gemini' | 'template';
+  posts?: string[];
+  context?: {
+    launchDate?: string;
+    waitlistUrl?: string;
+    sovereign25Remaining?: number;
+  };
+  error?: string;
+};
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -103,6 +117,54 @@ export default function NeuralDashboardClient({
   });
 
   React.useEffect(() => setMounted(true), []);
+
+  const [marketingPosts, setMarketingPosts] = useState<string[]>([]);
+  const [marketingMode, setMarketingMode] = useState<'gemini' | 'template' | 'unknown'>('unknown');
+  const [marketingUpdatedAt, setMarketingUpdatedAt] = useState<string>('');
+  const [marketingError, setMarketingError] = useState<string | null>(null);
+  const [marketingBusy, setMarketingBusy] = useState(false);
+  const [marketingCopiedIndex, setMarketingCopiedIndex] = useState<number | null>(null);
+
+  const loadMarketingPosts = React.useCallback(async () => {
+    setMarketingBusy(true);
+    setMarketingError(null);
+    try {
+      const response = await fetch('/api/marketing/generate', { cache: 'no-store' });
+      const payload = (await response.json().catch(() => ({}))) as MarketingGeneratePayload;
+      if (!response.ok) {
+        setMarketingError(payload?.error || 'Unable to load marketing posts.');
+        return;
+      }
+
+      const nextPosts = Array.isArray(payload.posts) ? payload.posts.filter((p) => typeof p === 'string') : [];
+      setMarketingPosts(nextPosts.slice(0, 3));
+      setMarketingMode(payload.mode || 'unknown');
+      setMarketingUpdatedAt(payload.generatedAt || new Date().toISOString());
+    } catch {
+      setMarketingError('Unable to load marketing posts.');
+    } finally {
+      setMarketingBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    void loadMarketingPosts();
+    const interval = setInterval(() => {
+      void loadMarketingPosts();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [mounted, loadMarketingPosts]);
+
+  const copyMarketingPost = React.useCallback(async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMarketingCopiedIndex(index);
+      window.setTimeout(() => setMarketingCopiedIndex(null), 1500);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
@@ -765,6 +827,53 @@ export default function NeuralDashboardClient({
                 <div className="h-full w-1/3 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.9)]" />
               </div>
               <div className="mt-3 text-xs text-slate-400">Today: Feb 14, 2026 • Mission window active.</div>
+            </section>
+
+            <section className="rounded-2xl border border-amber-500/30 bg-slate-900/50 backdrop-blur-md p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-amber-200">Marketing Control</h3>
+                  <p className="mt-1 text-xs text-slate-400">Live-sync: 15s • Source: {marketingMode === 'unknown' ? 'loading' : marketingMode}</p>
+                  {marketingUpdatedAt ? (
+                    <p className="mt-1 text-xs text-slate-500">Updated: {new Date(marketingUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadMarketingPosts()}
+                  disabled={marketingBusy}
+                  className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:opacity-60"
+                >
+                  {marketingBusy ? 'Syncing…' : 'Generate / Sync Now'}
+                </button>
+              </div>
+
+              {marketingError ? (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+                  {marketingError}
+                </div>
+              ) : null}
+
+              <div className="mt-4 space-y-3">
+                {marketingPosts.length === 0 ? (
+                  <p className="text-sm text-slate-400">Waiting for the next post batch…</p>
+                ) : (
+                  marketingPosts.slice(0, 3).map((post, index) => (
+                    <div key={`${index}-${post.slice(0, 16)}`} className="rounded-xl border border-amber-500/20 bg-slate-950/60 p-3">
+                      <p className="whitespace-pre-wrap text-sm text-slate-200">{post}</p>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => void copyMarketingPost(post, index)}
+                          className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-400/20"
+                        >
+                          {marketingCopiedIndex === index ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </section>
 
             <DashboardTaskList

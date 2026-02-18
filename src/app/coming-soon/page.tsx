@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, CheckCircle2, Rocket } from "lucide-react";
+import { WaitlistViralCard } from "@/components/marketing/WaitlistViralCard";
 
 const launchDate = "March 13, 2026";
 
@@ -40,6 +41,9 @@ export default function ComingSoonPage() {
   return (
     <div className="mesh-gradient py-10 md:py-14">
       <section className="section-shell">
+        <div className="mb-8">
+          <WaitlistViralCard />
+        </div>
         <div className="surface-glass p-8 md:p-12">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Launch Update</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gradient-sovereign animate-fade-in md:text-5xl">

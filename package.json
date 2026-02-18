@@ -32,6 +32,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google-cloud/monitoring": "^5.3.1",
     "@google/generative-ai": "^0.24.1",
+    "@mertercelik/react-prize-wheel": "^1.0.2",
     "@neondatabase/serverless": "^0.10.0",
     "@next/env": "^16.1.6",
     "@prisma/adapter-neon": "^7.4.0",

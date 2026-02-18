@@ -6,6 +6,7 @@ import PWARegister from "@/components/PWARegister";
 import { WebVitalsReporter } from "@/components/monitoring/WebVitalsReporter";
 import { SITE_URL } from "@/lib/site-config";
 import { resolveBrandOverrideFromRequest } from "@/lib/branding/brand-override";
+import "@mertercelik/react-prize-wheel/style.css";
 import "./globals.css";
 
 const manrope = Manrope({

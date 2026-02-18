@@ -7,12 +7,16 @@ export type FoundersOfferId =
   | "estate-founder"
   | "wholesale-ghost"
   | "architect-choice"
+  | "sovereign-25"
+  | "wheel-zenith"
   | "zenith-discount-15";
 
 export const FOUNDERS_LIMITS: Readonly<Record<FoundersOfferId, number>> = {
   "estate-founder": 50,
   "wholesale-ghost": 25,
   "architect-choice": 25,
+  "sovereign-25": 25,
+  "wheel-zenith": 5,
   "zenith-discount-15": Number.POSITIVE_INFINITY,
 };
 

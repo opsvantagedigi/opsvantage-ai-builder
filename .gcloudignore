@@ -1,0 +1,32 @@
+# Keep Cloud Build upload small and deterministic.
+# gcloud uses this file to exclude paths from the build context archive.
+
+# Node / Next artifacts
+node_modules/
+.next/
+.next-build/
+
+# Test & coverage output
+coverage/
+playwright-report/
+
+# Data exports / misc artifacts
+exports/
+
+# Cypress artifacts
+cypress/videos/
+cypress/screenshots/
+
+# Local caches
+__pycache__/
+
+# Separate service (built with its own Cloud Build config)
+neural-core/
+
+# VCS / editor
+.git/
+.vscode/
+
+# Environment / logs
+.env*
+*.log

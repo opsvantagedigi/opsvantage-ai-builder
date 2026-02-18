@@ -1,0 +1,69 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    [
+      'build',
+      '--build-arg',
+      'NEXT_PUBLIC_MARZ_VIDEO_MODE=true',
+      '--build-arg',
+      'NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL}',
+      '--build-arg',
+      'NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL}',
+      '--build-arg',
+      'NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN}',
+      '--build-arg',
+      'NEXT_PUBLIC_VAPID_PUBLIC_KEY=${_NEXT_PUBLIC_VAPID_PUBLIC_KEY}',
+      '-t',
+      'gcr.io/$PROJECT_ID/opsvantage-ai-builder-staging',
+      '.',
+    ]
+
+# Push the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder-staging']
+
+# Deploy to Cloud Run (staging)
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+    [
+      'run',
+      'deploy',
+      'opsvantage-ai-builder-staging',
+      '--image',
+      'gcr.io/$PROJECT_ID/opsvantage-ai-builder-staging',
+      '--region',
+      'europe-west4',
+      '--platform',
+      'managed',
+      '--allow-unauthenticated',
+      '--min-instances',
+      '0',
+      '--max-instances',
+      '2',
+      '--set-env-vars',
+      'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN},NEXT_PUBLIC_VAPID_PUBLIC_KEY=${_NEXT_PUBLIC_VAPID_PUBLIC_KEY}',
+      '--set-secrets',
+      'SOVEREIGN_PASSWORD=${_SOVEREIGN_PASSWORD_SECRET}:latest,PUSH_SERVICE_TOKEN=${_PUSH_SERVICE_TOKEN_SECRET}:latest,VAPID_PRIVATE_KEY=${_VAPID_PRIVATE_KEY_SECRET}:latest,VAPID_SUBJECT=${_VAPID_SUBJECT_SECRET}:latest',
+      '--port',
+      '8080',
+      '--memory',
+      '1Gi',
+      '--cpu',
+      '1',
+    ]
+
+images:
+- 'gcr.io/$PROJECT_ID/opsvantage-ai-builder-staging'
+
+substitutions:
+  _NEXT_PUBLIC_NEURAL_CORE_URL: 'https://marz-neural-core-1018462465472.europe-west4.run.app'
+  _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL: ''
+  _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN: ''
+  _NEXT_PUBLIC_VAPID_PUBLIC_KEY: 'BBB9aV3pwuYlwNSk-KlYchgyBkxXVfOD76rMaeNK9xaP62DN_2PTIRhjTTeCXF3E1pR2wcV50RAhe4od2HFiDsE'
+  _SOVEREIGN_PASSWORD_SECRET: 'SOVEREIGN_PASSWORD'
+  _PUSH_SERVICE_TOKEN_SECRET: 'PUSH_SERVICE_TOKEN'
+  _VAPID_PRIVATE_KEY_SECRET: 'VAPID_PRIVATE_KEY'
+  _VAPID_SUBJECT_SECRET: 'VAPID_SUBJECT'
+
+timeout: '1600s'

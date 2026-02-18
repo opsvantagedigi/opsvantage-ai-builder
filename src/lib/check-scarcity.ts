@@ -9,7 +9,7 @@ export async function checkScarcity(): Promise<boolean> {
     // Count the number of claimed "Founders 25" slots
     const claimedCount = await db.foundersClaim.count({
       where: {
-        offerId: 'FOUNDERS_25', // Assuming this is the offer ID for the Founders 25 program
+        offerId: 'sovereign-25',
       },
     });
 
@@ -34,7 +34,7 @@ export async function getClaimedCount(): Promise<number> {
   try {
     const claimedCount = await db.foundersClaim.count({
       where: {
-        offerId: 'FOUNDERS_25',
+        offerId: 'sovereign-25',
       },
     });
 
