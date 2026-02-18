@@ -4,14 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Terminal,
-  Activity,
-  ShieldCheck,
-  DollarSign,
-  Globe,
-  Server,
-  Cpu,
-  AlertTriangle,
-  Lock,
   Loader2,
   Mic,
   Radio,
@@ -364,198 +356,96 @@ export function MarzCommandConsoleClient({ authorizedEmail }: { authorizedEmail:
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#020617] font-mono text-white relative">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
-        <div className="absolute bottom-0 right-0 h-125 w-125 rounded-full bg-blue-900/10 blur-[100px]" />
-      </div>
-
-      <header className="relative z-10 flex items-center justify-between border-b border-white/10 bg-black/40 p-6 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="absolute h-3 w-3 animate-ping rounded-full bg-green-500" />
-            <div className="relative h-3 w-3 rounded-full bg-green-500" />
-          </div>
-          <h1 className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-2xl font-bold tracking-widest text-transparent">
-            MARZ_OPERATOR // <span className="text-base font-normal uppercase text-white">GOD_MODE</span>
-          </h1>
-          <span className={`inline-flex items-center rounded border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${socketReady ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-300' : 'border-amber-400/40 bg-amber-500/10 text-amber-200'}`}>
+    <div className="font-mono text-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
+          <Terminal className="h-4 w-4" /> MARZ Operator Console
+          <span className={`ml-2 inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${socketReady ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-amber-500/30 bg-amber-500/10 text-amber-200'}`}>
             Neural Core {socketReady ? 'Live' : 'Fallback'}
           </span>
         </div>
-        <div className="flex items-center gap-6 text-sm text-slate-400">
-          <span className="flex items-center gap-2 font-bold">
-            <Lock className="h-4 w-4 text-green-500" /> SECURE CONN: {authorizedEmail}
-          </span>
-          <span className="flex items-center gap-2">
-            <Server className="h-4 w-4" /> HOSTING: ONLINE
-          </span>
-          <span className="flex items-center gap-2">
-            <Globe className="h-4 w-4" /> OPENPROVIDER: CONNECTED
-          </span>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleActivateMarz}
+            disabled={isActivating}
+            className="inline-flex items-center gap-1 rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+          >
+            {isActivating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Radio className="h-3 w-3" />} Activate
+          </button>
         </div>
-      </header>
-
-      <main className="relative z-10 grid h-[calc(100vh-80px)] grid-cols-12 gap-6 p-6">
-        <div className="col-span-3 flex flex-col gap-6">
-          <MetricCard icon={<Activity className="text-green-400" />} label="SYSTEM INTEGRITY" value={`${systemHealth}%`} trend="+0.2%" />
-          <MetricCard icon={<Cpu className="text-blue-400" />} label="ACTIVE NODES (USERS)" value={activeUsers.toString()} trend="+12 this hour" />
-          <MetricCard icon={<DollarSign className="text-yellow-400" />} label="REVENUE (24H)" value={`$${revenueToday}`} trend="Stripe Webhook Active" />
-
-          <div className="mt-auto rounded-xl border border-white/10 bg-white/5 p-4">
-            <h3 className="mb-4 text-xs uppercase tracking-wider text-slate-500">Emergency Overrides</h3>
-            <div className="space-y-2">
-              <button className="flex w-full items-center gap-2 rounded border border-red-500/30 bg-red-500/10 px-4 py-2 text-left text-sm font-bold uppercase tracking-tighter text-red-400 transition-colors hover:bg-red-500/20">
-                <AlertTriangle className="h-4 w-4" /> PURGE CACHE (ALL)
-              </button>
-              <button className="flex w-full items-center gap-2 rounded border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-left text-sm font-bold uppercase tracking-tighter text-blue-400 transition-colors hover:bg-blue-500/20">
-                <ShieldCheck className="h-4 w-4" /> ROTATE API KEYS
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-6 flex flex-col">
-          <div className="relative flex flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/60 shadow-[0_0_50px_-10px_rgba(6,182,212,0.15)]">
-            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 p-3">
-              <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
-                <Terminal className="h-4 w-4" /> LIVE NEURAL LOGS
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleActivateMarz}
-                  disabled={isActivating}
-                  className="inline-flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-50"
-                >
-                  {isActivating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Radio className="h-3 w-3" />} Activate MARZ
-                </button>
-                <div className="h-2 w-2 rounded-full bg-red-500/50" />
-                <div className="h-2 w-2 rounded-full bg-yellow-500/50" />
-                <div className="h-2 w-2 rounded-full bg-green-500/50" />
-              </div>
-            </div>
-
-            <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-4 text-sm">
-              <AnimatePresence>
-                {logs.map((message, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className={`whitespace-pre-wrap border-l-2 pl-3 ${
-                      message.isError
-                        ? 'border-red-500 text-red-300'
-                        : message.role === 'user'
-                          ? 'border-yellow-500 text-yellow-300'
-                          : 'border-blue-500 text-blue-100'
-                    }`}
-                  >
-                    {message.content}
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {isProcessing && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-2 border-l-2 border-cyan-500 pl-3 text-cyan-400"
-                >
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  MARZ is processing...
-                </motion.div>
-              )}
-
-              <div ref={logsEndRef} />
-              {!isProcessing && <div className="animate-pulse text-xs text-cyan-500">Ready for input_</div>}
-            </div>
-
-            <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-white/10 bg-white/5 p-4">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(event) => setInputValue(event.target.value)}
-                placeholder="Command MARZ (e.g., 'Run diagnostics' or 'Check OpenProvider status')..."
-                className="flex-1 border-none bg-transparent text-white outline-none placeholder:text-slate-600"
-                disabled={isProcessing}
-              />
-              <button
-                type="button"
-                onClick={handleVoiceCommand}
-                disabled={!voiceSupported || isProcessing || isListening}
-                className="rounded border border-cyan-500/50 bg-cyan-600/20 px-3 py-2 text-cyan-300 transition-all hover:bg-cyan-600/35 disabled:opacity-50"
-                aria-label="Voice command"
-                title={voiceSupported ? 'Speak command' : 'Voice command not supported in this browser'}
-              >
-                <Mic className={`h-4 w-4 ${isListening ? 'animate-pulse text-emerald-300' : ''}`} />
-              </button>
-              <button
-                type="submit"
-                disabled={isProcessing || !inputValue.trim()}
-                className="rounded border border-cyan-500/50 bg-cyan-600/30 px-4 py-2 font-bold text-cyan-300 transition-all hover:bg-cyan-600/50 disabled:opacity-50"
-              >
-                {isProcessing ? '...' : '→'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <div className="col-span-3 flex flex-col gap-6">
-          <div className="relative h-1/2 overflow-hidden rounded-xl border border-white/10 bg-white/5 p-4">
-            <h3 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-              <Globe className="h-4 w-4" /> GLOBAL TRAFFIC
-            </h3>
-            <div className="absolute inset-0 flex items-center justify-center opacity-30">
-              <div className="h-32 w-32 animate-ping rounded-full border-4 border-cyan-500/30" />
-            </div>
-            <div className="relative z-10 mt-12 text-center">
-              <div className="text-2xl font-bold uppercase tracking-widest text-white">NZ, AU, US</div>
-              <div className="text-xs font-bold uppercase tracking-widest text-slate-500">Top Regions Active</div>
-            </div>
-          </div>
-
-          <div className="h-1/2 rounded-xl border border-blue-500/20 bg-linear-to-b from-blue-900/20 to-black p-4">
-            <h3 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-400">
-              <Server className="h-4 w-4" /> RECENT DOMAINS
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex justify-between font-bold text-slate-300">
-                <span> crypto - safe.nz</span>
-                <span className="text-green-400">ACTIVE</span>
-              </li>
-              <li className="flex justify-between font-bold text-slate-300">
-                <span> dental - pro.com</span>
-                <span className="text-yellow-400">PENDING</span>
-              </li>
-              <li className="flex justify-between font-bold text-slate-300">
-                <span> agency - flow.io</span>
-                <span className="text-green-400">ACTIVE</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-interface MetricCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  trend: string;
-}
-
-function MetricCard({ icon, label, value, trend }: MetricCardProps) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-5 transition-colors hover:bg-white/10">
-      <div className="mb-2 flex items-start justify-between">
-        {icon}
-        <span className="text-xs font-bold uppercase text-slate-500">{trend}</span>
       </div>
-      <div className="mb-1 text-xs font-bold uppercase tracking-widest text-slate-400">{label}</div>
-      <div className="font-sans text-3xl font-bold tracking-tighter text-white">{value}</div>
+
+      <div className="space-y-3 p-4">
+        <div className="space-y-1 text-xs text-slate-400">
+          <div>Secure: {authorizedEmail}</div>
+          <div>Health: {systemHealth}% • Active: {activeUsers} • Revenue: ${revenueToday}</div>
+        </div>
+
+        <div className="custom-scrollbar max-h-[420px] space-y-3 overflow-y-auto rounded-xl border border-slate-800/70 bg-black/40 p-4 text-sm">
+          <AnimatePresence>
+            {logs.map((message, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={`whitespace-pre-wrap border-l-2 pl-3 ${
+                  message.isError
+                    ? 'border-red-500 text-red-200'
+                    : message.role === 'user'
+                      ? 'border-amber-400 text-amber-200'
+                      : 'border-cyan-500 text-slate-100'
+                }`}
+              >
+                {message.content}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {isProcessing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-2 border-l-2 border-cyan-500 pl-3 text-cyan-200"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+              MARZ is processing...
+            </motion.div>
+          )}
+
+          <div ref={logsEndRef} />
+          {!isProcessing && <div className="animate-pulse text-xs text-slate-500">Ready for input…</div>}
+        </div>
+
+        <form onSubmit={handleSendMessage} className="flex flex-wrap gap-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(event) => setInputValue(event.target.value)}
+            placeholder="Command MARZ…"
+            className="min-w-[220px] flex-1 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500"
+            disabled={isProcessing}
+          />
+          <button
+            type="button"
+            onClick={handleVoiceCommand}
+            disabled={!voiceSupported || isProcessing || isListening}
+            className="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-slate-200 hover:bg-slate-900/40 disabled:opacity-50"
+            aria-label="Voice command"
+            title={voiceSupported ? 'Speak command' : 'Voice command not supported in this browser'}
+          >
+            <Mic className={`h-4 w-4 ${isListening ? 'animate-pulse text-emerald-300' : ''}`} />
+          </button>
+          <button
+            type="submit"
+            disabled={isProcessing || !inputValue.trim()}
+            className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+          >
+            {isProcessing ? '…' : 'Send'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
