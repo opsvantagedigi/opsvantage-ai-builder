@@ -19,6 +19,7 @@
     "audit:internal-logic": "npx tsx scripts/internal-logic-pass.ts",
     "gcloud:build": "npx tsx scripts/gcloud-build.ts",
     "gcloud:deploy": "gcloud builds submit --config cloudbuild.yaml .",
+    "gcloud:deploy:staging": "gcloud builds submit --project opsvantage-ai-builder --config cloudbuild.staging.yaml .",
     "gcloud:deploy:neural-core": "gcloud builds submit --config neural-core/cloudbuild.neural-core.yaml ./neural-core",
     "gcloud:scheduler:reflection": "pwsh -ExecutionPolicy Bypass -File ./scripts/setup-reflection-scheduler.ps1",
     "slo:probe": "pwsh -ExecutionPolicy Bypass -File ./scripts/uptime-probe.ps1",
