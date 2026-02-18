@@ -37,7 +37,7 @@ export function SpinWheel(props: {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/60 p-6 backdrop-blur dark:border-amber-500/30 dark:bg-slate-950/50">
       <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-amber-200">Spin the Wheel</div>
-      <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">One spin per email. Your reward is reserved.</p>
+      <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">One spin per email. Your reward is reserved. Share after you spin to double your odds.</p>
 
       <div className="mt-5 flex items-center justify-center">
         <div className="w-full max-w-[340px]">

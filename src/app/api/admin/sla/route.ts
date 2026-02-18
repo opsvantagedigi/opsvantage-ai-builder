@@ -51,6 +51,16 @@ function getSuiteReport() {
   }
 }
 
+function readNumericEnv(...keys: string[]) {
+  for (const key of keys) {
+    const raw = process.env[key];
+    if (!raw) continue;
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const sovereignCookie = req.cookies.get("zenith_admin_token")?.value;
   const isSovereign = Boolean(sovereignCookie);
@@ -75,12 +85,19 @@ export async function GET(req: NextRequest) {
     getUxVitalsSummary(),
   ]);
 
+  const neural = {
+    ttsLatencyMs: readNumericEnv("SLA_TTS_LATENCY_MS", "TTS_LATENCY_MS"),
+    lipSyncFps: readNumericEnv("SLA_LIP_SYNC_FPS", "LIP_SYNC_FRAME_RATE"),
+    phi3InferenceMs: readNumericEnv("SLA_PHI3_INFERENCE_MS", "PH_3_INFERENCE_TIME", "PHI3_INFERENCE_MS"),
+  };
+
   return NextResponse.json({
     ok: true,
     snapshot: {
       ...snapshot,
       ux,
     },
+    neural,
     suite,
     sampledAt: new Date().toISOString(),
   });

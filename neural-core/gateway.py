@@ -38,8 +38,8 @@ class Settings(BaseSettings):
     target_audio_video_offset_ms: int = 35
     max_audio_video_offset_ms: int = 50
 
-    host: str = "0.0.0.0"
-    port: int = 8080
+    host: str = os.getenv("HOST", "0.0.0.0")
+    port: int = int(os.getenv("PORT", "8080"))
     idle_timeout_seconds: int = 600
 
     hibernate_webhook_url: str | None = None
@@ -853,3 +853,9 @@ async def local_hibernate_trigger() -> JSONResponse:
     await send_hibernate_signal("Manual trigger")
     await activity_tracker.mark_hibernation_signal()
     return JSONResponse({"ok": True, "signaled": True})
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("gateway:app", host=settings.host, port=settings.port)

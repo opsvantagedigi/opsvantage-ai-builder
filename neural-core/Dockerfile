@@ -3,7 +3,8 @@ FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PORT=8080
+    PORT=8080 \
+    HOST=0.0.0.0
 
 WORKDIR /workspace/neural-core
 
@@ -26,7 +27,7 @@ COPY constitution.md ./constitution.md
 COPY assets ./assets
 COPY reflection_engine.py ./reflection_engine.py
 COPY start.sh ./start.sh
-RUN chmod +x ./start.sh
+RUN sed -i 's/\r$//' ./start.sh && chmod +x ./start.sh
 
 EXPOSE 8080
 CMD ["./start.sh"]

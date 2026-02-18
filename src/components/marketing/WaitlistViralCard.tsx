@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SpinWheel, type WheelPrizeId } from '@/components/marketing/SpinWheel';
 
@@ -44,6 +44,8 @@ function formatPrize(prize: string | null) {
 export function WaitlistViralCard() {
   const searchParams = useSearchParams();
   const ref = (searchParams.get('ref') || '').trim();
+  const src = (searchParams.get('src') || '').trim().toLowerCase();
+  const referralSource = src ? `share-${src}` : 'landing';
 
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +55,11 @@ export function WaitlistViralCard() {
   const [showWheel, setShowWheel] = useState(false);
   const [copied, setCopied] = useState(false);
   const [lockedEmail, setLockedEmail] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+  const lastNoticeRef = useRef<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const spotsLabel = useMemo(() => {
     if (!offer) return 'Loading…';
@@ -80,9 +87,47 @@ export function WaitlistViralCard() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreLast() {
+      try {
+        const lastEmail = localStorage.getItem('waitlist:lastEmail');
+        if (!lastEmail) return;
+        setEmail(lastEmail);
+        const res = await fetch(`/api/waitlist?email=${encodeURIComponent(lastEmail)}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = (await res.json()) as WaitlistResponse;
+        if (!cancelled) {
+          setResult(json);
+          setRestored(true);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    restoreLast();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!result || result.lead.wheelPrize !== 'queue_jump') return;
+    const boost = result.position?.boost ?? 100;
+    const key = `${result.lead.email}:${boost}`;
+    if (lastNoticeRef.current === key) return;
+    lastNoticeRef.current = key;
+    setNotice(`You just skipped ${boost} people. Welcome to the front of the line.`);
+    const id = setTimeout(() => setNotice(null), 3500);
+    return () => clearTimeout(id);
+  }, [result]);
+
   function unlockWheel() {
     setError(null);
     setResult(null);
+    setShareOpen(false);
     const trimmed = email.trim();
     if (!trimmed) return;
     setLockedEmail(trimmed.toLowerCase());
@@ -98,7 +143,7 @@ export function WaitlistViralCard() {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, source: 'landing', referralCode: ref || undefined, wheelPrize: prizeId }),
+        body: JSON.stringify({ email, source: referralSource, referralCode: ref || undefined, wheelPrize: prizeId }),
       });
 
       const json = (await res.json()) as WaitlistResponse | { error?: string };
@@ -109,6 +154,7 @@ export function WaitlistViralCard() {
 
       setResult(json as WaitlistResponse);
       setShowWheel(false);
+      setShareOpen(false);
 
       try {
         localStorage.setItem('waitlist:lastEmail', (json as WaitlistResponse).lead.email);
@@ -137,6 +183,45 @@ export function WaitlistViralCard() {
     }
   }
 
+  function withShareSource(url: string, sourceLabel: string) {
+    try {
+      const parsed = new URL(url);
+      parsed.searchParams.set('src', sourceLabel);
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  function buildShareMessage(link: string) {
+    const boost = result?.position?.boost ?? 100;
+    return `I just jumped ${boost} spots in the @OpsVantage waitlist! Meet MARZ, the future of AI Sovereignty. Use my link to get into the Sovereign 25: ${link}`;
+  }
+
+  async function shareOn(platform: 'x' | 'linkedin') {
+    const baseLink = result?.lead.referralUrl;
+    if (!baseLink) return;
+    const shareLink = withShareSource(baseLink, platform);
+    const text = buildShareMessage(shareLink);
+
+    if (platform === 'x') {
+      const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareNotice('Share copy saved to clipboard for LinkedIn.');
+      setTimeout(() => setShareNotice(null), 2500);
+    } catch {
+      // ignore
+    }
+
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareLink)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <div className="surface-glass p-8 md:p-10">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-300">Digital Waitlist</p>
@@ -148,6 +233,18 @@ export function WaitlistViralCard() {
       <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
         Sovereign 25: the first 25 founders receive a 50% lifetime discount, a Sovereign Founder badge, and direct voice access to MARZ-Prime.
       </p>
+
+      {notice ? (
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200">
+          {notice}
+        </div>
+      ) : null}
+
+      {shareNotice ? (
+        <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-800 dark:border-cyan-900/70 dark:bg-cyan-950/40 dark:text-cyan-200">
+          {shareNotice}
+        </div>
+      ) : null}
 
       <div className="mt-6 inline-flex animate-pulse items-center gap-2 rounded-xl border border-slate-200 bg-white/60 px-4 py-3 text-sm font-medium text-slate-800 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
         <span className="rounded-lg bg-cyan-50 px-2 py-1 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200">{spotsLabel}/25</span>
@@ -179,6 +276,12 @@ export function WaitlistViralCard() {
       {error ? (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300">
           {error}
+        </div>
+      ) : null}
+
+      {restored && result ? (
+        <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:border-cyan-900/70 dark:bg-cyan-950/40 dark:text-cyan-200">
+          Reward pinned to this session
         </div>
       ) : null}
 
@@ -238,6 +341,35 @@ export function WaitlistViralCard() {
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 Each referral moves you up 10 places. Milestones: 3 referrals = Top 50 • 10 referrals = Masterclass • 25 referrals = Founder&apos;s Circle entry.
               </p>
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Social Multiplier</p>
+                    <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">Double your odds by sharing your link.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="button-primary whitespace-nowrap"
+                    onClick={() => {
+                      setShareOpen(true);
+                      void shareOn('x');
+                    }}
+                  >
+                    Double Your Odds
+                  </button>
+                </div>
+                {shareOpen ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" className="button-secondary" onClick={() => void shareOn('x')}>
+                      Share on X
+                    </button>
+                    <button type="button" className="button-secondary" onClick={() => void shareOn('linkedin')}>
+                      Share on LinkedIn
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>

@@ -3,7 +3,13 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 
-if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === "production") {
+const isProduction = process.env.NODE_ENV === "production";
+const isNextBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+const skipStrictDuringBuild = String(process.env.SKIP_DB_CHECK_DURING_BUILD || "").toLowerCase() === "true";
+
+// Enforce at runtime (production), but do NOT hard-fail during `next build`.
+// Cloud Build runs `next build` without runtime secrets; those are injected at deploy time.
+if (!process.env.NEXTAUTH_SECRET && isProduction && !isNextBuildPhase && !skipStrictDuringBuild) {
   throw new Error("CRITICAL: NEXTAUTH_SECRET MISSING");
 }
 

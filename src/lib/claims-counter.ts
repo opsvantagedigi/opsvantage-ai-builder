@@ -63,32 +63,60 @@ export async function createOfferClaim(params: {
   userId?: string | null;
 }) {
   const limit = FOUNDERS_LIMITS[params.offerId];
+  let claim: { id: string; sequence: number | null } | null = null;
+  const maxRetries = 3;
 
-  try {
-    await prisma.$transaction(
-      async (tx) => {
-        const claimed = await tx.foundersClaim.count({ where: { offerId: params.offerId } });
-        if (Number.isFinite(limit) && claimed >= limit) {
-          throw new Error("Offer is fully claimed.");
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      claim = await prisma.$transaction(
+        async (tx) => {
+          const claimed = await tx.foundersClaim.count({ where: { offerId: params.offerId } });
+          if (Number.isFinite(limit) && claimed >= limit) {
+            throw new Error("Offer is fully claimed.");
+          }
+
+          const nextSequence = claimed + 1;
+          return await tx.foundersClaim.create({
+            data: {
+              offerId: params.offerId,
+              fingerprint: params.fingerprint,
+              userId: params.userId ?? null,
+              awardedOfferId: params.offerId,
+              sequence: nextSequence,
+            },
+            select: { id: true, sequence: true },
+          });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      );
+      break;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          const target = (error.meta as { target?: string[] } | undefined)?.target;
+          if (Array.isArray(target) && target.includes("fingerprint")) {
+            throw new Error("You have already claimed this offer.");
+          }
+          // Sequence collision: retry.
+        } else if (error.code === "P2034") {
+          // Transaction conflict: retry.
         }
+      } else if (error instanceof Error && error.message === "Offer is fully claimed.") {
+        throw error;
+      } else if (error instanceof Error && error.message === "You have already claimed this offer.") {
+        throw error;
+      }
 
-        await tx.foundersClaim.create({
-          data: {
-            offerId: params.offerId,
-            fingerprint: params.fingerprint,
-            userId: params.userId ?? null,
-            awardedOfferId: params.offerId,
-          },
-        });
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
-    );
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new Error("You have already claimed this offer.");
+      if (attempt === maxRetries - 1) {
+        throw error;
+      }
     }
-    throw error;
   }
 
-  return getOfferStatus(params.offerId);
+  const status = await getOfferStatus(params.offerId);
+  return {
+    ...status,
+    claimId: claim?.id ?? null,
+    claimSequence: claim?.sequence ?? null,
+  };
 }

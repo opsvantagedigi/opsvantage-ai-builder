@@ -303,6 +303,21 @@ model Usage {
   workspace      Workspace @relation(fields: [workspaceId], references: [id])
 }
 
+model MarketingContent {
+  id        String   @id @default(cuid())
+  phase     String?
+  headline  String
+  subheader String
+  ctaLabel  String
+  ctaHref   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
 model LaunchLead {
   id              String      @id @default(cuid())
   email           String      @unique
@@ -342,10 +357,12 @@ model FoundersClaim {
   zenithPrice     Float?
   savedAmount     Float?
   currency        String   @default("USD")
+  sequence        Int?
   createdAt       DateTime @default(now())
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([offerId, fingerprint])
+  @@unique([offerId, sequence])
   @@index([offerId, createdAt])
   @@index([userId, createdAt])
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
+import { SlaHudOverlay } from "@/components/admin/SlaHudOverlay";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export function DashboardShell({ children, title, description, actions, classNam
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <DashboardHeader />
+      <SlaHudOverlay />
       <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 md:py-10">
         {(title || description || actions) && (
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">

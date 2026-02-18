@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { logger } from "@/lib/logger"
+import { createOfferClaim } from "@/lib/claims-counter"
+import { logActivity } from "@/lib/audit-logger"
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -51,6 +53,40 @@ export const POST = async (req: Request) => {
     const workspace = await prisma.workspace.create({ data: { name: `${user.name}'s Workspace`, slug: `ws-${Date.now()}`, ownerId: user.id } })
     await prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: 'OWNER' } })
     await prisma.project.create({ data: { name: "Default Project", workspaceId: workspace.id } })
+
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined
+    const userAgent = req.headers.get('user-agent') || undefined
+
+    try {
+      const claimStatus = await createOfferClaim({
+        offerId: "sovereign-25",
+        fingerprint: `user:${user.id}`,
+        userId: user.id,
+      })
+
+      if (typeof claimStatus.claimSequence === 'number') {
+        const claimSequenceLabel = `Founder #${String(claimStatus.claimSequence).padStart(2, '0')}`
+        await logActivity({
+          workspaceId: workspace.id,
+          actorId: user.id,
+          action: 'SOVEREIGN_25_CLAIMED',
+          entityType: 'WORKSPACE',
+          entityId: workspace.id,
+          metadata: {
+            offerId: 'sovereign-25',
+            claimId: claimStatus.claimId,
+            claimSequence: claimStatus.claimSequence,
+            claimSequenceLabel,
+            email: user.email,
+          },
+          ipAddress,
+          userAgent,
+        })
+      }
+    } catch (error) {
+      // Never block signup on founder claim/audit failures.
+      console.error('[api/register] sovereign-25 claim failed:', error)
+    }
 
     return NextResponse.json({ ok: true, userId: user.id })
   } catch (err: unknown) {

@@ -195,7 +195,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { email?: unknown; source?: unknown; referralCode?: unknown; wheelPrize?: unknown };
     const email = body.email;
-    const source = typeof body.source === "string" ? body.source.trim().slice(0, 120) : undefined;
+    const sourceRaw = typeof body.source === "string" ? body.source.trim().slice(0, 120) : undefined;
+    const source = sourceRaw ? sourceRaw.toLowerCase() : undefined;
     const referralCode = typeof body.referralCode === "string" ? body.referralCode.trim().slice(0, 32) : undefined;
     const requestedPrize = isWheelPrize(body.wheelPrize) ? (body.wheelPrize as WheelPrize) : null;
 
@@ -247,33 +248,19 @@ export async function POST(request: Request) {
           });
 
       if (!existing && referrerId) {
+        const isViralShare = Boolean(source && source.startsWith("share-"));
         await tx.launchLead.update({
           where: { id: referrerId },
-          data: { referralsCount: { increment: 1 } },
+          data: { referralsCount: { increment: isViralShare ? 2 : 1 } },
         });
       }
 
       return { lead: created, didCreate: !existing };
     });
 
-    // Try to auto-claim a Sovereign 25 slot for net-new leads.
-    let sovereignFounder = Boolean(lead.sovereignFounder);
-    if (!sovereignFounder && didCreate) {
-      try {
-        await createOfferClaim({
-          offerId: "sovereign-25",
-          fingerprint: `lead:${lead.id}`,
-          userId: null,
-        });
-        await prisma.launchLead.update({
-          where: { id: lead.id },
-          data: { sovereignFounder: true },
-        });
-        sovereignFounder = true;
-      } catch {
-        // If full or conflict, ignore.
-      }
-    }
+    // Sovereign-25 sequences are reserved for paid/converted founders.
+    // Waitlist should NOT consume real `sovereign-25` slots.
+    const sovereignFounder = Boolean(lead.sovereignFounder);
 
     // Instant lead sync (best-effort)
     if (didCreate) {
@@ -307,24 +294,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Referral milestone: 25 referrals => attempt Founder's Circle entry.
-    // This is still capped globally by the sovereign-25 offer limit.
-    if (!sovereignFounder && (lead.referralsCount ?? 0) >= 25) {
-      try {
-        await createOfferClaim({
-          offerId: "sovereign-25",
-          fingerprint: `lead:${lead.id}`,
-          userId: null,
-        });
-        await prisma.launchLead.update({
-          where: { id: lead.id },
-          data: { sovereignFounder: true },
-        });
-        sovereignFounder = true;
-      } catch {
-        // ignore
-      }
-    }
+    // Referral milestone UI is handled client-side; do not claim sovereign-25 here.
 
     const position = await computePosition(lead.id);
 
