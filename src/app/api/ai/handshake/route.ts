@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import WebSocket from 'ws';
 
 import { applyRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
-type HandshakeIntent = 'prewarm' | 'wake';
+function resolveWsUrl() {
+  const explicit = String(process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL || '').trim();
+  if (explicit) return explicit;
 
-function toWsUrl(httpUrl: string) {
-  const trimmed = httpUrl.trim().replace(/\/$/, '');
-  if (!trimmed) return null;
+  const base = String(process.env.NEXT_PUBLIC_NEURAL_CORE_URL || '').trim();
+  if (!base) return '';
 
+  const trimmed = base.replace(/\/$/, '');
   if (trimmed.startsWith('wss://') || trimmed.startsWith('ws://')) {
     return `${trimmed}/ws/neural-core`;
   }
@@ -23,7 +26,7 @@ function toWsUrl(httpUrl: string) {
     return `ws://${trimmed.slice('http://'.length)}/ws/neural-core`;
   }
 
-  return null;
+  return '';
 }
 
 function toHttpUrl(wsUrl: string): string {
@@ -32,147 +35,153 @@ function toHttpUrl(wsUrl: string): string {
   return wsUrl;
 }
 
-async function prewarmHealth(baseUrl: string) {
-  const start = Date.now();
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6_000);
-
+  const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${baseUrl.replace(/\/$/, '')}/health`, {
-      method: 'GET',
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-
-    const latencyMs = Date.now() - start;
-    const text = await res.text().catch(() => '');
-    let json: unknown = null;
-    try {
-      json = text ? JSON.parse(text) : null;
-    } catch {
-      json = { raw: text.slice(0, 1000) };
-    }
-
-    return { ok: res.ok, status: res.status, latencyMs, payload: json };
+    return await fetch(url, { ...init, signal: controller.signal, cache: 'no-store' });
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(id);
   }
 }
 
-async function bestEffortAwakening(wsUrl: string) {
-  // Warming the instance via websocket can reduce first-frame latency.
-  // This is best-effort: failures should not block the dashboard.
-  const { default: WebSocket } = await import('ws');
+async function requestWake(reqUrl: string) {
+  const token = String(process.env.NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN || '').trim();
 
-  return await new Promise<{ ok: boolean; event?: unknown; error?: string }>((resolve) => {
+  // Call our own wake route so it can forward to the upstream orchestrator if configured.
+  const url = new URL('/api/orchestrator/wake', reqUrl);
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (token) headers.authorization = `Bearer ${token}`;
+
+  const res = await fetchWithTimeout(
+    url.toString(),
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ signal: 'WakeUp', source: 'api/ai/handshake', reason: 'dashboard pre-warm handshake' }),
+    },
+    8000,
+  );
+
+  return res.ok;
+}
+
+async function wsAwaken(wsUrl: string, origin: string) {
+  return await new Promise<{ ok: boolean; stage: string; message?: string }>((resolve) => {
+    const ws = new WebSocket(wsUrl, {
+      headers: {
+        Origin: origin,
+      },
+    });
+
     const timeout = setTimeout(() => {
       try {
         ws.close();
       } catch {
         // ignore
       }
-      resolve({ ok: false, error: 'timeout' });
-    }, 7_000);
-
-    const ws = new WebSocket(wsUrl, {
-      headers: {
-        Origin: process.env.NEXT_PUBLIC_APP_URL || 'https://opsvantagedigital.online',
-      },
-    });
+      resolve({ ok: false, stage: 'timeout', message: 'WebSocket handshake timed out.' });
+    }, 12_000);
 
     ws.on('open', () => {
-      try {
-        ws.send(
-          JSON.stringify({
-            awakening: true,
-            request_id: `handshake-${Date.now()}`,
-            text: 'Awaken MARZ video presence.',
-          }),
-        );
-      } catch {
-        // ignore
-      }
+      ws.send(
+        JSON.stringify({
+          awakening: true,
+          text: 'Awaken MARZ video presence.',
+          client: 'opsvantage-ai-builder',
+          request_id: `handshake-${Date.now()}`,
+          ts: Date.now(),
+        }),
+      );
     });
 
-    ws.on('message', (data: any) => {
-      const text = typeof data?.toString === 'function' ? data.toString('utf-8') : '';
+    ws.on('message', (data) => {
+      const text = data.toString('utf-8');
       try {
-        const parsed = text ? JSON.parse(text) : null;
-        const type = String(parsed?.type || '').toLowerCase();
-        const stage = String(parsed?.stage || '').toLowerCase();
-        if (type === 'video_stream' || stage === 'awakening') {
-          clearTimeout(timeout);
-          try {
-            ws.close();
-          } catch {
-            // ignore
-          }
-          resolve({ ok: true, event: parsed });
+        const parsed = JSON.parse(text) as { status?: string; message?: string; video_b64?: string; audio_b64?: string };
+        const hasStream = Boolean(parsed.video_b64) || Boolean(parsed.audio_b64);
+        clearTimeout(timeout);
+        try {
+          ws.close();
+        } catch {
+          // ignore
         }
+        resolve({ ok: true, stage: hasStream ? 'stream' : 'status', message: parsed.message || parsed.status });
       } catch {
-        // ignore
+        // non-JSON message, ignore
       }
     });
 
-    ws.on('error', (err: any) => {
+    ws.on('error', (err) => {
       clearTimeout(timeout);
-      resolve({ ok: false, error: err?.message || 'ws_error' });
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+      resolve({ ok: false, stage: 'error', message: err instanceof Error ? err.message : 'WebSocket error.' });
     });
 
     ws.on('close', () => {
       clearTimeout(timeout);
-      resolve({ ok: true });
     });
   });
 }
 
 export async function POST(req: NextRequest) {
-  const rate = await applyRateLimit(req, { keyPrefix: 'api:ai:handshake', limit: 20, windowMs: 60_000 });
+  const rate = await applyRateLimit(req, { keyPrefix: 'api:ai:handshake', limit: 30, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json(
-      { error: 'Too many requests.' },
+      { ok: false, error: 'Too many requests.' },
       { status: 429, headers: { 'Retry-After': `${rate.retryAfterSeconds}` } },
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as { intent?: unknown };
-  const intent: HandshakeIntent = body.intent === 'wake' ? 'wake' : 'prewarm';
-
-  const baseUrl = String(process.env.NEXT_PUBLIC_NEURAL_CORE_URL || '').trim();
-  const explicitWsUrl = String(process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL || '').trim();
-  const wsUrl = explicitWsUrl || (baseUrl ? toWsUrl(baseUrl) : null) || '';
-
-  if (!baseUrl && !wsUrl) {
-    return NextResponse.json({ ok: false, error: 'NEXT_PUBLIC_NEURAL_CORE_URL is not set.' }, { status: 500 });
+  const wsUrl = resolveWsUrl();
+  if (!wsUrl) {
+    return NextResponse.json({ ok: false, error: 'NEXT_PUBLIC_NEURAL_CORE_URL is not configured.' }, { status: 500 });
   }
 
-  const resolvedHttpBase = baseUrl || toHttpUrl(wsUrl).replace(/\/ws\/neural-core$/, '');
+  const httpWsProbeUrl = toHttpUrl(wsUrl);
+  const origin = new URL(req.url).origin;
 
-  let health: Awaited<ReturnType<typeof prewarmHealth>> | null = null;
+  let probed404 = false;
   try {
-    health = await prewarmHealth(resolvedHttpBase);
+    const probe = await fetchWithTimeout(httpWsProbeUrl, { method: 'GET' }, 4000);
+    probed404 = probe.status === 404;
   } catch {
-    health = null;
+    // ignore
   }
 
-  let awakening: Awaited<ReturnType<typeof bestEffortAwakening>> | null = null;
-  if (intent === 'wake' && wsUrl) {
-    try {
-      awakening = await bestEffortAwakening(wsUrl);
-    } catch {
-      awakening = { ok: false, error: 'awakening_failed' };
+  let woke = false;
+  if (probed404) {
+    woke = await requestWake(req.url);
+    // brief grace for container to rehydrate
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+
+  // Also hit /health to warm CPU path and confirm service is reachable.
+  try {
+    const base = String(process.env.NEXT_PUBLIC_NEURAL_CORE_URL || '').trim().replace(/\/$/, '');
+    if (base.startsWith('http://') || base.startsWith('https://')) {
+      await fetchWithTimeout(`${base}/health`, { method: 'GET' }, 5000);
     }
+  } catch {
+    // ignore
   }
 
-  return NextResponse.json(
-    {
-      ok: true,
-      neuralCoreUrl: resolvedHttpBase,
-      neuralCoreWsUrl: wsUrl,
-      intent,
-      health,
-      awakening,
-    },
-    { headers: { 'cache-control': 'no-store' } },
-  );
+  const wsResult = await wsAwaken(wsUrl, origin);
+
+  return NextResponse.json({
+    ok: wsResult.ok,
+    wsUrl,
+    woke,
+    stage: wsResult.stage,
+    message: wsResult.message || null,
+  });
+}
+
+export async function GET(req: NextRequest) {
+  // Convenience: allow GET for quick probes.
+  return POST(req);
 }

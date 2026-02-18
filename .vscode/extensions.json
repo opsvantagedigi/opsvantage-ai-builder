@@ -3,6 +3,7 @@
         "github.copilot-chat",
         "csstools.postcss",
         "googlecloudtools.cloudcode",
-        "google.geminicodeassist"
+        "google.geminicodeassist",
+        "qwenlm.qwen-code-vscode-ide-companion"
     ]
 }

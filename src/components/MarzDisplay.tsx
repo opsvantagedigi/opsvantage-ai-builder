@@ -22,8 +22,6 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   const [isAwakening, setIsAwakening] = useState(false);
   const [resolvedWsUrl, setResolvedWsUrl] = useState<string | undefined>(wsUrl);
   const hasSentHandshakeRef = useRef(false);
-  const [talkBusy, setTalkBusy] = useState(false);
-  const [talkError, setTalkError] = useState<string | null>(null);
 
   const { status, stream, lastEvent, lastError, connect, sendMessage, wakeContainer } = useNeuralLink({
     wsUrl: resolvedWsUrl,
@@ -75,36 +73,6 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
       hasSentHandshakeRef.current = false;
     }
   }, [sendMessage, status]);
-
-  async function talkToMarz() {
-    setTalkBusy(true);
-    setTalkError(null);
-    try {
-      const response = await fetch('/api/ai/handshake', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ intent: 'wake' }),
-      });
-
-      const payload = (await response.json().catch(() => null)) as { neuralCoreWsUrl?: string; error?: string } | null;
-      if (!response.ok) {
-        setTalkError(String(payload?.error || 'Handshake failed.'));
-        return;
-      }
-
-      const nextWsUrl = String(payload?.neuralCoreWsUrl || '').trim();
-      if (nextWsUrl) {
-        setResolvedWsUrl(nextWsUrl);
-      }
-
-      hasSentHandshakeRef.current = false;
-      connect();
-    } catch {
-      setTalkError('Handshake failed.');
-    } finally {
-      setTalkBusy(false);
-    }
-  }
 
   useEffect(() => {
     const eventType = String(lastEvent?.type || '').toLowerCase();
@@ -196,22 +164,6 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
       {isAwakening && <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />}
 
       <div className={`${className || ''} ${isAwakening ? 'fixed inset-6 z-50 rounded-2xl border border-cyan-400/40 bg-slate-950/95 p-4 shadow-[0_0_40px_rgba(34,211,238,0.25)]' : ''}`}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-xs uppercase tracking-[0.12em] text-slate-400">MARZ Video Handshake</div>
-        <button
-          type="button"
-          onClick={() => void talkToMarz()}
-          disabled={talkBusy}
-          className="rounded border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
-        >
-          {talkBusy ? 'Waking…' : 'Talk to MARZ'}
-        </button>
-      </div>
-
-      {talkError ? (
-        <div className="mb-3 rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-100">{talkError}</div>
-      ) : null}
-
       <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/40">
         {stream.videoUrl ? (
           <video

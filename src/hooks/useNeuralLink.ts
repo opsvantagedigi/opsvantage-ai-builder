@@ -163,6 +163,27 @@ export function useNeuralLink({
       return;
     }
 
+    // Preferred path: let the server-side handshake route handle waking + pre-warming.
+    // This avoids client-side CORS traps and keeps wake tokens off the browser where possible.
+    try {
+      wakeInFlightRef.current = true;
+      setStatus('waking');
+
+      const response = await fetch('/api/ai/handshake', { method: 'POST', cache: 'no-store' });
+      if (response.ok) {
+        lastWakeAtRef.current = Date.now();
+        setLastError(null);
+        setTimeout(() => {
+          setStatus('idle');
+        }, 900);
+        return;
+      }
+    } catch {
+      // fallback below
+    } finally {
+      wakeInFlightRef.current = false;
+    }
+
     if (!effectiveWakeUrl) {
       setStatus('hibernated');
       setLastError('Neural core appears hibernated and no wake URL is configured.');
