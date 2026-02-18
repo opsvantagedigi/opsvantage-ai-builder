@@ -155,9 +155,13 @@ export async function POST(req: NextRequest) {
 
   let woke = false;
   if (probed404) {
-    woke = await requestWake(req.url);
-    // brief grace for container to rehydrate
-    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      woke = await requestWake(req.url);
+      // brief grace for container to rehydrate
+      await new Promise((r) => setTimeout(r, 1200));
+    } catch {
+      woke = false;
+    }
   }
 
   // Also hit /health to warm CPU path and confirm service is reachable.
