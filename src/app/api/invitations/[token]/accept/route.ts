@@ -50,8 +50,8 @@ export async function POST(
     }
 
     // Verify email matches
-    const user = await db.user.findUnique({
-      where: { id: session?.sub },
+    const user = await db.user.findFirst({
+      where: { id: session?.sub, deletedAt: null },
     });
 
     if (!user || user.email !== invitation.email) {

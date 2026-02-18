@@ -21,8 +21,8 @@ export async function addCustomDomainAction(projectId: string, domain: string) {
   }
 
   // 1. Find project and verify ownership/membership
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, deletedAt: null },
     include: {
       workspace: { include: { members: true } },
     },

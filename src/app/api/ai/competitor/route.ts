@@ -17,7 +17,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Competitor URL is required' }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({ where: { email: session?.email } });
+        const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         // Fetch competitor content

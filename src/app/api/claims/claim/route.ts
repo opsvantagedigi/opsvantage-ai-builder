@@ -20,7 +20,7 @@ function getClientIp(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rate = applyRateLimit(req, { keyPrefix: "api:claims:claim", limit: 30, windowMs: 60_000 });
+  const rate = await applyRateLimit(req, { keyPrefix: "api:claims:claim", limit: 30, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many requests." },

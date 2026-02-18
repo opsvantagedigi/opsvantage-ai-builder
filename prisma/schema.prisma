@@ -13,6 +13,7 @@ model User {
   createdAt              DateTime          @default(now())
   image                  String?
   updatedAt              DateTime          @updatedAt
+  deletedAt              DateTime?
   openProviderHandle     String?           @unique
   aiGenerationsUsed      Int               @default(0)
   sitesPublished         Int               @default(0)
@@ -30,6 +31,8 @@ model User {
   foundersClaims         FoundersClaim[]
   ownedWorkspaces        Workspace[]       @relation("WorkspaceOwner")
   workspaces             WorkspaceMember[]
+
+  @@index([deletedAt])
 }
 
 model Account {
@@ -94,6 +97,7 @@ model Project {
   sanityDataset String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
   workspaceId   String
   content       Json?
   customDomain  String?     @unique
@@ -106,6 +110,7 @@ model Project {
   workspace     Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
+  @@index([deletedAt])
 }
 
 model Domain {
@@ -191,6 +196,7 @@ model Workspace {
   ownerId                String
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
+  deletedAt              DateTime?
   type                   WorkspaceType     @default(STANDARD)
   plan                   Plan              @default(FREE)
   stripeCurrentPeriodEnd DateTime?         @map("stripe_current_period_end")
@@ -210,6 +216,7 @@ model Workspace {
   members                WorkspaceMember[]
 
   @@index([ownerId])
+  @@index([deletedAt])
 }
 
 model WorkspaceMember {

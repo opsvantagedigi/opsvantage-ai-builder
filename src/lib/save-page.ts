@@ -7,7 +7,7 @@ export async function saveGeneratedPage(userEmail: string, pagePayload: PageGene
   // validate
   const payload = pageGenerationResponseSchema.parse(pagePayload)
 
-  const user = await prisma.user.findUnique({ where: { email: userEmail } })
+  const user = await prisma.user.findFirst({ where: { email: userEmail, deletedAt: null } })
   if (!user) throw new Error("User not found")
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id } })
   if (!member) throw new Error("No workspace found for user")

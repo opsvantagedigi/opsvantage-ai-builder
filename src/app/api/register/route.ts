@@ -37,12 +37,15 @@ export const POST = async (req: Request) => {
 
     const { email } = parsed.data
 
-    const existing = await prisma.user.findUnique({ where: { email } })
-    if (existing) {
+    const existingActive = await prisma.user.findFirst({ where: { email, deletedAt: null } })
+    if (existingActive) {
       return NextResponse.json({ error: 'User already exists' }, { status: 409 })
     }
 
-    const user = await prisma.user.create({ data: { email, name: email.split('@')[0] } })
+    const existingDeleted = await prisma.user.findFirst({ where: { email, deletedAt: { not: null } } })
+    const user = existingDeleted
+      ? await prisma.user.update({ where: { email }, data: { deletedAt: null, name: existingDeleted.name || email.split('@')[0] } })
+      : await prisma.user.create({ data: { email, name: email.split('@')[0] } })
 
     // create workspace and project for the new user
     const workspace = await prisma.workspace.create({ data: { name: `${user.name}'s Workspace`, slug: `ws-${Date.now()}`, ownerId: user.id } })

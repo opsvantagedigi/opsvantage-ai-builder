@@ -20,8 +20,8 @@ export const PLAN_LIMITS = {
 };
 
 export async function checkSubscription(workspaceId: string) {
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: workspaceId },
+  const workspace = await prisma.workspace.findFirst({
+    where: { id: workspaceId, deletedAt: null },
     select: {
       id: true,
       name: true,

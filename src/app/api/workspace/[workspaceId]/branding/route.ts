@@ -17,7 +17,7 @@ export async function PATCH(
     const { brandingLogo, brandingColors, customDashboardDomain } = body;
 
     try {
-        const user = await prisma.user.findUnique({ where: { email: session?.email } });
+        const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         // Check if user is an admin/owner of the workspace

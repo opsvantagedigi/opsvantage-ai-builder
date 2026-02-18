@@ -35,6 +35,11 @@ module.exports = [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
+      "@typescript-eslint/no-unused-expressions": "off",
+      "no-unused-expressions": [
+        "warn",
+        { allowShortCircuit: true, allowTernary: true, allowTaggedTemplates: true }
+      ],
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-empty-object-type": "warn",

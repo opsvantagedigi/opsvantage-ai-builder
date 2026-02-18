@@ -14,7 +14,7 @@ function parseDomain(value: string) {
 }
 
 export async function POST(request: Request) {
-  const rate = applyRateLimit(request, { keyPrefix: "api:domains", limit: 30, windowMs: 60_000 });
+  const rate = await applyRateLimit(request, { keyPrefix: "api:domains", limit: 30, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429, headers: { "Retry-After": `${rate.retryAfterSeconds}` } });
   }

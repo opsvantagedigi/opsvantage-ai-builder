@@ -10,7 +10,7 @@ function isValidEmail(email: unknown): email is string {
 }
 
 export async function POST(request: Request) {
-  const rate = applyRateLimit(request, { keyPrefix: "api:waitlist", limit: 15, windowMs: 60_000 });
+  const rate = await applyRateLimit(request, { keyPrefix: "api:waitlist", limit: 15, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json({ error: "Too many requests. Please try again in a minute." }, { status: 429, headers: { "Retry-After": `${rate.retryAfterSeconds}` } });
   }

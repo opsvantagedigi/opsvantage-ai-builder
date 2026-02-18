@@ -17,7 +17,7 @@ export async function GET() {
     return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.email, deletedAt: null } });
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }

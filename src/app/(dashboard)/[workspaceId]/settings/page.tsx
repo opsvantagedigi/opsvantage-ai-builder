@@ -24,7 +24,7 @@ export default async function SettingsPage({
     redirect('/login');
   }
 
-  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  const user = await prisma.user.findFirst({ where: { email: userEmail, deletedAt: null } });
   if (!user) {
     redirect('/login');
   }
@@ -49,8 +49,8 @@ export default async function SettingsPage({
     );
   }
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: workspaceId },
+  const workspace = await prisma.workspace.findFirst({
+    where: { id: workspaceId, deletedAt: null },
     include: {
       auditLogs: {
         take: 50,

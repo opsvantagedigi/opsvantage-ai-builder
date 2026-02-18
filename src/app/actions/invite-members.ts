@@ -46,8 +46,8 @@ export async function inviteMemberAction(
     }
 
     // 3. CHECK SUBSCRIPTION (Agency plan only)
-    const workspace = await db.workspace.findUnique({
-      where: { id: workspaceId },
+    const workspace = await db.workspace.findFirst({
+      where: { id: workspaceId, deletedAt: null },
       include: { owner: true },
     });
 
@@ -55,8 +55,8 @@ export async function inviteMemberAction(
       return { success: false, error: 'Workspace not found' };
     }
 
-    const ownerSubscription = await db.user.findUnique({
-      where: { id: workspace.ownerId },
+    const ownerSubscription = await db.user.findFirst({
+      where: { id: workspace.ownerId, deletedAt: null },
     });
 
     // Get plan from subscription
@@ -169,8 +169,8 @@ export async function acceptInvitationAction(token: string): Promise<InviteMembe
     }
 
     // 4. FIND OR CREATE USER
-    let user = await db.user.findUnique({
-      where: { email: invitation.email },
+    const user = await db.user.findFirst({
+      where: { email: invitation.email, deletedAt: null },
     });
 
     if (!user) {

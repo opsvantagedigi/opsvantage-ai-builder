@@ -26,7 +26,7 @@ async function isAuthorized(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const rate = applyRateLimit(req, { keyPrefix: "api:admin:kill-switch:get", limit: 90, windowMs: 60_000 });
+  const rate = await applyRateLimit(req, { keyPrefix: "api:admin:kill-switch:get", limit: 90, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many requests." },
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rate = applyRateLimit(req, { keyPrefix: "api:admin:kill-switch:post", limit: 30, windowMs: 60_000 });
+  const rate = await applyRateLimit(req, { keyPrefix: "api:admin:kill-switch:post", limit: 30, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many requests." },

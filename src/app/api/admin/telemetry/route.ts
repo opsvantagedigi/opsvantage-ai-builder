@@ -64,7 +64,7 @@ async function getEstimatedSavings() {
 }
 
 export async function GET(req: NextRequest) {
-  const rate = applyRateLimit(req, { keyPrefix: "api:admin:telemetry", limit: 60, windowMs: 60_000 });
+  const rate = await applyRateLimit(req, { keyPrefix: "api:admin:telemetry", limit: 60, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many requests." },

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { Prisma, PrismaClient } from "@prisma/client"
 import { PrismaNeon } from "@prisma/adapter-neon"
 import { logger } from "./logger"
 
@@ -16,13 +16,150 @@ let activeDatabaseUrl =
 
 function createClient(connectionString: string) {
   const adapter = new PrismaNeon({ connectionString });
-  return new PrismaClient({
+  const client = new PrismaClient({
     adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
   });
+
+  const softDeleteFilterExtension = Prisma.defineExtension({
+    name: "softDeleteFilter",
+    model: {
+      user: {
+        async softDelete(where: Prisma.UserWhereUniqueInput) {
+          return this.update({
+            where,
+            data: { deletedAt: new Date() },
+          });
+        },
+        async restore(where: Prisma.UserWhereUniqueInput) {
+          return this.update({
+            where,
+            data: { deletedAt: null },
+          });
+        },
+      },
+      project: {
+        async softDelete(where: Prisma.ProjectWhereUniqueInput) {
+          return this.update({
+            where,
+            data: { deletedAt: new Date() },
+          });
+        },
+        async restore(where: Prisma.ProjectWhereUniqueInput) {
+          return this.update({
+            where,
+            data: { deletedAt: null },
+          });
+        },
+      },
+      workspace: {
+        async softDelete(where: Prisma.WorkspaceWhereUniqueInput) {
+          return this.update({
+            where,
+            data: { deletedAt: new Date() },
+          });
+        },
+        async restore(where: Prisma.WorkspaceWhereUniqueInput) {
+          return this.update({
+            where,
+            data: { deletedAt: null },
+          });
+        },
+      },
+    },
+    query: {
+      user: {
+        findMany({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        findFirst({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        count({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        aggregate({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        groupBy({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+      },
+      project: {
+        findMany({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        findFirst({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        count({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        aggregate({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        groupBy({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+      },
+      workspace: {
+        findMany({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        findFirst({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        count({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        aggregate({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+        groupBy({ args, query }) {
+          addNotDeletedWhere(args);
+          return query(args);
+        },
+      },
+    },
+  });
+
+  return client.$extends(softDeleteFilterExtension) as unknown as PrismaClient;
+}
+
+function addNotDeletedWhere(args: unknown) {
+  const a = args as { where?: Record<string, unknown> } | null | undefined;
+  if (!a) return;
+  const where = a.where;
+  if (!where) {
+    a.where = { deletedAt: null };
+    return;
+  }
+
+  // If the caller explicitly specifies deletedAt (including NOT null), respect it.
+  if (Object.prototype.hasOwnProperty.call(where, "deletedAt")) {
+    return;
+  }
+
+  a.where = {
+    AND: [{ deletedAt: null }, where],
+  };
 }
 
 export let prisma: PrismaClient = globalForPrisma.prisma ?? createClient(activeDatabaseUrl);

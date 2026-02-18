@@ -119,10 +119,10 @@ export class MonitoringService {
   }
 
   async getUptimePulse(serviceName: string): Promise<UptimePulse> {
-    const baseFilter = `resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${serviceName}\"`;
-    const totalRequests = await this.sumMetric(`metric.type=\"run.googleapis.com/request_count\" AND ${baseFilter}`);
+    const baseFilter = `resource.type="cloud_run_revision" AND resource.labels.service_name="${serviceName}"`;
+    const totalRequests = await this.sumMetric(`metric.type="run.googleapis.com/request_count" AND ${baseFilter}`);
     const errorRequests = await this.sumMetric(
-      `metric.type=\"run.googleapis.com/request_count\" AND metric.labels.response_code_class=\"5xx\" AND ${baseFilter}`
+      `metric.type="run.googleapis.com/request_count" AND metric.labels.response_code_class="5xx" AND ${baseFilter}`
     );
 
     const successfulRequests = Math.max(0, totalRequests - errorRequests);
@@ -165,13 +165,13 @@ export class MonitoringService {
     const output: SaturationReading[] = [];
 
     for (const serviceName of serviceNames) {
-      const baseFilter = `resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${serviceName}\"`;
+      const baseFilter = `resource.type="cloud_run_revision" AND resource.labels.service_name="${serviceName}"`;
 
-      const cpuRatio = await this.avgMetric(`metric.type=\"run.googleapis.com/container/cpu/utilizations\" AND ${baseFilter}`);
+      const cpuRatio = await this.avgMetric(`metric.type="run.googleapis.com/container/cpu/utilizations" AND ${baseFilter}`);
 
       const gpuRatio =
-        await this.avgMetric(`metric.type=\"run.googleapis.com/container/gpu/utilizations\" AND ${baseFilter}`) ??
-        await this.avgMetric(`metric.type=\"run.googleapis.com/container/accelerator/duty_cycle\" AND ${baseFilter}`);
+        await this.avgMetric(`metric.type="run.googleapis.com/container/gpu/utilizations" AND ${baseFilter}`) ??
+        await this.avgMetric(`metric.type="run.googleapis.com/container/accelerator/duty_cycle" AND ${baseFilter}`);
 
       output.push({
         service: serviceName,

@@ -132,8 +132,8 @@ async function run() {
   const registerBody = await parseJson(registerResponse);
   record('First-in registration', registerResponse.status === 200 && registerBody.ok === true, `status=${registerResponse.status}`);
 
-  const registeredUser = await prisma.user.findUnique({
-    where: { email: testEmail },
+  const registeredUser = await prisma.user.findFirst({
+    where: { email: testEmail, deletedAt: null },
     select: { id: true },
   });
 
@@ -397,8 +397,8 @@ async function run() {
       }
     }
 
-    const publishedProject = await prisma.project.findUnique({
-      where: { id: projectId },
+    const publishedProject = await prisma.project.findFirst({
+      where: { id: projectId, deletedAt: null },
       select: { published: true, publishedAt: true, subdomain: true },
     });
 

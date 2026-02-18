@@ -33,7 +33,7 @@ export const POST = withErrorHandling(async (req) => {
   const userPrompt = body.prompt || null
 
   // Find project context
-  const user = await prisma.user.findUnique({ where: { email: session?.email } })
+  const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id } })
   if (!member) return NextResponse.json({ error: "No workspace found" }, { status: 404 })

@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
     try {
         const { workspaceId } = await params;
 
-        const user = await prisma.user.findUnique({ where: { email: session?.email } });
+        const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         const member = await prisma.workspaceMember.findUnique({
@@ -28,8 +28,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
             return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
         }
 
-        const workspace = await prisma.workspace.findUnique({
-            where: { id: workspaceId },
+        const workspace = await prisma.workspace.findFirst({
+            where: { id: workspaceId, deletedAt: null },
             select: {
                 plan: true,
                 stripeCustomerId: true,

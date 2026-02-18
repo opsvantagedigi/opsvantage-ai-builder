@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
     try {
         const { workspaceId } = await params;
 
-        const user = await prisma.user.findUnique({ where: { email: session?.email } });
+        const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         const member = await prisma.workspaceMember.findUnique({
@@ -58,7 +58,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ works
         const { workspaceId } = await params;
         const { memberId } = await req.json();
 
-        const user = await prisma.user.findUnique({ where: { email: session?.email } });
+        const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         const currentMember = await prisma.workspaceMember.findUnique({

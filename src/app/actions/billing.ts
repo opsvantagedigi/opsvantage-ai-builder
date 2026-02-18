@@ -26,8 +26,8 @@ export async function createBillingSessionAction(planId?: string) {
     }
 
     // 2. Get user from database
-    const user = await db.user.findUnique({
-      where: { email: userEmail },
+    const user = await db.user.findFirst({
+      where: { email: userEmail, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -110,8 +110,8 @@ export async function getCurrentSubscriptionAction() {
       return { error: 'Unauthorized' };
     }
 
-    const user = await db.user.findUnique({
-      where: { email: userEmail },
+    const user = await db.user.findFirst({
+      where: { email: userEmail, deletedAt: null },
       select: {
         id: true,
         stripePriceId: true,

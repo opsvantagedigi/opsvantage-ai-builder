@@ -4,7 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
-  const rate = applyRateLimit(request, { keyPrefix: "api:infrastructure", limit: 40, windowMs: 60_000 });
+  const rate = await applyRateLimit(request, { keyPrefix: "api:infrastructure", limit: 40, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": `${rate.retryAfterSeconds}` } });
   }
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const rate = applyRateLimit(request, { keyPrefix: "api:infrastructure", limit: 30, windowMs: 60_000 });
+  const rate = await applyRateLimit(request, { keyPrefix: "api:infrastructure", limit: 30, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": `${rate.retryAfterSeconds}` } });
   }

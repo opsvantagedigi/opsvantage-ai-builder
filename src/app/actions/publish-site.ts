@@ -42,8 +42,8 @@ export async function publishSiteAction(
     }
 
     // 2. VERIFY PROJECT OWNERSHIP
-    const project = await db.project.findUnique({
-      where: { id: projectId },
+    const project = await db.project.findFirst({
+      where: { id: projectId, deletedAt: null },
       include: { workspace: true },
     });
 
@@ -65,8 +65,8 @@ export async function publishSiteAction(
     });
 
     // 4. VALIDATE SUBSCRIPTION + USER STATE
-    const user = await db.user.findUnique({
-      where: { email: userEmail },
+    const user = await db.user.findFirst({
+      where: { email: userEmail, deletedAt: null },
     });
 
     if (!user) {

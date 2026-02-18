@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npx --no-install prisma generate && next build",
+    "env:validate": "npx tsx scripts/validate-env.ts",
     "postbuild": "node scripts/generate-nft.mjs",
     "start": "next start",
     "lint": "eslint",
@@ -108,8 +109,8 @@
     "prisma": "^7.4.0",
     "tailwindcss": "^3.4.3",
     "ts-jest": "^29.4.5",
-    "typescript": "^5",
-    "typescript-eslint": "^8.56.0",
+    "typescript": "5.6.3",
+    "typescript-eslint": "^8.14.0",
     "vitest": "^4.0.18"
   },
   "overrides": {

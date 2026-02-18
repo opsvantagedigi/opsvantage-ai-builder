@@ -1,0 +1,30 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '--build-arg', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=${_NEXT_PUBLIC_MARZ_VIDEO_MODE}',
+        '--build-arg', 'NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL}',
+        '--build-arg', 'NEXT_PUBLIC_NEURAL_CORE_WS_URL=${_NEXT_PUBLIC_NEURAL_CORE_WS_URL}',
+        '--build-arg', 'NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL}',
+        '--build-arg', 'NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN}',
+        '--build-arg', 'NEXT_PUBLIC_VAPID_PUBLIC_KEY=${_NEXT_PUBLIC_VAPID_PUBLIC_KEY}',
+        '-t', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder',
+        '.',
+      ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/opsvantage-ai-builder']
+
+images:
+  - 'gcr.io/$PROJECT_ID/opsvantage-ai-builder'
+
+substitutions:
+  _NEXT_PUBLIC_MARZ_VIDEO_MODE: 'true'
+  _NEXT_PUBLIC_NEURAL_CORE_URL: 'https://marz-neural-core-xge3xydmha-ez.a.run.app'
+  _NEXT_PUBLIC_NEURAL_CORE_WS_URL: 'wss://marz-neural-core-xge3xydmha-ez.a.run.app/ws/neural-core'
+  _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL: ''
+  _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN: ''
+  _NEXT_PUBLIC_VAPID_PUBLIC_KEY: 'BBB9aV3pwuYlwNSk-KlYchgyBkxXVfOD76rMaeNK9xaP62DN_2PTIRhjTTeCXF3E1pR2wcV50RAhe4od2HFiDsE'
+
+timeout: '1600s'

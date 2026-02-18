@@ -1,16 +1,24 @@
 import type { NextRequest } from "next/server";
 
-type Bucket = {
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+type RateLimitResult = {
+  allowed: boolean;
+  remaining: number;
+  retryAfterSeconds: number;
+};
+
+type InMemoryBucket = {
   count: number;
   resetAt: number;
 };
 
-const globalBuckets = globalThis as typeof globalThis & {
-  __rateLimitBuckets?: Map<string, Bucket>;
+const globalState = globalThis as typeof globalThis & {
+  __rateLimitBuckets?: Map<string, InMemoryBucket>;
+  __rateLimiters?: Map<string, Ratelimit>;
+  __upstashRedis?: Redis;
 };
-
-const buckets = globalBuckets.__rateLimitBuckets ?? new Map<string, Bucket>();
-globalBuckets.__rateLimitBuckets = buckets;
 
 function getClientIp(request: Request | NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -20,25 +28,55 @@ function getClientIp(request: Request | NextRequest): string {
   return request.headers.get("x-real-ip") || "unknown";
 }
 
-export function applyRateLimit(
-  request: Request | NextRequest,
-  options: {
-    keyPrefix: string;
-    limit: number;
-    windowMs: number;
+function getRedis(): Redis | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+
+  if (!globalState.__upstashRedis) {
+    globalState.__upstashRedis = new Redis({ url, token });
   }
-) {
-  const ip = getClientIp(request);
-  const key = `${options.keyPrefix}:${ip}`;
+
+  return globalState.__upstashRedis;
+}
+
+function getInMemoryBuckets() {
+  const buckets = globalState.__rateLimitBuckets ?? new Map<string, InMemoryBucket>();
+  globalState.__rateLimitBuckets = buckets;
+  return buckets;
+}
+
+function getLimiter(cacheKey: string, limit: number, windowMs: number): Ratelimit | null {
+  const redis = getRedis();
+  if (!redis) return null;
+
+  const ratelimiters = globalState.__rateLimiters ?? new Map<string, Ratelimit>();
+  globalState.__rateLimiters = ratelimiters;
+
+  const existing = ratelimiters.get(cacheKey);
+  if (existing) return existing;
+
+  const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
+  const created = new Ratelimit({
+    redis,
+    prefix: cacheKey,
+    limiter: Ratelimit.slidingWindow(limit, `${windowSeconds} s`),
+  });
+  ratelimiters.set(cacheKey, created);
+  return created;
+}
+
+function applyInMemoryLimit(key: string, limit: number, windowMs: number): RateLimitResult {
+  const buckets = getInMemoryBuckets();
   const now = Date.now();
 
   const bucket = buckets.get(key);
   if (!bucket || bucket.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + options.windowMs });
-    return { allowed: true, remaining: options.limit - 1, retryAfterSeconds: Math.ceil(options.windowMs / 1000) };
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: Math.max(0, limit - 1), retryAfterSeconds: Math.max(1, Math.ceil(windowMs / 1000)) };
   }
 
-  if (bucket.count >= options.limit) {
+  if (bucket.count >= limit) {
     return {
       allowed: false,
       remaining: 0,
@@ -51,13 +89,36 @@ export function applyRateLimit(
 
   return {
     allowed: true,
-    remaining: options.limit - bucket.count,
+    remaining: Math.max(0, limit - bucket.count),
     retryAfterSeconds: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
   };
 }
-import { LRUCache } from 'lru-cache';
-import { NextResponse } from 'next/server';
-import { logger } from './logger';
+
+export async function applyRateLimit(
+  request: Request | NextRequest,
+  options: {
+    keyPrefix: string;
+    limit: number;
+    windowMs: number;
+  }
+): Promise<RateLimitResult> {
+  const ip = getClientIp(request);
+  const key = `${options.keyPrefix}:${ip}`;
+
+  const limiterKey = `rl:${options.keyPrefix}:${options.limit}:${options.windowMs}`;
+  const limiter = getLimiter(limiterKey, options.limit, options.windowMs);
+  if (!limiter) {
+    return applyInMemoryLimit(key, options.limit, options.windowMs);
+  }
+
+  const result = await limiter.limit(key);
+  const retryAfterSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
+  return {
+    allowed: result.success,
+    remaining: result.remaining,
+    retryAfterSeconds,
+  };
+}
 
 type RateLimitOptions = {
   uniqueTokenPerInterval?: number;
@@ -65,29 +126,30 @@ type RateLimitOptions = {
 };
 
 export function rateLimit(options?: RateLimitOptions) {
-  const tokenCache = new LRUCache({
-    max: options?.uniqueTokenPerInterval || 500,
-    ttl: options?.interval || 60000,
-  });
+  const maxUniqueTokens = options?.uniqueTokenPerInterval || 500;
+  const windowMs = options?.interval || 60_000;
+
+  const limiterKey = `rl:token:${maxUniqueTokens}:${windowMs}`;
+  const limiter = getLimiter(limiterKey, maxUniqueTokens, windowMs);
 
   return {
-    check: (limit: number, token: string) =>
-      new Promise<void>((resolve, reject) => {
-        const tokenCount = (tokenCache.get(token) as number[]) || [0];
-        if (tokenCount[0] === 0) {
-          tokenCache.set(token, tokenCount);
-        }
-        tokenCount[0] += 1;
+    check: async (limit: number, token: string) => {
+      if (!token) {
+        throw new Error("Rate limit token missing");
+      }
 
-        const currentUsage = tokenCount[0];
-        const isRateLimited = currentUsage > limit;
-
-        if (isRateLimited) {
-            logger.warn(`Rate limit exceeded. Token: ${token}, Current usage: ${currentUsage}, Limit: ${limit}`);
-            reject('Rate limit exceeded');
-        } else {
-            resolve();
+      if (!limiter) {
+        const memory = applyInMemoryLimit(`token:${token}`, limit, windowMs);
+        if (!memory.allowed) {
+          throw new Error("Rate limit exceeded");
         }
-      }),
+        return;
+      }
+
+      const result = await limiter.limit(`token:${token}`);
+      if (!result.success || (limit > 0 && result.remaining < 0)) {
+        throw new Error("Rate limit exceeded");
+      }
+    },
   };
 }

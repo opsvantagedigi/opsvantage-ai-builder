@@ -30,8 +30,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required field: projectId' }, { status: 400 });
     }
 
-    const project = await db.project.findUnique({
-      where: { id: projectId },
+    const project = await db.project.findFirst({
+      where: { id: projectId, deletedAt: null },
       include: { onboarding: true },
     });
 

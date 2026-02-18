@@ -48,8 +48,8 @@ export async function registerDomainAction(domain: string, price: { amount: stri
     return { error: 'You must be logged in to register a domain.' };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
     select: { id: true, openProviderHandle: true, email: true, name: true },
   });
 

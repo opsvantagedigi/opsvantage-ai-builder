@@ -49,8 +49,8 @@ export async function getOrCreateCustomerHandleAction(customerData: CustomerData
     return { error: 'User not authenticated: No user ID in session.' };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
     select: { openProviderHandle: true },
   });
 

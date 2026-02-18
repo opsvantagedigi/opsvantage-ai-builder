@@ -42,8 +42,8 @@ export async function loadProjectContentAction(projectId: string) {
     }
 
     // 2. LOAD FROM DATABASE
-    const project = await db.project.findUnique({
-      where: { id: projectId },
+    const project = await db.project.findFirst({
+      where: { id: projectId, deletedAt: null },
       select: { content: true, updatedAt: true },
     });
 

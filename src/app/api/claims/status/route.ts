@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { getOfferStatus, isFoundersOfferId } from "@/lib/claims-counter";
 
 export async function GET(req: NextRequest) {
-  const rate = applyRateLimit(req, { keyPrefix: "api:claims:status", limit: 60, windowMs: 60_000 });
+  const rate = await applyRateLimit(req, { keyPrefix: "api:claims:status", limit: 60, windowMs: 60_000 });
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many requests." },

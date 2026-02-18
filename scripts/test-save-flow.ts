@@ -4,7 +4,7 @@ import saveGeneratedPage from "@/lib/save-page"
 import type { PageGenerationResponse } from "@/lib/page-generation-schema"
 
 async function ensureTestUser(email: string) {
-  let user = await prisma.user.findUnique({ where: { email } })
+  let user = await prisma.user.findFirst({ where: { email, deletedAt: null } })
   if (!user) {
     user = await prisma.user.create({ data: { email, name: "Test User" } })
   }

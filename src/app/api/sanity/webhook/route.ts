@@ -55,7 +55,7 @@ export const POST = async (req: Request) => {
   const pathsToRevalidate: string[] = []
   try {
     if (projectRef) {
-      const project = await prisma.project.findUnique({ where: { id: projectRef } })
+      const project = await prisma.project.findFirst({ where: { id: projectRef, deletedAt: null } })
       const sub = project?.subdomain
       if (slug === "home" || doc.isHome) {
         if (sub) pathsToRevalidate.push(`/${sub}`)

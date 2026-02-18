@@ -15,7 +15,7 @@ export const GET = withErrorHandling(async () => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     logger.info(`Onboarding GET: session. Email: ${session?.email}`)
-    const user = await prisma.user.findUnique({ where: { email: session?.email } })
+    const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } })
     if (!user) {
       logger.error(`Onboarding GET: User not found. Email: ${session?.email}`)
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -127,7 +127,7 @@ export const PATCH = withErrorHandling(async (req) => {
     return NextResponse.json({ error: "Validation Error", details: patch.error.issues }, { status: 400 })
   }
   // Find latest onboarding for user's latest project
-  const user = await prisma.user.findUnique({ where: { email: session?.email } })
+  const user = await prisma.user.findFirst({ where: { email: session?.email, deletedAt: null } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
   const member = await prisma.workspaceMember.findFirst({ where: { userId: user.id }, include: { workspace: true } })
   if (!member) return NextResponse.json({ error: "No workspace found" }, { status: 404 })

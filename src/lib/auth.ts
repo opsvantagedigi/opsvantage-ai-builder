@@ -3,6 +3,10 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("CRITICAL: NEXTAUTH_SECRET MISSING");
+}
+
 const credentialProvider = CredentialsProvider({
   name: "Credentials",
   credentials: {
@@ -34,7 +38,7 @@ export const authOptions: NextAuthOptions = {
   session: { 
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET || 'dev-nextauth-secret',
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     jwt: async ({ token, user }: any) => {
       if (user) {

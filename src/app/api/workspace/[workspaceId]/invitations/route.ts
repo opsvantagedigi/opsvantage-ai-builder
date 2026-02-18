@@ -105,16 +105,16 @@ export async function POST(
     }
 
     // Check subscription (Agency only)
-    const workspace = await db.workspace.findUnique({
-      where: { id: workspaceId },
+    const workspace = await db.workspace.findFirst({
+      where: { id: workspaceId, deletedAt: null },
     });
 
     if (!workspace) {
       return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
     }
 
-    const owner = await db.user.findUnique({
-      where: { id: workspace.ownerId },
+    const owner = await db.user.findFirst({
+      where: { id: workspace.ownerId, deletedAt: null },
     });
 
     if (!owner?.stripePriceId) {
