@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 function toWsUrl(httpUrl: string) {
   const trimmed = httpUrl.trim().replace(/\/$/, "");
   if (trimmed.startsWith("wss://") || trimmed.startsWith("ws://")) {
