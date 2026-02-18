@@ -3,7 +3,13 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim();
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key.startsWith('opsvantage-runtime-') && key !== 'opsvantage-runtime-v2').map((key) => caches.delete(key)));
+    })()
+  );
 });
 
 self.addEventListener('fetch', (event) => {
@@ -11,8 +17,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  const path = url.pathname;
+
+  // Never cache authenticated/admin surfaces or Next.js build artifacts.
+  // These change frequently and stale caching breaks the dashboard.
+  const shouldBypassCache =
+    !isSameOrigin ||
+    path.startsWith('/admin') ||
+    path.startsWith('/dashboard') ||
+    path.startsWith('/sovereign-access') ||
+    path.startsWith('/api') ||
+    path.startsWith('/_next');
+
+  if (shouldBypassCache) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
-    caches.open('opsvantage-runtime-v1').then(async (cache) => {
+    caches.open('opsvantage-runtime-v2').then(async (cache) => {
       const cached = await cache.match(event.request);
       if (cached) {
         return cached;

@@ -8,6 +8,30 @@ export default function PWARegister() {
       return;
     }
 
+    const pathname = window.location.pathname || "/";
+    const isAdminSurface =
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/sovereign-access");
+
+    if (isAdminSurface) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => {
+        });
+
+      if ("caches" in window) {
+        caches
+          .keys()
+          .then((keys) => Promise.all(keys.filter((key) => key.startsWith("opsvantage-runtime-")).map((key) => caches.delete(key))))
+          .catch(() => {
+          });
+      }
+
+      return;
+    }
+
     const urlBase64ToUint8Array = (base64String: string) => {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
       const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
