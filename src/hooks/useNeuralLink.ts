@@ -63,7 +63,11 @@ function resolveDefaultWsUrl(): string {
     }
   }
 
-  return 'ws://localhost:8080/ws/neural-core';
+  if (process.env.NODE_ENV !== 'production') {
+    return 'ws://localhost:8080/ws/neural-core';
+  }
+
+  return '';
 }
 
 function toHttpUrl(wsUrl: string): string {
@@ -138,7 +142,7 @@ export function useNeuralLink({
   const [lastEvent, setLastEvent] = useState<NeuralLinkEvent | null>(null);
   const statusRef = useRef<NeuralLinkStatus>('idle');
 
-  const effectiveWsUrl = wsUrl || resolveDefaultWsUrl();
+  const effectiveWsUrl = (wsUrl || resolveDefaultWsUrl()).trim();
   const configuredWakeUrl = wakeUrl || process.env.NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL;
   const effectiveWakeUrl = configuredWakeUrl?.trim() || '/api/orchestrator/wake';
   const effectiveWakeToken = wakeToken || process.env.NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN || '';
@@ -232,6 +236,11 @@ export function useNeuralLink({
 
   const verify404AndWake = useCallback(async () => {
     try {
+      if (!effectiveWsUrl) {
+        setStatus('error');
+        setLastError('Neural core URL is not configured.');
+        return;
+      }
       const probeUrl = toHttpUrl(effectiveWsUrl);
       const response = await fetch(probeUrl, { method: 'GET', cache: 'no-store' });
       if (response.status === 404) {
@@ -258,6 +267,12 @@ export function useNeuralLink({
 
   const connect = useCallback(() => {
     if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!effectiveWsUrl) {
+      setStatus('error');
+      setLastError('Neural core URL is not configured.');
       return;
     }
 

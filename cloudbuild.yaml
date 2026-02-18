@@ -26,7 +26,7 @@ images:
 - 'gcr.io/$PROJECT_ID/opsvantage-ai-builder'
 
 substitutions:
-  _NEXT_PUBLIC_NEURAL_CORE_URL: 'https://marz-neural-core-xge3xydmha-ez.a.run.app'
+  _NEXT_PUBLIC_NEURAL_CORE_URL: 'https://marz-neural-core-1018462465472.europe-west4.run.app'
   _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL: ''
   _NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN: ''
   _NEXT_PUBLIC_VAPID_PUBLIC_KEY: 'BBB9aV3pwuYlwNSk-KlYchgyBkxXVfOD76rMaeNK9xaP62DN_2PTIRhjTTeCXF3E1pR2wcV50RAhe4od2HFiDsE'

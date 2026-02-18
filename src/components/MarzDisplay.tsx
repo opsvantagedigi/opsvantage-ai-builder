@@ -26,7 +26,7 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   const { status, stream, lastEvent, lastError, connect, sendMessage, wakeContainer } = useNeuralLink({
     wsUrl: resolvedWsUrl,
     wakeUrl,
-    autoConnect: true,
+    autoConnect: Boolean(resolvedWsUrl),
   });
 
   useEffect(() => {
@@ -222,6 +222,8 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
 
       <form onSubmit={handleSend} className="mt-2 flex items-center gap-2">
         <input
+          id="marz-chat-input"
+          name="message"
           type="text"
           value={messageText}
           onChange={(event) => setMessageText(event.target.value)}
