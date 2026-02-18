@@ -22,7 +22,10 @@ from voice_config import VOICE_PARAMS, apply_wit_filter
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    neural_model_id: str = "meta-llama/Meta-Llama-3-8B-Instruct"
+    # Default to an open-access model so Neural Core works without HuggingFace auth.
+    # For gated models (e.g. meta-llama/*), set HUGGINGFACE_TOKEN.
+    neural_model_id: str = os.getenv("NEURAL_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct")
+    huggingface_token: str | None = os.getenv("HUGGINGFACE_TOKEN") or None
     xtts_model_id: str = VOICE_PARAMS.get("model_name", "tts_models/multilingual/multi-dataset/xtts_v2")
     sovereign_voice_sample: str | None = None
     wav2lip_checkpoint_path: str = "/opt/Wav2Lip/checkpoints/wav2lip_gan.pth"
@@ -342,8 +345,14 @@ class BrainEngine:
         from vllm import LLM
 
         if self._llm is None:
+            model_id = settings.neural_model_id
+            if "meta-llama" in model_id and not (settings.huggingface_token or ""):
+                print(f"[BrainEngine] WARNING: {model_id} requires HUGGINGFACE_TOKEN")
+                print("[BrainEngine] Falling back to microsoft/Phi-3-mini-4k-instruct (no auth required)")
+                model_id = "microsoft/Phi-3-mini-4k-instruct"
+
             self._llm = LLM(
-                model=settings.neural_model_id,
+                model=model_id,
                 trust_remote_code=True,
                 gpu_memory_utilization=0.9,
                 max_model_len=4096,
