@@ -6,6 +6,7 @@ import { verifySession } from "@/lib/verify-session";
 import { MarzAgent } from "@/lib/marz/agent-core";
 import { generateSpeech, getInitialVoicePayload } from "@/lib/marz-logic";
 import { ensureSentinelMemory } from "@/lib/marz/sentinel-memory";
+import { logger } from "@/lib/logger";
 
 const DEFAULT_PROMPT =
   "Deliver a concise ops update in a grounded New Zealand tone inspired by a calm, motherly advisor. Keep it under 70 words.";
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       prompt?: unknown;
       firstLink?: boolean;
     };
-    console.log("DEBUG PAYLOAD:", body);
+    logger.info("[Neural Link] Request received", { hasText: Boolean(body.gen_text || body.text), hasPrompt: Boolean(body.prompt) });
 
     const speechText = String(body.gen_text || body.text || "Synchronisation complete.").trim();
     if (!speechText) {

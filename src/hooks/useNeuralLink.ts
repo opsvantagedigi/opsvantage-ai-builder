@@ -243,7 +243,7 @@ export function useNeuralLink({
       }
       const probeUrl = toHttpUrl(effectiveWsUrl);
       const response = await fetch(probeUrl, { method: 'GET', cache: 'no-store' });
-      if (response.status === 404) {
+      if (response.status === 404 || response.status === 503) {
         await wakeContainer();
       }
     } catch {

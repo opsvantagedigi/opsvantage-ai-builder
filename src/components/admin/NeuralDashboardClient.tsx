@@ -132,7 +132,8 @@ export default function NeuralDashboardClient({
       const response = await fetch('/api/marketing/generate', { cache: 'no-store' });
       const payload = (await response.json().catch(() => ({}))) as MarketingGeneratePayload;
       if (!response.ok) {
-        setMarketingError(payload?.error || 'Unable to load marketing posts.');
+        const errorMsg = payload?.error || 'Unable to load marketing posts.';
+        setMarketingError(errorMsg);
         return;
       }
 
@@ -140,7 +141,7 @@ export default function NeuralDashboardClient({
       setMarketingPosts(nextPosts.slice(0, 3));
       setMarketingMode(payload.mode || 'unknown');
       setMarketingUpdatedAt(payload.generatedAt || new Date().toISOString());
-    } catch {
+    } catch (error) {
       setMarketingError('Unable to load marketing posts.');
     } finally {
       setMarketingBusy(false);
@@ -625,7 +626,8 @@ export default function NeuralDashboardClient({
       const fallbackText = "Welcome, Ajay. Neural link online. Running browser fallback voice while AllTalk XTTS stabilizes.";
       setVoiceModelLabel("Browser TTS Fallback");
       setNeuralSpeech(fallbackText);
-      setNeuralLinkError(error instanceof Error ? error.message : String(error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setNeuralLinkError(errorMessage);
       requestFallbackSpeech(fallbackText);
     } finally {
       setNeuralLinkBusy(false);

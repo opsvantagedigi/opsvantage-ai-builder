@@ -67,6 +67,8 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
         awakening: true,
         request_id: `awakening-${Date.now()}`,
         text: 'Awaken MARZ video presence.',
+        client: 'marz-display',
+        ts: Date.now(),
       });
     } catch {
       // If the socket isn't ready yet, user can press Reconnect.

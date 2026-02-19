@@ -46,7 +46,9 @@ const MarzOperator = () => {
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          return;
+        }
         setIsListening(false);
       };
     }
