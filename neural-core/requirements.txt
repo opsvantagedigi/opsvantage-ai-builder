@@ -10,6 +10,7 @@ soundfile==0.12.1
 aiofiles==24.1.0
 httpx==0.28.1
 ffmpeg-python==0.2.0
+opencv-python-headless==4.8.1.78
 TTS==0.22.0
 transformers==4.48.2
 tokenizers==0.21.2
