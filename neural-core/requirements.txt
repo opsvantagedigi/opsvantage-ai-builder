@@ -4,6 +4,7 @@ websockets==14.1
 python-multipart==0.0.20
 pydantic==2.10.6
 pydantic-settings==2.7.1
+python-dotenv==1.2.1
 setuptools==68.2.2
 numpy==1.22.0
 soundfile==0.12.1
@@ -11,6 +12,7 @@ aiofiles==24.1.0
 httpx==0.28.1
 ffmpeg-python==0.2.0
 opencv-python-headless==4.8.1.78
+google-cloud-storage==2.19.0
 TTS==0.22.0
 transformers==4.48.2
 tokenizers==0.21.2

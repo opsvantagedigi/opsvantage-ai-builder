@@ -28,9 +28,18 @@ class Settings(BaseSettings):
     # Default to an open-access model so Neural Core works without HuggingFace auth.
     # For gated models (e.g. meta-llama/*), set HUGGINGFACE_TOKEN.
     neural_model_id: str = os.getenv("NEURAL_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct")
-    huggingface_token: str | None = os.getenv("HUGGINGFACE_TOKEN") or None
+    huggingface_token: str | None = (
+        (os.getenv("HUGGINGFACE_TOKEN") or os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or "")
+        .replace("\r", "")
+        .replace("\n", "")
+        .strip()
+        or None
+    )
     xtts_model_id: str = VOICE_PARAMS.get("model_name", "tts_models/multilingual/multi-dataset/xtts_v2")
     sovereign_voice_sample: str | None = None
+    wav2lip_checkpoint_url: str | None = (
+        (os.getenv("WAV2LIP_CHECKPOINT_URL") or "").replace("\r", "").replace("\n", "").strip() or None
+    )
     wav2lip_checkpoint_path: str = "/opt/Wav2Lip/checkpoints/wav2lip_gan.pth"
     wav2lip_repo_path: str = "/opt/Wav2Lip"
     default_avatar_video: str = "/workspace/neural-core/assets/marz-face.mp4"
@@ -560,10 +569,105 @@ def clamp_tts_text(text: str, max_chars: int = 280) -> str:
     return normalized[:cut].rstrip() + "…"
 
 
+def ensure_min_tts_text(text: str, min_chars: int = 32) -> str:
+    normalized = " ".join((text or "").split()).strip()
+    if len(normalized) >= min_chars:
+        return normalized
+
+    if not normalized:
+        normalized = "Understood."
+
+    suffix = " Please continue."
+    combined = f"{normalized}{suffix}"
+    if len(combined) >= min_chars:
+        return combined
+
+    # Last resort: pad with a short neutral phrase.
+    padding = " I'm listening." * 3
+    return (combined + padding).strip()
+
+
 class LipSyncEngine:
+    async def _ensure_checkpoint(self) -> None:
+        checkpoint = Path(settings.wav2lip_checkpoint_path)
+        if checkpoint.exists():
+            return
+
+        checkpoint.parent.mkdir(parents=True, exist_ok=True)
+
+        def _download() -> None:
+            token = (settings.huggingface_token or "").replace("\r", "").replace("\n", "").strip()
+            auth_headers = {"authorization": f"Bearer {token}"} if token else {}
+
+            configured_url = (settings.wav2lip_checkpoint_url or "").strip()
+
+            urls: list[tuple[str, str, dict[str, str]]] = [
+                ("sovereign", configured_url, {}),
+                (
+                    "sharepoint",
+                    "https://iiitaphyd-my.sharepoint.com/:u:/g/personal/radrabha_m_research_iiit_ac_in/EbVZT77Xx8tMq7tV5zPqQ6wBqV8H9p4N2kL5mR3tY6wXzA?download=1",
+                    {},
+                ),
+                (
+                    "huggingface",
+                    "https://huggingface.co/justinjohn/wav2lip/resolve/main/wav2lip_gan.pth",
+                    auth_headers,
+                ),
+            ]
+
+            tmp_path = checkpoint.parent / f".{checkpoint.name}.download"
+            for label, url, headers in urls:
+                if not url:
+                    continue
+                try:
+                    print(f"[wav2lip] checkpoint missing; downloading via {label}: {url}")
+
+                    if url.startswith("gs://"):
+                        # Download from a private GCS bucket using the Cloud Run service account.
+                        # Requires roles/storage.objectViewer on the object/bucket.
+                        from google.cloud import storage
+
+                        without_scheme = url[len("gs://") :]
+                        bucket_name, blob_name = without_scheme.split("/", 1)
+                        client = storage.Client()
+                        bucket = client.bucket(bucket_name)
+                        blob = bucket.blob(blob_name)
+                        blob.download_to_filename(str(tmp_path))
+                    else:
+                        with httpx.Client(timeout=180.0, follow_redirects=True) as client:
+                            with client.stream("GET", url, headers=headers) as response:
+                                response.raise_for_status()
+                                with tmp_path.open("wb") as handle:
+                                    for chunk in response.iter_bytes():
+                                        if chunk:
+                                            handle.write(chunk)
+
+                    size_mb = tmp_path.stat().st_size / 1024 / 1024
+                    if size_mb < 50:
+                        raise RuntimeError(f"Downloaded checkpoint too small ({size_mb:.1f}MB)")
+
+                    tmp_path.replace(checkpoint)
+                    print(f"[wav2lip] checkpoint downloaded ({size_mb:.1f}MB)")
+                    return
+                except Exception as error:
+                    print(f"[wav2lip] checkpoint download failed via {label}: {error}")
+                    try:
+                        if tmp_path.exists():
+                            tmp_path.unlink()
+                    except Exception:
+                        pass
+
+            raise RuntimeError("Unable to download Wav2Lip checkpoint from all sources.")
+
+        await asyncio.to_thread(_download)
+        if not checkpoint.exists():
+            raise FileNotFoundError(f"Wav2Lip checkpoint missing after download: {checkpoint}")
+
     async def render(self, face_video: Path, audio_wav: Path, out_mp4: Path) -> None:
         if not face_video.exists():
             raise FileNotFoundError(f"Avatar source not found: {face_video}")
+
+        await self._ensure_checkpoint()
 
         command = [
             "python",
@@ -696,6 +800,46 @@ async def calibrate_sync(video_path: Path, audio_wav: Path, calibrated_path: Pat
         return video_path
 
     return calibrated_path
+
+
+async def mux_audio_onto_avatar(avatar_video: Path, audio_wav: Path, out_mp4: Path) -> Path:
+    if not avatar_video.exists():
+        raise FileNotFoundError(f"Avatar source not found: {avatar_video}")
+    if not audio_wav.exists():
+        raise FileNotFoundError(f"Audio source not found: {audio_wav}")
+
+    process = await asyncio.create_subprocess_exec(
+        "ffmpeg",
+        "-y",
+        "-stream_loop",
+        "-1",
+        "-i",
+        str(avatar_video),
+        "-i",
+        str(audio_wav),
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "aac",
+        "-shortest",
+        str(out_mp4),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await process.communicate()
+    if process.returncode != 0 or not out_mp4.exists():
+        details = stderr.decode("utf-8", errors="ignore")
+        raise RuntimeError(f"ffmpeg mux failed: {details}")
+
+    return out_mp4
 
 
 brain = BrainEngine()
@@ -889,7 +1033,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
 
                 brain_output = await brain.infer(text_prompt, sentiment_profile=sentiment_profile)
                 voiced_output = apply_wit_filter(brain_output)
-                tts_text = clamp_tts_text(voiced_output, max_chars=280)
+                tts_text = ensure_min_tts_text(clamp_tts_text(voiced_output, max_chars=280))
 
                 await websocket.send_text(
                     safe_json(
@@ -919,8 +1063,13 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                         )
                     )
 
-                    await lipsync.render(avatar_path, wav_path, video_path)
-                    final_video_path = await calibrate_sync(video_path, wav_path, calibrated_video_path)
+                    fallback_video_path = work / "avatar-with-audio.mp4"
+                    try:
+                        await lipsync.render(avatar_path, wav_path, video_path)
+                        final_video_path = await calibrate_sync(video_path, wav_path, calibrated_video_path)
+                    except Exception as lipsync_error:
+                        print("[wav2lip] lipsync unavailable; falling back to avatar mux", repr(lipsync_error))
+                        final_video_path = await mux_audio_onto_avatar(avatar_path, wav_path, fallback_video_path)
 
                     audio_bytes = wav_path.read_bytes()
                     video_bytes = final_video_path.read_bytes()

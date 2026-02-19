@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'marz-pwa-v1';
-const RUNTIME_CACHE = 'marz-runtime-v1';
+const CACHE_NAME = 'marz-pwa-v2';
+const RUNTIME_CACHE = 'marz-runtime-v2';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -44,6 +44,15 @@ self.addEventListener('fetch', (event) => {
 
   // Skip chrome-extension and other non-http requests
   if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
+  const url = new URL(event.request.url);
+  const path = url.pathname || '/';
+
+  // Never cache Next.js build assets or API routes; caching these can break voice/video chat
+  // after deployments by serving stale JS or stale configuration.
+  if (path.startsWith('/_next/') || path.startsWith('/api/') || path === '/sw.js' || path === '/service-worker.js') {
     return;
   }
 

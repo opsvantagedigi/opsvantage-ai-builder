@@ -53,7 +53,15 @@ export async function proxy(req: NextRequest) {
     }
 
     const allowPrefixes = ["/api", "/_next"];
-    const allowExact = new Set(["/", "/coming-soon", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/sovereign-access"]);
+    const allowExact = new Set([
+        "/",
+        "/coming-soon",
+        "/favicon.ico",
+        "/robots.txt",
+        "/sitemap.xml",
+        "/sovereign-access",
+    ]);
+    const isMarzChatRoute = pathname === "/marz/chat" || pathname.startsWith("/marz/chat/");
 
     let globalLaunchActive = false;
     if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
@@ -71,7 +79,7 @@ export async function proxy(req: NextRequest) {
         }
     }
 
-    if (isPublicAsset || allowExact.has(pathname) || allowPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    if (isPublicAsset || isMarzChatRoute || allowExact.has(pathname) || allowPrefixes.some((prefix) => pathname.startsWith(prefix))) {
         const response = NextResponse.next();
         response.headers.set("x-zenith-authorized", isSovereignAdmin.toString());
         return response;

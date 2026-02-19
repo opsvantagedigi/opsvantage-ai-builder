@@ -68,7 +68,7 @@
     "react-hook-form": "^7.71.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
-    "resend": "^3.5.0",
+    "resend": "^6.9.2",
     "sanity": "^5.9.0",
     "semver": "^7.6.2",
     "socket.io-client": "^4.8.3",
@@ -118,6 +118,9 @@
   "overrides": {
     "path-to-regexp": "^8.3.0",
     "semver": "^7.6.2",
-    "prismjs": "^1.30.0"
+    "prismjs": "^1.30.0",
+    "minimatch": "10.2.1",
+    "glob": "13.0.5",
+    "rimraf": "6.1.3"
   }
 }

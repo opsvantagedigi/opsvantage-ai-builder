@@ -54,3 +54,10 @@ tmpclaude-*
 
 .vercel
 /playwright-report/
+
+# local python env
+.venv/
+
+# neural-core local artifacts (never commit)
+/neural-core/checkpoints/
+*.pth

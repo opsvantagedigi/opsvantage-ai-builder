@@ -7,6 +7,7 @@ module.exports = [
   {
     ignores: [
       "node_modules/**",
+      ".venv/**",
       ".next/**",
       ".next-build/**",
       "out/**",

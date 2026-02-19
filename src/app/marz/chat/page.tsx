@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Microphone, Video, VideoOff, Volume2, VolumeX, Send, Power, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Mic, Video, VideoOff, Volume2, VolumeX, Send, Power, Sparkles, Wifi, WifiOff } from 'lucide-react';
 
 type Message = {
   id: string;
@@ -16,7 +16,6 @@ type Message = {
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 export default function MARZChatPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   
   // State
@@ -38,6 +37,18 @@ export default function MARZChatPage() {
   const recognitionRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Add message to chat
+  const addMessage = useCallback((role: 'user' | 'assistant', text: string, videoUrl?: string, audioUrl?: string) => {
+    setMessages(prev => [...prev, {
+      id: `${role}-${Date.now()}`,
+      role,
+      text,
+      timestamp: new Date(),
+      videoUrl,
+      audioUrl,
+    }]);
+  }, []);
   
   // Wake on mount if requested
   useEffect(() => {
@@ -80,7 +91,7 @@ export default function MARZChatPage() {
       
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = true;
+        recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = 'en-US';
         
@@ -107,6 +118,8 @@ export default function MARZChatPage() {
         
         recognitionRef.current.onerror = (event: any) => {
           console.error('Speech recognition error:', event.error);
+          const errorLabel = typeof event?.error === 'string' ? event.error : 'unknown';
+          addMessage('assistant', `Voice recognition error: ${errorLabel}.`);
           setIsListening(false);
         };
         
@@ -119,7 +132,7 @@ export default function MARZChatPage() {
     return () => {
       recognitionRef.current?.stop();
     };
-  }, []);
+  }, [addMessage]);
   
   // Process voice commands
   const processVoiceCommand = useCallback((command: string) => {
@@ -186,6 +199,7 @@ export default function MARZChatPage() {
         
         // Send awakening message
         ws.send(JSON.stringify({
+          request_id: `wake-${Date.now()}`,
           awakening: true,
           text: 'Awaken MARZ. Sovereign user requesting connection.',
           client: 'marz-pwa-mobile',
@@ -198,26 +212,47 @@ export default function MARZChatPage() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+
+          if (data.type === 'error') {
+            setConnectionStatus('error');
+            addMessage('assistant', `MARZ error: ${data.message || 'Unknown neural-core error.'}`);
+            return;
+          }
+
+          if (data.type === 'status' && !data.video_b64 && !data.audio_b64 && !data.text) {
+            return;
+          }
+
+          let latestVideoUrl: string | undefined;
+          let latestAudioUrl: string | undefined;
           
           if (data.video_b64) {
-            const videoBlob = base64ToBlob(data.video_b64, 'video/webm');
+            const videoFormat = String(data.video_format || '').toLowerCase();
+            const videoMimeType = videoFormat === 'mp4' ? 'video/mp4' : 'video/webm';
+            const videoBlob = base64ToBlob(data.video_b64, videoMimeType);
             const videoUrl = URL.createObjectURL(videoBlob);
+            latestVideoUrl = videoUrl;
             
             if (videoRef.current) {
               videoRef.current.src = videoUrl;
-              videoRef.current.play();
+              void videoRef.current.play().catch((playError) => {
+                console.error('Video playback failed:', playError);
+              });
             }
-            
-            addMessage('assistant', data.text || 'Video stream received', videoUrl);
           }
           
           if (data.audio_b64) {
-            const audioBlob = base64ToBlob(data.audio_b64, 'audio/mpeg');
+            const audioFormat = String(data.audio_format || '').toLowerCase();
+            const audioMimeType = audioFormat === 'wav' ? 'audio/wav' : 'audio/mpeg';
+            const audioBlob = base64ToBlob(data.audio_b64, audioMimeType);
             const audioUrl = URL.createObjectURL(audioBlob);
+            latestAudioUrl = audioUrl;
             
             if (audioRef.current && isAudioEnabled) {
               audioRef.current.src = audioUrl;
-              audioRef.current.play();
+              void audioRef.current.play().catch((playError) => {
+                console.error('Audio playback failed:', playError);
+              });
               setIsSpeaking(true);
               
               audioRef.current.onended = () => {
@@ -227,7 +262,17 @@ export default function MARZChatPage() {
           }
           
           if (data.text) {
-            addMessage('assistant', data.text);
+            addMessage('assistant', data.text, latestVideoUrl, latestAudioUrl);
+            return;
+          }
+
+          if (latestVideoUrl) {
+            addMessage('assistant', 'Video stream received.', latestVideoUrl, latestAudioUrl);
+            return;
+          }
+
+          if (latestAudioUrl) {
+            addMessage('assistant', 'Audio response received.', undefined, latestAudioUrl);
           }
         } catch (error) {
           console.error('Error processing message:', error);
@@ -263,13 +308,18 @@ export default function MARZChatPage() {
   
   // Send message
   const sendMessage = useCallback((text: string) => {
+    const messageText = text.trim();
+    if (!messageText) {
+      return;
+    }
+
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      addMessage('user', text);
+      addMessage('user', messageText);
       addMessage('assistant', 'MARZ is currently offline. Please reconnect.');
       return;
     }
     
-    addMessage('user', text);
+    addMessage('user', messageText);
     
     const recentHistory = messages.slice(-8).map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
@@ -277,30 +327,19 @@ export default function MARZChatPage() {
     }));
     
     wsRef.current.send(JSON.stringify({
-      text,
+      text: messageText,
       request_id: `chat-${Date.now()}`,
       history: recentHistory,
+      enable_video: isVideoEnabled,
     }));
     
     setInputText('');
-  }, [messages]);
-  
-  // Add message to chat
-  const addMessage = (role: 'user' | 'assistant', text: string, videoUrl?: string, audioUrl?: string) => {
-    setMessages(prev => [...prev, {
-      id: `${role}-${Date.now()}`,
-      role,
-      text,
-      timestamp: new Date(),
-      videoUrl,
-      audioUrl,
-    }]);
-  };
+  }, [addMessage, isVideoEnabled, messages]);
   
   // Toggle voice listening
   const toggleListening = useCallback(() => {
     if (!recognitionRef.current) {
-      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      addMessage('assistant', 'Voice commands are not supported on this browser. Use Chrome/Edge or type your message.');
       return;
     }
     
@@ -308,10 +347,15 @@ export default function MARZChatPage() {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
-      recognitionRef.current.start();
-      setIsListening(true);
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (startError) {
+        console.error('Speech recognition start failed:', startError);
+        addMessage('assistant', 'Unable to start voice recognition. Check microphone permission and try again.');
+      }
     }
-  }, [isListening]);
+  }, [addMessage, isListening]);
   
   // Handle install PWA
   const handleInstall = useCallback(() => {
@@ -460,7 +504,7 @@ export default function MARZChatPage() {
                 : 'bg-cyan-600 text-white hover:bg-cyan-700'
             }`}
           >
-            <Microphone className="w-6 h-6" />
+            <Mic className="w-6 h-6" />
           </button>
           
           {/* Text input */}
@@ -468,7 +512,7 @@ export default function MARZChatPage() {
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputText)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage(inputText)}
             placeholder="Type a message..."
             className="flex-1 bg-slate-800 border border-slate-700 rounded-full px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
           />
