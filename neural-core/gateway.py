@@ -340,6 +340,10 @@ CONSTITUTION_TEXT = load_constitution_text()
 class BrainEngine:
     def __init__(self) -> None:
         self._llm: Any | None = None
+        self._fallback_model: Any | None = None
+        self._fallback_tokenizer: Any | None = None
+        self._fallback_device: Any | None = None
+        self._use_fallback = False
 
     def _load(self) -> Any:
         from vllm import LLM
@@ -351,19 +355,51 @@ class BrainEngine:
                 print("[BrainEngine] Falling back to microsoft/Phi-3-mini-4k-instruct (no auth required)")
                 model_id = "microsoft/Phi-3-mini-4k-instruct"
 
-            self._llm = LLM(
-                model=model_id,
-                trust_remote_code=True,
-                gpu_memory_utilization=0.9,
-                max_model_len=4096,
-            )
+            try:
+                self._llm = LLM(
+                    model=model_id,
+                    trust_remote_code=True,
+                    gpu_memory_utilization=0.9,
+                    max_model_len=4096,
+                )
+            except Exception as exc:
+                self._use_fallback = True
+                self._llm = None
+                print(f"[BrainEngine] vLLM init failed; falling back to transformers. Error: {exc}")
         return self._llm
+
+    def _load_fallback(self) -> tuple[Any, Any, Any]:
+        if self._fallback_model is None or self._fallback_tokenizer is None:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            import torch
+
+            model_id = settings.neural_model_id
+            if "meta-llama" in model_id and not (settings.huggingface_token or ""):
+                model_id = "microsoft/Phi-3-mini-4k-instruct"
+
+            tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+            if tokenizer.pad_token is None:
+                tokenizer.pad_token = tokenizer.eos_token
+
+            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+            model = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                torch_dtype=dtype,
+                trust_remote_code=True,
+            )
+            model.to(device)
+            model.eval()
+
+            self._fallback_model = model
+            self._fallback_tokenizer = tokenizer
+            self._fallback_device = device
+
+        return self._fallback_model, self._fallback_tokenizer, self._fallback_device
 
     async def infer(self, prompt: str, sentiment_profile: dict[str, Any] | None = None) -> str:
         def _run() -> str:
-            from vllm import SamplingParams
-
-            llm = self._load()
             memory_context = memory_store.query_context(prompt, top_k=3)
             memory_block = "\n".join(memory_context) if memory_context else "No prior memory context available."
             sentiment_block = sentiment_profile or {
@@ -382,11 +418,37 @@ class BrainEngine:
             baseline = 0.6
             delta = float(sentiment_block.get("temperature_delta", 0.0))
             temperature = max(0.2, min(0.9, baseline + delta))
-            params = SamplingParams(temperature=temperature, top_p=0.9, max_tokens=420)
-            outputs = llm.generate([constrained_prompt], params)
-            if not outputs or not outputs[0].outputs:
-                return "No response generated."
-            return outputs[0].outputs[0].text.strip()
+            if not self._use_fallback:
+                try:
+                    from vllm import SamplingParams
+
+                    llm = self._load()
+                    if llm is not None:
+                        params = SamplingParams(temperature=temperature, top_p=0.9, max_tokens=420)
+                        outputs = llm.generate([constrained_prompt], params)
+                        if outputs and outputs[0].outputs:
+                            return outputs[0].outputs[0].text.strip()
+                except Exception as exc:
+                    self._use_fallback = True
+                    print(f"[BrainEngine] vLLM inference failed; falling back to transformers. Error: {exc}")
+
+            model, tokenizer, device = self._load_fallback()
+            import torch
+
+            inputs = tokenizer(constrained_prompt, return_tensors="pt")
+            inputs = {key: value.to(device) for key, value in inputs.items()}
+            with torch.inference_mode():
+                generated = model.generate(
+                    **inputs,
+                    max_new_tokens=420,
+                    do_sample=True,
+                    temperature=temperature,
+                    top_p=0.9,
+                    pad_token_id=tokenizer.eos_token_id,
+                )
+            output_ids = generated[0][inputs["input_ids"].shape[-1] :]
+            text = tokenizer.decode(output_ids, skip_special_tokens=True)
+            return text.strip() or "No response generated."
 
         return await asyncio.to_thread(_run)
 
