@@ -387,8 +387,15 @@ class BrainEngine:
 
     def _load_fallback(self) -> tuple[Any, Any, Any]:
         if self._fallback_model is None or self._fallback_tokenizer is None:
-            from transformers import AutoTokenizer
-            from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+            try:
+                from transformers import AutoTokenizer  # type: ignore
+            except Exception:
+                from transformers.models.auto.tokenization_auto import AutoTokenizer  # type: ignore
+
+            try:
+                from transformers import AutoModelForCausalLM  # type: ignore
+            except Exception:
+                from transformers.models.auto.modeling_auto import AutoModelForCausalLM  # type: ignore
             import torch
 
             model_id = settings.neural_model_id
