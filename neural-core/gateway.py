@@ -420,6 +420,9 @@ class BrainEngine:
             constrained_prompt = (
                 f"[PRIMARY CONSTITUTION]\n{CONSTITUTION_TEXT}\n\n"
                 f"[SOVEREIGN MEMORY]\n{memory_block}\n\n"
+                f"[OUTPUT CONSTRAINTS]\n"
+                f"Respond as MARZ in 1-2 short sentences (max 280 characters).\n"
+                f"No lists. No markdown. No role tags.\n\n"
                 f"[SENTIMENT_ANALYSIS_V2]\n"
                 f"label={sentiment_block.get('label')} score={sentiment_block.get('score')} empathy_weight={sentiment_block.get('empathy_weight')}\n\n"
                 f"[CURRENT REQUEST]\n{prompt}\n"
@@ -494,7 +497,6 @@ class SovereignVoice:
                         text=text,
                         file_path=str(out_wav),
                         speaker_wav=settings.sovereign_voice_sample,
-                        language="en",
                         **tts_kwargs,
                     )
                 except TypeError:
@@ -503,18 +505,59 @@ class SovereignVoice:
                         text=text,
                         file_path=str(out_wav),
                         speaker_wav=settings.sovereign_voice_sample,
-                        language="en",
                         **fallback_kwargs,
                     )
             else:
+                speaker: str | None = None
                 try:
-                    wav = tts.tts(text=text, **tts_kwargs)
-                except TypeError:
-                    fallback_kwargs = {key: value for key, value in tts_kwargs.items() if key != "emotion"}
-                    wav = tts.tts(text=text, **fallback_kwargs)
+                    speakers = getattr(tts, "speakers", None)
+                    if isinstance(speakers, (list, tuple)) and speakers:
+                        speaker = str(speakers[0])
+                except Exception:
+                    speaker = None
+
+                # Skip language detection - model is not multi-lingual
+                language: str | None = None
+
+                base_kwargs = dict(tts_kwargs)
+                if speaker:
+                    base_kwargs.setdefault("speaker", speaker)
+
+                # Prefer writing directly to a wav file when supported.
+                for drop_keys in ((), ("emotion",), ("emotion", "speaker")):
+                    attempt_kwargs = {k: v for k, v in base_kwargs.items() if k not in drop_keys}
+                    try:
+                        if hasattr(tts, "tts_to_file"):
+                            tts.tts_to_file(text=text, file_path=str(out_wav), **attempt_kwargs)
+                            return
+                        wav = tts.tts(text=text, **attempt_kwargs)
+                        sf.write(str(out_wav), wav, 24000)
+                        return
+                    except TypeError:
+                        continue
+
+                # Last resort: call tts() with no extras.
+                wav = tts.tts(text=text)
                 sf.write(str(out_wav), wav, 24000)
 
         await asyncio.to_thread(_run)
+
+
+def clamp_tts_text(text: str, max_chars: int = 280) -> str:
+    normalized = " ".join((text or "").split())
+    if len(normalized) <= max_chars:
+        return normalized
+
+    cut_points = [
+        normalized.rfind(".", 0, max_chars),
+        normalized.rfind("!", 0, max_chars),
+        normalized.rfind("?", 0, max_chars),
+        normalized.rfind(" ", 0, max_chars),
+    ]
+    cut = max(cut_points)
+    if cut < 1:
+        cut = max_chars
+    return normalized[:cut].rstrip() + "…"
 
 
 class LipSyncEngine:
@@ -846,6 +889,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
 
                 brain_output = await brain.infer(text_prompt, sentiment_profile=sentiment_profile)
                 voiced_output = apply_wit_filter(brain_output)
+                tts_text = clamp_tts_text(voiced_output, max_chars=280)
 
                 await websocket.send_text(
                     safe_json(
@@ -863,7 +907,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                     video_path = work / "lipsync.mp4"
                     calibrated_video_path = work / "lipsync-calibrated.mp4"
 
-                    await voice.synthesize(voiced_output, wav_path)
+                    await voice.synthesize(tts_text, wav_path)
 
                     await websocket.send_text(
                         safe_json(
@@ -886,7 +930,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                             {
                                 "type": "result",
                                 "request_id": request_id,
-                                "text": voiced_output,
+                                "text": tts_text,
                                 "audio_b64": base64.b64encode(audio_bytes).decode("utf-8"),
                                 "video_b64": base64.b64encode(video_bytes).decode("utf-8"),
                                 "audio_format": "wav",
