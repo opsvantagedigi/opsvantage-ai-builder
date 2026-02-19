@@ -1,21 +1,60 @@
 {
-  "name": "OpsVantage Digital",
-  "short_name": "OpsVantage",
-  "description": "Sovereign enterprise AI operations platform",
-  "start_url": "/",
+  "name": "MARZ - Your Sovereign AI Partner",
+  "short_name": "MARZ",
+  "description": "Your Sovereign AI Partner - Always listening, always ready",
+  "start_url": "/marz/chat",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0A0A0A",
+  "background_color": "#0f172a",
+  "theme_color": "#06b6d4",
+  "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icons/marz-icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/apple-icon.png",
+      "src": "/icons/marz-icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Wake MARZ",
+      "short_name": "Wake",
+      "description": "Wake up MARZ with voice command",
+      "url": "/marz/chat?wake=true",
+      "icons": [{ "src": "/icons/marz-wake-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Video Chat",
+      "short_name": "Video",
+      "description": "Start video chat with MARZ",
+      "url": "/marz/chat?video=true",
+      "icons": [{ "src": "/icons/marz-video-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/marz-chat.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "share_target": {
+    "action": "/marz/chat",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

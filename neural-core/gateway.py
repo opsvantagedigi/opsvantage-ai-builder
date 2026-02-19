@@ -473,7 +473,7 @@ class SovereignVoice:
         from TTS.api import TTS
 
         if self._tts is None:
-            self._tts = TTS(settings.xtts_model_id)
+            self._tts = TTS(settings.xtts_model_id, gpu=False)
         return self._tts
 
     async def synthesize(self, text: str, out_wav: Path) -> None:

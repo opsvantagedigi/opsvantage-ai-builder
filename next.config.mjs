@@ -6,6 +6,12 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   generateBuildId: () => 'zenith-build-' + Date.now(),
+  headers: async () => [
+    {
+      source: '/manifest.json',
+      headers: [{ key: 'Content-Type', value: 'application/manifest+json' }],
+    },
+  ],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

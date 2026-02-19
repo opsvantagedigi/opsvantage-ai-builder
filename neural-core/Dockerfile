@@ -24,6 +24,9 @@ RUN pip install -r requirements.txt
 
 RUN git clone https://github.com/Rudrabha/Wav2Lip.git /opt/Wav2Lip
 
+# Newer librosa versions make filters.mel keyword-only; Wav2Lip uses positional args.
+RUN sed -i "s/librosa\.filters\.mel(hp\.sample_rate, hp\.n_fft,/librosa.filters.mel(sr=hp.sample_rate, n_fft=hp.n_fft,/" /opt/Wav2Lip/audio.py
+
 COPY gateway.py ./gateway.py
 COPY voice_config.py ./voice_config.py
 COPY constitution.md ./constitution.md
