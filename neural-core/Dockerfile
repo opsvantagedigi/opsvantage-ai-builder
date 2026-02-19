@@ -17,8 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./requirements.txt
-RUN pip install --ignore-installed --use-deprecated=legacy-resolver -r requirements.txt \
-    && pip install --upgrade --no-cache-dir "tokenizers==0.20.3" "transformers==4.47.1"
+RUN pip install --ignore-installed --use-deprecated=legacy-resolver -r requirements.txt
 
 RUN git clone https://github.com/Rudrabha/Wav2Lip.git /opt/Wav2Lip
 
