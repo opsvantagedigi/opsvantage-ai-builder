@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./requirements.txt
-RUN pip install --ignore-installed --use-deprecated=legacy-resolver -r requirements.txt
+RUN pip install --ignore-installed -r requirements.txt
 
 RUN git clone https://github.com/Rudrabha/Wav2Lip.git /opt/Wav2Lip
 
