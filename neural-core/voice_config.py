@@ -1,6 +1,6 @@
 # MARZ Sovereign Voice Profile
 VOICE_PARAMS = {
-    "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+    "model_name": "tts_models/en/ljspeech/tacotron2-DDC",
     "temperature": 0.75,
     "length_penalty": 1.0,
     "repetition_penalty": 5.0,
