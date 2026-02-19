@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import time
+import traceback
 import uuid
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,8 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from reflection_engine import run_once as run_reflection_once
 from voice_config import VOICE_PARAMS, apply_wit_filter
+
+os.environ.setdefault("COQUI_TOS_AGREED", "1")
 
 
 class Settings(BaseSettings):
@@ -37,6 +40,7 @@ class Settings(BaseSettings):
     tavily_api_key: str | None = None
     target_audio_video_offset_ms: int = 35
     max_audio_video_offset_ms: int = 50
+    use_vllm: bool = os.getenv("NEURAL_USE_VLLM", "true").lower() != "false"
 
     host: str = os.getenv("HOST", "0.0.0.0")
     port: int = int(os.getenv("PORT", "8080"))
@@ -347,6 +351,10 @@ class BrainEngine:
 
     def _load(self) -> Any:
         from vllm import LLM
+
+        if not settings.use_vllm:
+            self._use_fallback = True
+            return None
 
         if self._llm is None:
             model_id = settings.neural_model_id
@@ -890,12 +898,14 @@ async def neural_core_socket(websocket: WebSocket) -> None:
 
                 await activity_tracker.touch()
             except Exception as pipeline_error:
+                print("[NeuralCore] pipeline_error", repr(pipeline_error))
+                traceback.print_exc()
                 await websocket.send_text(
                     safe_json(
                         {
                             "type": "error",
                             "request_id": request_id,
-                            "message": str(pipeline_error),
+                            "message": f"{type(pipeline_error).__name__}: {pipeline_error}",
                         }
                     )
                 )
