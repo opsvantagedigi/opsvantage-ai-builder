@@ -10,6 +10,61 @@ import generateValidatedJSON from "@/lib/ai"
 import { pageGenerationResponseSchema } from "@/lib/page-generation-schema"
 import { optimizeGeneratedPageSeo } from "@/lib/ai/seo-optimization-engine"
 
+function buildFallbackPage(params: {
+  sitemapNode?: any
+  onboarding?: { businessName?: string | null; industry?: string | null; description?: string | null } | null
+}): { title: string; slug: string; sections: Array<Record<string, unknown>> } {
+  const slug = String(params.sitemapNode?.slug || "home")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "home"
+
+  const title = String(params.sitemapNode?.title || (slug === "home" ? "Home" : slug.replace(/-/g, " ")))
+    .trim() || "Home"
+
+  const businessName = params.onboarding?.businessName || "Your Business"
+  const industry = params.onboarding?.industry || "your market"
+  const description = params.onboarding?.description || ""
+
+  return {
+    title,
+    slug,
+    sections: [
+      {
+        id: `hero-${slug}`,
+        type: "HERO",
+        heading: `${businessName}: ${title}`,
+        body: description || `A modern, conversion-focused ${industry} page for ${businessName}.`,
+        cta: { label: "Book a Call", url: "/book-a-call" },
+      },
+      {
+        id: `features-${slug}`,
+        type: "FEATURES",
+        heading: "What you get",
+        items: [
+          { title: "Fast setup", description: "Launch-ready structure with clear messaging." },
+          { title: "Trust signals", description: "Proof, outcomes, and credibility baked in." },
+          { title: "Lead capture", description: "Calls-to-action that convert." },
+        ],
+      },
+      {
+        id: `cta-${slug}`,
+        type: "CTA",
+        heading: "Ready to move?",
+        body: "Start with a quick call and we’ll map the next 7 days.",
+        cta: { label: "Get started", url: "/book-a-call" },
+      },
+      {
+        id: `footer-${slug}`,
+        type: "FOOTER",
+        body: "© " + new Date().getFullYear() + " " + businessName,
+      },
+    ],
+  }
+}
+
 export const POST = withErrorHandling(async (req) => {
   // Lazily instantiate AI client to avoid import-time failures
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
@@ -91,26 +146,46 @@ export const POST = withErrorHandling(async (req) => {
   } catch (err: unknown) {
     const e = err as Error
     logger.error(`Page generation failed. Error: ${String(e)}`)
+
+    // Deterministic fallback so the product can continue even if the AI model flakes.
+    const fallbackRaw = buildFallbackPage({ sitemapNode, onboarding })
+    const fallbackValidated = pageGenerationResponseSchema.parse(fallbackRaw)
+    const fallbackOptimized = optimizeGeneratedPageSeo({
+      page: fallbackValidated,
+      onboarding: {
+        businessName: onboarding?.businessName ?? undefined,
+        businessType: onboarding?.businessType ?? undefined,
+        industry: onboarding?.industry ?? undefined,
+        description: onboarding?.description ?? undefined,
+        brandVoice: onboarding?.brandVoice ?? undefined,
+        targetAudience: onboarding?.targetAudience ?? undefined,
+        goals: onboarding?.goals ?? undefined,
+      },
+      siteUrl: process.env.NEXT_PUBLIC_APP_URL,
+    })
+
     // Persist failed AiTask
     try {
-        if (projectIdRef) {
-        await prisma.aiTask.create({
+      if (projectIdRef) {
+        const aiTask = await prisma.aiTask.create({
           data: {
             projectId: projectIdRef,
             type: "SITEMAP_TO_PAGES",
             provider: "GEMINI",
             payload: { sitemapNode: sitemapNodeRef as any, prompt: userPromptRef },
-            error: String(err),
-            status: "FAILED",
+            result: fallbackOptimized as any,
+            error: `ai_failed_fallback_used: ${String(err)}`,
+            status: "COMPLETED",
           }
         })
+        return NextResponse.json({ ok: true, page: fallbackOptimized, aiTaskId: aiTask.id, fallback: true })
       }
     } catch (e: unknown) {
       const ee = e as Error
       logger.warn(`Failed to persist failed AiTask. Error: ${String(ee)}`)
     }
 
-    return NextResponse.json({ error: "AI failed to generate page" }, { status: 500 })
+    return NextResponse.json({ ok: true, page: fallbackOptimized, fallback: true })
   }
   } catch (err: unknown) {
     const ex = err as Error
