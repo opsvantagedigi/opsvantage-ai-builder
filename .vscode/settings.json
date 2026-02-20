@@ -1,6 +1,7 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "python.terminal.useEnvFile": true,
   "geminicodeassist.agentDebugMode": true,
   "geminicodeassist.codeGenerationPaneViewEnabled": true,
   "geminicodeassist.inlineSuggestions.nextEditPredictions": true,
