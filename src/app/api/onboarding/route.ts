@@ -71,7 +71,7 @@ export const POST = withErrorHandling(async (req) => {
       }
     })
     workspaceId = newWorkspace.id
-  } else {
+  } else if (session?.role !== "SOVEREIGN") {
     // If workspace exists, check project limit before creating a new one
     const subscription = await checkSubscription(workspaceId);
     if (subscription.usage.projects >= subscription.limits.projects) {
