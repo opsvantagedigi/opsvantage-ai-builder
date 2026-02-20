@@ -93,13 +93,34 @@ export const POST = withErrorHandling(async (req) => {
   })
   // Create unique dataset name
   const datasetName = `dataset_${project.id}`
-  const requestOrigin = new URL(req.url).origin
-  const sanityDatasetUrl = new URL("/api/sanity/create-dataset", requestOrigin)
-  await fetch(sanityDatasetUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dataset: datasetName })
+
+  const sanityProjectId = process.env.SANITY_PROJECT_ID || process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+  const sanityWriteToken = process.env.SANITY_WRITE_TOKEN
+  if (!sanityProjectId || !sanityWriteToken) {
+    return NextResponse.json(
+      { error: "Sanity not configured", message: "Missing SANITY_PROJECT_ID or SANITY_WRITE_TOKEN" },
+      { status: 500 },
+    )
+  }
+
+  const sanityDatasetRes = await fetch(`https://${sanityProjectId}.api.sanity.io/v2023-10-01/datasets`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${sanityWriteToken}`,
+    },
+    body: JSON.stringify({ name: datasetName, aclMode: "private" }),
   })
+
+  // 409 = dataset already exists; safe for idempotent retries.
+  if (!sanityDatasetRes.ok && sanityDatasetRes.status !== 409) {
+    const errorBody = await sanityDatasetRes.text().catch(() => "")
+    logger.error(`Onboarding POST: Sanity dataset create failed. status=${sanityDatasetRes.status} body=${errorBody.slice(0, 400)}`)
+    return NextResponse.json(
+      { error: "Internal Server Error", message: `Sanity dataset create failed (${sanityDatasetRes.status})` },
+      { status: 500 },
+    )
+  }
   await prisma.project.update({ where: { id: project.id }, data: { sanityDataset: datasetName } })
   // Create onboarding record (step 1)
   const onboarding = await prisma.onboarding.create({
