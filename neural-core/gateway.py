@@ -1072,11 +1072,24 @@ async def neural_core_socket(websocket: WebSocket) -> None:
 
                     fallback_video_path = work / "avatar-with-audio.mp4"
                     try:
-                        await lipsync.render(avatar_path, wav_path, video_path)
-                        final_video_path = await calibrate_sync(video_path, wav_path, calibrated_video_path)
+                        render_timeout_seconds = int(os.getenv("WAV2LIP_RENDER_TIMEOUT_SECONDS", "120"))
+                        calibrate_timeout_seconds = int(os.getenv("WAV2LIP_CALIBRATE_TIMEOUT_SECONDS", "60"))
+                        mux_timeout_seconds = int(os.getenv("WAV2LIP_MUX_TIMEOUT_SECONDS", "45"))
+
+                        await asyncio.wait_for(
+                            lipsync.render(avatar_path, wav_path, video_path),
+                            timeout=render_timeout_seconds,
+                        )
+                        final_video_path = await asyncio.wait_for(
+                            calibrate_sync(video_path, wav_path, calibrated_video_path),
+                            timeout=calibrate_timeout_seconds,
+                        )
                     except Exception as lipsync_error:
                         print("[wav2lip] lipsync unavailable; falling back to avatar mux", repr(lipsync_error))
-                        final_video_path = await mux_audio_onto_avatar(avatar_path, wav_path, fallback_video_path)
+                        final_video_path = await asyncio.wait_for(
+                            mux_audio_onto_avatar(avatar_path, wav_path, fallback_video_path),
+                            timeout=mux_timeout_seconds,
+                        )
 
                     audio_bytes = wav_path.read_bytes()
                     video_bytes = final_video_path.read_bytes()
