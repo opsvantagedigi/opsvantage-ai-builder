@@ -1,11 +1,10 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'marz-pwa-v2';
-const RUNTIME_CACHE = 'marz-runtime-v2';
+const CACHE_NAME = 'marz-pwa-v3';
+const RUNTIME_CACHE = 'marz-runtime-v3';
 
 const PRECACHE_ASSETS = [
   '/',
-  '/marz/chat',
   '/manifest.json',
   '/icons/marz-icon-192.png',
   '/icons/marz-icon-512.png',
@@ -50,6 +49,20 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   const path = url.pathname || '/';
 
+  // Real-time chat route should always be fetched from the network to avoid stale shells
+  // and deployment-desync issues in installed PWAs.
+  if (path === '/marz/chat') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response('Offline - MARZ chat requires a network connection', {
+          status: 503,
+          statusText: 'Service Unavailable',
+        });
+      })
+    );
+    return;
+  }
+
   // Never cache Next.js build assets or API routes; caching these can break voice/video chat
   // after deployments by serving stale JS or stale configuration.
   if (path.startsWith('/_next/') || path.startsWith('/api/') || path === '/sw.js' || path === '/service-worker.js') {
@@ -80,7 +93,7 @@ self.addEventListener('fetch', (event) => {
           
           // Offline fallback for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/marz/chat');
+            return caches.match('/');
           }
           
           // Return offline response

@@ -29,10 +29,12 @@ export default function MARZChatPage() {
   const [lastTranscript, setLastTranscript] = useState('');
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [secureContextWarning, setSecureContextWarning] = useState<string | null>(null);
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraPreviewRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const recognitionRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -49,6 +51,19 @@ export default function MARZChatPage() {
       audioUrl,
     }]);
   }, []);
+
+  // Secure-context check (required for camera/microphone)
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (process.env.NODE_ENV === 'production' && !window.isSecureContext) {
+      const warning = 'HTTPS is required for camera and microphone access. Open this page using https:// to enable video chat.';
+      setSecureContextWarning(warning);
+      addMessage('assistant', `⚠️ ${warning}`);
+    }
+  }, [addMessage]);
   
   // Wake on mount if requested
   useEffect(() => {
@@ -60,9 +75,105 @@ export default function MARZChatPage() {
     }
     
     if (videoOnMount) {
-      setIsVideoEnabled(true);
+      void enableCamera();
     }
   }, []);
+
+  const getFriendlyMediaError = useCallback((error: unknown) => {
+    const name = (error as any)?.name;
+
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return 'Camera/microphone permission denied. Please allow access in your browser settings and try again.';
+    }
+
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return 'No camera or microphone was found on this device.';
+    }
+
+    if (name === 'NotReadableError' || name === 'TrackStartError') {
+      return 'Camera or microphone is already in use by another app. Close other apps and try again.';
+    }
+
+    if (name === 'OverconstrainedError') {
+      return 'Your device cannot satisfy the requested camera settings. Try again or use a different device.';
+    }
+
+    const message = (error as any)?.message;
+    return typeof message === 'string' && message.trim()
+      ? `Camera error: ${message}`
+      : 'Unable to access camera/microphone.';
+  }, []);
+
+  const disableCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (cameraPreviewRef.current) {
+      cameraPreviewRef.current.srcObject = null;
+    }
+
+    setIsVideoEnabled(false);
+  }, []);
+
+  const enableCamera = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!window.isSecureContext && process.env.NODE_ENV === 'production') {
+      const warning = 'HTTPS is required for camera and microphone access. Open this page using https:// to enable video chat.';
+      setSecureContextWarning(warning);
+      addMessage('assistant', `⚠️ ${warning}`);
+      setIsVideoEnabled(false);
+      return;
+    }
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      addMessage('assistant', 'This browser does not support camera access. Try Chrome/Edge or Safari on a supported device.');
+      setIsVideoEnabled(false);
+      return;
+    }
+
+    try {
+      // Stop any previous stream before requesting a new one.
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, facingMode: 'user' },
+        audio: true,
+      });
+
+      streamRef.current = stream;
+
+      if (cameraPreviewRef.current) {
+        cameraPreviewRef.current.muted = true;
+        cameraPreviewRef.current.playsInline = true;
+        cameraPreviewRef.current.srcObject = stream;
+        void cameraPreviewRef.current.play().catch(() => {
+          // Autoplay policies vary; preview may require user interaction.
+        });
+      }
+
+      setIsVideoEnabled(true);
+    } catch (error) {
+      addMessage('assistant', getFriendlyMediaError(error));
+      setIsVideoEnabled(false);
+    }
+  }, [addMessage, getFriendlyMediaError]);
+
+  const toggleVideo = useCallback(() => {
+    if (isVideoEnabled) {
+      disableCamera();
+      return;
+    }
+
+    void enableCamera();
+  }, [disableCamera, enableCamera, isVideoEnabled]);
   
   // Check for PWA install prompt
   useEffect(() => {
@@ -187,9 +298,38 @@ export default function MARZChatPage() {
     setConnectionStatus('connecting');
     
     try {
-      const wsUrl = process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL || 
-                    process.env.NEXT_PUBLIC_NEURAL_CORE_URL?.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws/neural-core' ||
-                    'wss://marz-neural-core-xge3xydmha-ez.a.run.app/ws/neural-core';
+      const enforceWsProtocol = (rawUrl: string) => {
+        const preferSecure = typeof window !== 'undefined'
+          ? window.location.protocol === 'https:' || process.env.NODE_ENV === 'production'
+          : process.env.NODE_ENV === 'production';
+
+        try {
+          const url = new URL(rawUrl);
+          if (preferSecure) {
+            url.protocol = 'wss:';
+          } else if (url.protocol === 'http:' || url.protocol === 'https:') {
+            url.protocol = 'ws:';
+          }
+          return url.toString();
+        } catch {
+          if (preferSecure && rawUrl.startsWith('ws://')) {
+            return `wss://${rawUrl.slice('ws://'.length)}`;
+          }
+          if (!preferSecure && rawUrl.startsWith('wss://')) {
+            return `ws://${rawUrl.slice('wss://'.length)}`;
+          }
+          return rawUrl;
+        }
+      };
+
+      const rawWsUrl =
+        process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL ||
+        (process.env.NEXT_PUBLIC_NEURAL_CORE_URL
+          ? `${process.env.NEXT_PUBLIC_NEURAL_CORE_URL.replace(/^https?:\/\//, (m) => (m === 'https://' ? 'wss://' : 'ws://'))}/ws/neural-core`
+          : '') ||
+        'wss://marz-neural-core-xge3xydmha-ez.a.run.app/ws/neural-core';
+
+      const wsUrl = enforceWsProtocol(rawWsUrl);
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -384,6 +524,12 @@ export default function MARZChatPage() {
     <div className="fixed inset-0 bg-slate-950 flex flex-col">
       {/* Hidden audio element */}
       <audio ref={audioRef} className="hidden" />
+
+      {secureContextWarning && (
+        <div className="px-4 py-2 text-xs bg-amber-500/10 text-amber-200 border-b border-amber-500/20">
+          {secureContextWarning}
+        </div>
+      )}
       
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-cyan-500/20 bg-slate-900/80">
@@ -414,7 +560,18 @@ export default function MARZChatPage() {
             autoPlay
             muted
             playsInline
+            preload="auto"
           />
+
+          <video
+            ref={cameraPreviewRef}
+            className="absolute top-2 left-2 w-28 h-20 object-cover rounded-lg border border-cyan-500/30 bg-black/40"
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+          />
+
           <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 rounded text-xs text-cyan-400">
             MARZ Live
           </div>
@@ -530,7 +687,7 @@ export default function MARZChatPage() {
         {/* Additional controls */}
         <div className="flex items-center justify-center gap-4 mt-4">
           <button
-            onClick={() => setIsVideoEnabled(!isVideoEnabled)}
+            onClick={toggleVideo}
             className={`p-3 rounded-full transition-all ${
               isVideoEnabled
                 ? 'bg-emerald-600 text-white'
