@@ -30,9 +30,17 @@ function getParts(targetMs: number): CountdownParts {
 
 export default function NexusCountdown() {
   const targetMs = useMemo(() => new Date(TARGET_ISO_UTC).getTime(), []);
-  const [parts, setParts] = useState<CountdownParts>(() => getParts(targetMs));
+  const [parts, setParts] = useState<CountdownParts>(() => ({
+    totalMs: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  }));
 
   useEffect(() => {
+    // First update happens after mount so SSR + initial client render match.
+    setParts(getParts(targetMs));
     const interval = setInterval(() => {
       setParts(getParts(targetMs));
     }, 250);

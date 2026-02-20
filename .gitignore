@@ -55,6 +55,12 @@ tmpclaude-*
 .vercel
 /playwright-report/
 
+# Playwright ephemeral outputs
+/test-results/
+
+# Generated UAT crawler report (do not commit)
+/reports/uat-audit-results.json
+
 # local python env
 .venv/
 

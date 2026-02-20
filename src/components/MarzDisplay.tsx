@@ -20,6 +20,8 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
   const [messageText, setMessageText] = useState('');
   const [chat, setChat] = useState<ChatItem[]>([]);
   const [isAwakening, setIsAwakening] = useState(false);
+  const [briefingBusy, setBriefingBusy] = useState(false);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
   const [resolvedWsUrl, setResolvedWsUrl] = useState<string | undefined>(wsUrl);
   const hasSentHandshakeRef = useRef(false);
 
@@ -161,6 +163,51 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
     setMessageText('');
   };
 
+  const requestSystemBriefing = async () => {
+    if (briefingBusy) return;
+    setBriefingBusy(true);
+    setBriefingError(null);
+
+    try {
+      if (status === 'hibernated') {
+        await wakeContainer();
+        return;
+      }
+
+      const response = await fetch('/api/marz/neural-link', {
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ systemBriefing: true, format: 'json' }),
+      });
+
+      let briefingPrompt =
+        'Provide a System Briefing in 1-2 short sentences. If the contact page CTA is broken, say you audited it and staged a fix for approval.';
+      if (response.ok) {
+        const payload = (await response.json().catch(() => null)) as { briefingPrompt?: unknown } | null;
+        const serverPrompt = typeof payload?.briefingPrompt === 'string' ? payload.briefingPrompt.trim() : '';
+        if (serverPrompt) briefingPrompt = serverPrompt;
+      }
+
+      setChat((prev) => [
+        ...prev,
+        { role: 'user', text: 'System Briefing.', id: `user-briefing-${Date.now()}` },
+      ]);
+
+      sendMessage({
+        text: briefingPrompt,
+        request_id: `briefing-${Date.now()}`,
+        client: 'marz-display',
+        ts: Date.now(),
+      });
+    } catch (error) {
+      setBriefingError(error instanceof Error ? error.message : 'System briefing failed.');
+    } finally {
+      setBriefingBusy(false);
+    }
+  };
+
   return (
     <>
       {isAwakening && <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />}
@@ -193,6 +240,14 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
       <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-300">
         <span className="uppercase tracking-[0.12em]">Neural Link: {status}</span>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void requestSystemBriefing()}
+            disabled={briefingBusy}
+            className="rounded border border-emerald-400/40 bg-emerald-500/10 px-2 py-1 text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {briefingBusy ? 'Briefing…' : 'System Briefing'}
+          </button>
           <button
             type="button"
             onClick={connect}
@@ -240,7 +295,7 @@ export default function MarzDisplay({ className, wsUrl, wakeUrl }: MarzDisplayPr
         </button>
       </form>
 
-      {lastError && <p className="mt-2 text-xs text-rose-300">{lastError}</p>}
+      {(briefingError || lastError) && <p className="mt-2 text-xs text-rose-300">{briefingError || lastError}</p>}
       </div>
     </>
   );
