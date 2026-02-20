@@ -488,8 +488,39 @@ class SovereignVoice:
     def _load(self) -> Any:
         from TTS.api import TTS
 
+        def _force_cpu_float32(model: Any) -> None:
+            try:
+                import torch
+
+                if hasattr(model, "to"):
+                    model.to(torch.device("cpu"))
+                if hasattr(model, "float"):
+                    model.float()
+            except Exception:
+                return
+
+        def _force_tts_cpu_float32(tts: Any) -> None:
+            try:
+                synth = getattr(tts, "synthesizer", None)
+                if synth is None:
+                    return
+
+                for attr in ("tts_model", "vocoder_model", "model"):
+                    m = getattr(synth, attr, None)
+                    if m is not None:
+                        _force_cpu_float32(m)
+            except Exception:
+                return
+
         if self._tts is None:
+            try:
+                import torch
+
+                torch.set_default_dtype(torch.float32)
+            except Exception:
+                pass
             self._tts = TTS(settings.xtts_model_id, gpu=False)
+            _force_tts_cpu_float32(self._tts)
         return self._tts
 
     async def synthesize(self, text: str, out_wav: Path) -> None:
