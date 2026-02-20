@@ -61,6 +61,9 @@ tmpclaude-*
 # Generated UAT crawler report (do not commit)
 /reports/uat-audit-results.json
 
+# Generated CTA crawl report (do not commit)
+/reports/cta-link-checks.json
+
 # Internal audit logs
 internal-logic-pass.log
 
