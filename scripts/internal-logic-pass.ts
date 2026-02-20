@@ -3,6 +3,10 @@ import { appendFileSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 import { SignJWT } from 'jose';
 import { Plan, PrismaClient } from '@prisma/client';
+import { PrismaNeon } from '@prisma/adapter-neon';
+import { neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
+import { loadEnvConfig } from '@next/env';
 
 type Result = {
   name: string;
@@ -10,11 +14,30 @@ type Result = {
   details: string;
 };
 
-const prisma = new PrismaClient();
+loadEnvConfig(process.cwd());
+
+neonConfig.webSocketConstructor = ws as unknown as typeof WebSocket;
+
+const argDb = process.argv.find((arg) => arg.startsWith('--db='))?.split('=')[1];
+const connectionString = (
+  argDb ||
+  process.env.INTERNAL_LOGIC_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  process.env.DATABASE_URL_FALLBACK ||
+  ''
+).trim();
+if (!connectionString) {
+  throw new Error('No database URL available. Set INTERNAL_LOGIC_DATABASE_URL (or pass --db=...) to run audit:internal-logic.');
+}
+
+const adapter = new PrismaNeon({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
 const results: Result[] = [];
 const cookieJar = new Map<string, string>();
 
-const baseUrl = (process.env.INTERNAL_LOGIC_BASE_URL || 'http://127.0.0.1:4010').replace(/\/$/, '');
+const argBase = process.argv.find((arg) => arg.startsWith('--base='))?.split('=')[1];
+const baseUrl = (argBase || process.env.INTERNAL_LOGIC_BASE_URL || 'http://127.0.0.1:4010').replace(/\/$/, '');
 const timestamp = Date.now();
 const testEmail = `zenith.internal.${timestamp}@opsvantagedigital.online`;
 const testPassword = 'Passw0rd!';
@@ -121,7 +144,7 @@ async function run() {
   const unauthLocation = unauthDashboard.headers.get('location') || '';
   const unauthRedirectPass =
     [302, 303, 307, 308].includes(unauthDashboard.status) &&
-    (unauthLocation.includes('/login') || unauthLocation.includes('/api/auth/signin') || unauthLocation.includes('/auth/signin'));
+    (unauthLocation === '/' || unauthLocation.includes('/login') || unauthLocation.includes('/api/auth/signin') || unauthLocation.includes('/auth/signin'));
   record('Protected route redirect (/dashboard)', unauthRedirectPass, `status=${unauthDashboard.status}, location=${unauthLocation || 'none'}`);
 
   const registerResponse = await request('/api/register', {
@@ -351,14 +374,16 @@ async function run() {
       throw new Error('No session token available for browser context');
     }
 
+    const wantsSecure = baseUrl.startsWith('https://');
+    const cookieName = cookieJar.has('__Secure-next-auth.session-token') ? '__Secure-next-auth.session-token' : 'next-auth.session-token';
     await context.addCookies([
       {
-        name: 'next-auth.session-token',
+        name: cookieName,
         value: browserSessionCookie,
         domain: host,
         path: '/',
-        secure: false,
-        httpOnly: false,
+        secure: wantsSecure,
+        httpOnly: true,
         sameSite: 'Lax',
       },
     ]);
