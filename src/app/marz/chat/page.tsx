@@ -64,6 +64,36 @@ export default function MARZChatPage() {
       addMessage('assistant', `⚠️ ${warning}`);
     }
   }, [addMessage]);
+
+  // Send message
+  const sendMessage = useCallback((text: string) => {
+    const messageText = text.trim();
+    if (!messageText) {
+      return;
+    }
+
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      addMessage('user', messageText);
+      addMessage('assistant', 'MARZ is currently offline. Please reconnect.');
+      return;
+    }
+
+    addMessage('user', messageText);
+
+    const recentHistory = messages.slice(-8).map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.text }],
+    }));
+
+    wsRef.current.send(JSON.stringify({
+      text: messageText,
+      request_id: `chat-${Date.now()}`,
+      history: recentHistory,
+      enable_video: isVideoEnabled,
+    }));
+
+    setInputText('');
+  }, [addMessage, isVideoEnabled, messages]);
   
   // Wake on mount if requested
   useEffect(() => {
@@ -258,14 +288,14 @@ export default function MARZChatPage() {
     
     // Video commands
     if (lowerCommand.includes('turn on video') || lowerCommand.includes('enable video')) {
-      setIsVideoEnabled(true);
-      addMessage('assistant', 'Enabling video...');
+      void enableCamera();
+      addMessage('assistant', 'Enabling camera...');
       return;
     }
     
     if (lowerCommand.includes('turn off video') || lowerCommand.includes('disable video')) {
-      setIsVideoEnabled(false);
-      addMessage('assistant', 'Disabling video...');
+      disableCamera();
+      addMessage('assistant', 'Disabling camera...');
       return;
     }
     
@@ -291,18 +321,18 @@ export default function MARZChatPage() {
     
     // If no command matched, send as message
     sendMessage(command);
-  }, []);
+  }, [addMessage, disableCamera, enableCamera, sendMessage]);
   
   // Connect to MARZ WebSocket
   const connectToMARZ = useCallback(async () => {
     setConnectionStatus('connecting');
     
     try {
-      const enforceWsProtocol = (rawUrl: string) => {
-        const preferSecure = typeof window !== 'undefined'
-          ? window.location.protocol === 'https:' || process.env.NODE_ENV === 'production'
-          : process.env.NODE_ENV === 'production';
+      const preferSecure = typeof window !== 'undefined'
+        ? window.location.protocol === 'https:' || process.env.NODE_ENV === 'production'
+        : process.env.NODE_ENV === 'production';
 
+      const enforceWsProtocol = (rawUrl: string) => {
         try {
           const url = new URL(rawUrl);
           if (preferSecure) {
@@ -322,14 +352,32 @@ export default function MARZChatPage() {
         }
       };
 
-      const rawWsUrl =
-        process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL ||
-        (process.env.NEXT_PUBLIC_NEURAL_CORE_URL
-          ? `${process.env.NEXT_PUBLIC_NEURAL_CORE_URL.replace(/^https?:\/\//, (m) => (m === 'https://' ? 'wss://' : 'ws://'))}/ws/neural-core`
-          : '') ||
-        'wss://marz-neural-core-xge3xydmha-ez.a.run.app/ws/neural-core';
+      const ensureNeuralCorePath = (rawUrl: string) => {
+        if (!rawUrl) {
+          return rawUrl;
+        }
 
-      const wsUrl = enforceWsProtocol(rawWsUrl);
+        try {
+          const url = new URL(rawUrl);
+          const hasEndpoint = url.pathname && url.pathname !== '/' && url.pathname !== '';
+          if (!hasEndpoint) {
+            url.pathname = '/ws/neural-core';
+          }
+          return url.toString();
+        } catch {
+          if (rawUrl.includes('/ws/neural-core')) {
+            return rawUrl;
+          }
+
+          const trimmed = rawUrl.replace(/\/+$/, '');
+          return `${trimmed}/ws/neural-core`;
+        }
+      };
+
+      const candidate = process.env.NEXT_PUBLIC_NEURAL_CORE_WS_URL || process.env.NEXT_PUBLIC_NEURAL_CORE_URL || '';
+      const withEndpoint = ensureNeuralCorePath(candidate);
+      const withProtocol = enforceWsProtocol(withEndpoint);
+      const wsUrl = withProtocol || 'wss://marz-neural-core-xge3xydmha-ez.a.run.app/ws/neural-core';
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -445,36 +493,6 @@ export default function MARZChatPage() {
     
     setIsVideoEnabled(false);
   }, []);
-  
-  // Send message
-  const sendMessage = useCallback((text: string) => {
-    const messageText = text.trim();
-    if (!messageText) {
-      return;
-    }
-
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      addMessage('user', messageText);
-      addMessage('assistant', 'MARZ is currently offline. Please reconnect.');
-      return;
-    }
-    
-    addMessage('user', messageText);
-    
-    const recentHistory = messages.slice(-8).map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.text }],
-    }));
-    
-    wsRef.current.send(JSON.stringify({
-      text: messageText,
-      request_id: `chat-${Date.now()}`,
-      history: recentHistory,
-      enable_video: isVideoEnabled,
-    }));
-    
-    setInputText('');
-  }, [addMessage, isVideoEnabled, messages]);
   
   // Toggle voice listening
   const toggleListening = useCallback(() => {
