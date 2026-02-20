@@ -25,13 +25,40 @@ steps:
          '--region', 'europe-west4',
          '--platform', 'managed',
          '--allow-unauthenticated',
-         '--min-instances', '1',
+         '--min-instances', '0',
          '--max-instances', '6',
          '--set-env-vars', 'NEXT_PUBLIC_MARZ_VIDEO_MODE=true,NEXT_PUBLIC_NEURAL_CORE_URL=${_NEXT_PUBLIC_NEURAL_CORE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_URL},NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN=${_NEXT_PUBLIC_GCP_ORCHESTRATOR_WAKE_TOKEN},NEXT_PUBLIC_VAPID_PUBLIC_KEY=${_NEXT_PUBLIC_VAPID_PUBLIC_KEY},NEXT_PUBLIC_METRICS_URL=${_NEXT_PUBLIC_METRICS_URL}',
          '--set-secrets', 'DATABASE_URL=${_DATABASE_URL_SECRET}:latest,SOVEREIGN_PASSWORD=${_SOVEREIGN_PASSWORD_SECRET}:latest,PUSH_SERVICE_TOKEN=${_PUSH_SERVICE_TOKEN_SECRET}:latest,VAPID_PRIVATE_KEY=${_VAPID_PRIVATE_KEY_SECRET}:latest,VAPID_SUBJECT=${_VAPID_SUBJECT_SECRET}:latest,NEXTAUTH_SECRET=${_NEXTAUTH_SECRET_SECRET}:latest,HUGGINGFACE_TOKEN=${_HUGGINGFACE_TOKEN_SECRET}:latest,HF_TOKEN=${_HUGGINGFACE_TOKEN_SECRET}:latest,HUGGINGFACE_HUB_TOKEN=${_HUGGINGFACE_TOKEN_SECRET}:latest',
          '--port', '8080',
          '--memory', '1Gi',
          '--cpu', '1']
+
+# Cleanup old container images (best-effort) to keep registry storage low.
+# Runs only after successful build+deploy because Cloud Build stops on earlier failures.
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      set -euo pipefail
+      echo "[cleanup] Removing images older than 24h from Container Registry (gcr.io)"
+      cutoff="$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
+      for repo in "gcr.io/$PROJECT_ID/opsvantage-ai-builder" "gcr.io/$PROJECT_ID/marz-neural-core"; do
+        echo "[cleanup] repo=${repo} cutoff=${cutoff}"
+        # list digests older than cutoff
+        digests="$(gcloud container images list-tags "${repo}" --format='value(digest,timestamp.datetime)' --limit=999999 2>/dev/null | awk -v c="${cutoff}" '$2!="" && $2 < c {print $1}' | sort -u || true)"
+        if [ -z "${digests}" ]; then
+          echo "[cleanup] no digests to delete for ${repo}"
+          continue
+        fi
+        while read -r digest; do
+          if [ -z "${digest}" ]; then
+            continue
+          fi
+          echo "[cleanup] deleting ${repo}@${digest}"
+          gcloud container images delete "${repo}@${digest}" --force-delete-tags --quiet || true
+        done <<< "${digests}"
+      done
 
 images:
 - 'gcr.io/$PROJECT_ID/opsvantage-ai-builder'

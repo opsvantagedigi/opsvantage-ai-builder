@@ -10,7 +10,7 @@ gcloud run services update opsvantage-ai-builder `
 # 2. Scale Infrastructure for Traffic
 Write-Host "Scaling infrastructure..." -ForegroundColor Yellow
 gcloud run services update opsvantage-ai-builder `
-  --min-instances 1 `
+  --min-instances 0 `
   --max-instances 10 `
   --cpu-boost `
   --region us-central1
