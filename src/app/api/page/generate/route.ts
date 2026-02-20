@@ -60,7 +60,7 @@ export const POST = withErrorHandling(async (req) => {
   logger.info(`Page generation prompt. Project ID: ${project.id}`)
 
   try {
-    const validated = await generateValidatedJSON(genAI, prompt, pageGenerationResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
+    const validated = await generateValidatedJSON(genAI, prompt, pageGenerationResponseSchema, { maxAttempts: 3 })
     const optimizedPage = optimizeGeneratedPageSeo({
       page: validated,
       onboarding: {

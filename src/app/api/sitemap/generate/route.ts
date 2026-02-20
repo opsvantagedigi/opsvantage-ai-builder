@@ -46,11 +46,38 @@ export const POST = withErrorHandling(async (req) => {
 
   let validated: SitemapResponse
   try {
-    validated = await generateValidatedJSON(genAI, prompt, sitemapResponseSchema, { model: "gemini-pro", maxAttempts: 3 })
+    validated = await generateValidatedJSON(genAI, prompt, sitemapResponseSchema, { maxAttempts: 3 })
   } catch (err: unknown) {
     const e = err as Error
     logger.error(`Sitemap generation failed. Error: ${String(e)}`)
-    return NextResponse.json({ error: "AI failed to generate a valid sitemap" }, { status: 500 })
+
+    const fallback: SitemapResponse = {
+      sitemap: [
+        { id: "home", title: "Home", slug: "home", type: "HOME", children: [] },
+        { id: "about", title: "About", slug: "about", type: "ABOUT", children: [] },
+        { id: "services", title: "Services", slug: "services", type: "SERVICES", children: [] },
+        { id: "pricing", title: "Pricing", slug: "pricing", type: "CUSTOM", children: [] },
+        { id: "case-studies", title: "Case Studies", slug: "case-studies", type: "CUSTOM", children: [] },
+        { id: "blog", title: "Blog", slug: "blog", type: "BLOG", children: [] },
+        { id: "resources", title: "Resources", slug: "resources", type: "CUSTOM", children: [] },
+        { id: "faq", title: "FAQ", slug: "faq", type: "CUSTOM", children: [] },
+        { id: "contact", title: "Contact", slug: "contact", type: "CONTACT", children: [] },
+        { id: "book-a-call", title: "Book a Call", slug: "book-a-call", type: "CUSTOM", children: [] },
+      ],
+    }
+
+    const aiTask = await prisma.aiTask.create({
+      data: {
+        projectId: project.id,
+        type: "ONBOARDING_TO_SITEMAP",
+        provider: "GEMINI",
+        payload: { onboardingId: onboarding.id, reason: "ai_failed" },
+        result: fallback as unknown as any,
+        status: "COMPLETED",
+      },
+    })
+
+    return NextResponse.json({ ok: true, sitemap: fallback.sitemap, aiTaskId: aiTask.id, fallback: true })
   }
 
   // Persist an AiTask record for traceability

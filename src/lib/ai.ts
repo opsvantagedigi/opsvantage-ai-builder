@@ -14,7 +14,7 @@ export async function generateValidatedJSON<T extends z.ZodTypeAny>(
   schema: T,
   options: GenerateOptions = {}
 ): Promise<z.infer<T>> {
-  const modelName = options.model || "gemini-pro"
+  const modelName = options.model || process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash"
   const maxAttempts = options.maxAttempts ?? 3
   const attemptDelay = options.attemptDelayMs ?? 400
 
