@@ -93,7 +93,9 @@ export const POST = withErrorHandling(async (req) => {
   })
   // Create unique dataset name
   const datasetName = `dataset_${project.id}`
-  await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/sanity/create-dataset`, {
+  const requestOrigin = new URL(req.url).origin
+  const sanityDatasetUrl = new URL("/api/sanity/create-dataset", requestOrigin)
+  await fetch(sanityDatasetUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ dataset: datasetName })
