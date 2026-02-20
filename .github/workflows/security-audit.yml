@@ -24,3 +24,4 @@ jobs:
 
       - name: Audit gate (high/critical only)
         run: npm run audit:strict
+

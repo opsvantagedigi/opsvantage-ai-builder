@@ -120,8 +120,8 @@ Download the Wav2Lip checkpoint manually:
 
 # If you must download from Hugging Face, use a token from Secret Manager or your local env.
 wget --header="Authorization: Bearer $HUGGINGFACE_TOKEN" \
-   https://huggingface.co/justinjohn/wav2lip/resolve/main/wav2lip_gan.pth \
-   -O wav2lip_gan.pth
+    https://huggingface.co/justinjohn/wav2lip/resolve/main/wav2lip_gan.pth \
+    -O wav2lip_gan.pth
 ```
 
 Then upload to GCS and mount in Cloud Run, or use gcloud secrets.
