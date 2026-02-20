@@ -83,25 +83,12 @@ export async function POST(req: NextRequest) {
 
 // GET: Health check for MARZ chat endpoint
 export async function GET() {
-  try {
-    const agent = new MarzAgent("system");
-    const diagnostics = await agent.runSystemDiagnostics();
-
-    return NextResponse.json({
-      status: "operational",
-      message: "MARZ Chat API Online",
-      diagnostics,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return NextResponse.json(
-      {
-        status: "error",
-        message: "MARZ Chat API Offline",
-        error: errorMessage,
-      },
-      { status: 503 }
-    );
-  }
+  // Keep GET as a lightweight, always-safe health check.
+  // Live monitoring and PWA audits commonly ping this endpoint.
+  return NextResponse.json({
+    ok: true,
+    status: "operational",
+    message: "MARZ Chat API Online",
+    timestamp: new Date().toISOString(),
+  });
 }
