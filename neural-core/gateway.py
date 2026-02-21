@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import gc
 import json
 import os
 import tempfile
@@ -20,6 +21,10 @@ from reflection_engine import run_once as run_reflection_once
 from voice_config import VOICE_PARAMS, apply_wit_filter
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
+os.environ.setdefault(
+    "PYTORCH_CUDA_ALLOC_CONF",
+    (os.getenv("PYTORCH_CUDA_ALLOC_CONF") or "max_split_size_mb:128").strip() or "max_split_size_mb:128",
+)
 
 
 class Settings(BaseSettings):
@@ -799,6 +804,95 @@ async def probe_duration_seconds(media_path: Path) -> float:
         return 0.0
 
 
+def _get_env_float(name: str, default: float) -> float:
+    raw = (os.getenv(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+def _get_env_int(name: str, default: int) -> int:
+    raw = (os.getenv(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def enforce_avatar_size_limit(avatar_path: Path) -> None:
+    max_avatar_mb = _get_env_int("MARZ_MAX_AVATAR_MB", 150)
+    if max_avatar_mb <= 0:
+        return
+    if not avatar_path.exists():
+        return
+    size_mb = avatar_path.stat().st_size / 1024 / 1024
+    if size_mb > max_avatar_mb:
+        raise ValueError(f"Avatar video too large ({size_mb:.1f}MB > {max_avatar_mb}MB).")
+
+
+def truncate_wav_to_seconds(audio_wav: Path, max_seconds: float) -> None:
+    if max_seconds <= 0:
+        return
+    if not audio_wav.exists():
+        return
+
+    info = sf.info(str(audio_wav))
+    if info.frames <= 0 or info.samplerate <= 0:
+        return
+
+    duration = info.frames / float(info.samplerate)
+    if duration <= max_seconds:
+        return
+
+    max_frames = int(max_seconds * info.samplerate)
+    tmp_out = audio_wav.with_suffix(audio_wav.suffix + ".trunc")
+    with sf.SoundFile(str(audio_wav), "r") as reader:
+        with sf.SoundFile(
+            str(tmp_out),
+            "w",
+            samplerate=reader.samplerate,
+            channels=reader.channels,
+            format=reader.format,
+            subtype=reader.subtype,
+        ) as writer:
+            remaining = max_frames
+            block = 16384
+            while remaining > 0:
+                frames = min(block, remaining)
+                chunk = reader.read(frames, dtype="float32")
+                if chunk is None or len(chunk) == 0:
+                    break
+                writer.write(chunk)
+                remaining -= frames
+    tmp_out.replace(audio_wav)
+
+
+async def enforce_audio_duration_limit(audio_wav: Path) -> None:
+    max_audio_seconds = _get_env_float("MARZ_MAX_AUDIO_SECONDS", 22.0)
+    if max_audio_seconds <= 0:
+        return
+    if not audio_wav.exists():
+        return
+
+    duration = await probe_duration_seconds(audio_wav)
+    if duration <= 0:
+        try:
+            info = sf.info(str(audio_wav))
+            if info.frames > 0 and info.samplerate > 0:
+                duration = info.frames / float(info.samplerate)
+        except Exception:
+            return
+
+    if duration > max_audio_seconds:
+        print(f"[guard] audio too long ({duration:.2f}s), truncating to {max_audio_seconds:.2f}s")
+        truncate_wav_to_seconds(audio_wav, max_audio_seconds)
+
+
 async def calibrate_sync(video_path: Path, audio_wav: Path, calibrated_path: Path) -> Path:
     offset_sec = max(
         -settings.max_audio_video_offset_ms / 1000.0,
@@ -888,6 +982,40 @@ sentiment_analysis_v2 = SentimentAnalysisV2()
 
 def safe_json(data: dict[str, Any]) -> str:
     return json.dumps(data, ensure_ascii=False)
+
+
+def is_cuda_oom(error: BaseException) -> bool:
+    message = str(error)
+    if "cuda out of memory" in message.lower():
+        return True
+    try:
+        import torch
+
+        oom_cls = getattr(torch.cuda, "OutOfMemoryError", None)
+        return bool(oom_cls and isinstance(error, oom_cls))
+    except Exception:
+        return False
+
+
+def clear_cuda_cache(reason: str) -> None:
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            try:
+                torch.cuda.ipc_collect()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    try:
+        gc.collect()
+    except Exception:
+        pass
+
+    print(f"[cuda] cache cleared ({reason})")
 
 
 async def send_hibernate_signal(reason: str) -> None:
@@ -1007,6 +1135,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
             try:
                 text_prompt = await decode_voice_to_text(incoming)
                 avatar_path = Path(incoming.avatar_video_path) if incoming.avatar_video_path else Path(settings.default_avatar_video)
+                enforce_avatar_size_limit(avatar_path)
                 constitution_result = constitution_check(text_prompt)
 
                 if not constitution_result.get("approved", False):
@@ -1090,6 +1219,7 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                     calibrated_video_path = work / "lipsync-calibrated.mp4"
 
                     await voice.synthesize(tts_text, wav_path)
+                    await enforce_audio_duration_limit(wav_path)
 
                     await websocket.send_text(
                         safe_json(
@@ -1116,6 +1246,18 @@ async def neural_core_socket(websocket: WebSocket) -> None:
                             timeout=calibrate_timeout_seconds,
                         )
                     except Exception as lipsync_error:
+                        if is_cuda_oom(lipsync_error):
+                            await websocket.send_text(
+                                safe_json(
+                                    {
+                                        "type": "status",
+                                        "request_id": request_id,
+                                        "stage": "system_recovering",
+                                        "message": "GPU memory pressure detected. Recovering and switching to safe render.",
+                                    }
+                                )
+                            )
+                            clear_cuda_cache("wav2lip_oom")
                         print("[wav2lip] lipsync unavailable; falling back to avatar mux", repr(lipsync_error))
                         final_video_path = await asyncio.wait_for(
                             mux_audio_onto_avatar(avatar_path, wav_path, fallback_video_path),
@@ -1145,6 +1287,18 @@ async def neural_core_socket(websocket: WebSocket) -> None:
             except Exception as pipeline_error:
                 print("[NeuralCore] pipeline_error", repr(pipeline_error))
                 traceback.print_exc()
+                if is_cuda_oom(pipeline_error):
+                    await websocket.send_text(
+                        safe_json(
+                            {
+                                "type": "status",
+                                "request_id": request_id,
+                                "stage": "system_recovering",
+                                "message": "CUDA out-of-memory. Clearing GPU cache and recovering. Please retry your last request.",
+                            }
+                        )
+                    )
+                    clear_cuda_cache("pipeline_oom")
                 await websocket.send_text(
                     safe_json(
                         {

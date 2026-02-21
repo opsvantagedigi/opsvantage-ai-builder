@@ -3,6 +3,7 @@ FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128 \
     PORT=8080 \
     HOST=0.0.0.0
 
