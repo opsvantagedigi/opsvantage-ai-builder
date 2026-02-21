@@ -5,7 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { validateOutboundUrl } from "@/lib/security/outbound-allowlist";
 import { getSentinelJournalContext } from "@/lib/marz/sentinel-memory";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+function getGeminiClient(): GoogleGenerativeAI {
+    const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY is not configured in this environment.");
+    }
+    return new GoogleGenerativeAI(apiKey);
+}
 
 function isPrivateFounderContext(userEmail: string): boolean {
     const normalized = userEmail.toLowerCase();
@@ -284,6 +290,7 @@ export class MarzAgent {
     constructor(userEmail?: string) {
         this.userEmail = userEmail || "system";
         const privateMode = isPrivateFounderContext(this.userEmail);
+        const genAI = getGeminiClient();
         this.model = genAI.getGenerativeModel({
             model: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash-latest",
             systemInstruction: createSystemPrompt(privateMode),
@@ -372,8 +379,13 @@ ${userMessage}
             const errorMessage = error instanceof Error ? error.message : String(error);
             logger.error(`[MARZ] Neural processing failed: ${errorMessage}`);
 
+            const isAuthError = /unregistered callers|403\s+Forbidden|api key|GEMINI_API_KEY/i.test(errorMessage);
+            const diagnosticLine = isAuthError
+                ? "Diagnostic: Configure GEMINI_API_KEY (Secret Manager) and redeploy."
+                : "Diagnostic: Check API keys and rate limits. MARZ is attempting recovery...";
+
             return {
-                content: `⚠️ NEURAL LINK DEGRADED\n\nError: "${errorMessage}"\n\nDiagnostic: Check API keys and rate limits. MARZ is attempting recovery...`,
+                content: `⚠️ NEURAL LINK DEGRADED\n\nError: "${errorMessage}"\n\n${diagnosticLine}`,
                 role: "assistant",
                 timestamp: new Date().toISOString(),
                 isError: true,
