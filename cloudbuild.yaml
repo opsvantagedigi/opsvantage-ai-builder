@@ -44,7 +44,7 @@ steps:
 
       # Cleanup is intentionally optional. During forced deploys we want fast builds,
       # and registry cleanup can take long enough to hit Cloud Build timeouts.
-      if [ "${_RUN_REGISTRY_CLEANUP:-false}" != "true" ]; then
+      if [ "${_RUN_REGISTRY_CLEANUP}" != "true" ]; then
         echo "[cleanup] skipping (set _RUN_REGISTRY_CLEANUP=true to enable)"
         exit 0
       fi
