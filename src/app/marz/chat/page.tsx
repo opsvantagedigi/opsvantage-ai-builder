@@ -29,6 +29,8 @@ export default function MARZChatPage() {
   const [lastTranscript, setLastTranscript] = useState('');
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  const [latestVideoUrl, setLatestVideoUrl] = useState<string | null>(null);
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,6 +80,21 @@ export default function MARZChatPage() {
 
     setInputText('');
   }, [addMessage, isVideoEnabled, messages]);
+
+  const requestAwakeningVideo = useCallback(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    wsRef.current.send(JSON.stringify({
+      request_id: `wake-${Date.now()}`,
+      awakening: true,
+      text: 'Awaken MARZ. Sovereign user requesting connection.',
+      client: 'marz-pwa-mobile',
+      ts: Date.now(),
+      enable_video: true,
+    }));
+  }, []);
   
   // Wake on mount if requested
   useEffect(() => {
@@ -94,8 +111,27 @@ export default function MARZChatPage() {
   }, []);
 
   const toggleVideo = useCallback(() => {
-    setIsVideoEnabled((prev) => !prev);
-  }, []);
+    setIsVideoEnabled((prev) => {
+      const next = !prev;
+      if (next) {
+        requestAwakeningVideo();
+      }
+      return next;
+    });
+  }, [requestAwakeningVideo]);
+
+  useEffect(() => {
+    if (!isVideoEnabled || !latestVideoUrl || !videoRef.current) {
+      return;
+    }
+
+    if (videoRef.current.src !== latestVideoUrl) {
+      videoRef.current.src = latestVideoUrl;
+      void videoRef.current.play().catch(() => {
+        // Autoplay can be blocked; user interaction may be required.
+      });
+    }
+  }, [isVideoEnabled, latestVideoUrl]);
   
   // Check for PWA install prompt
   useEffect(() => {
@@ -284,6 +320,7 @@ export default function MARZChatPage() {
           text: 'Awaken MARZ. Sovereign user requesting connection.',
           client: 'marz-pwa-mobile',
           ts: Date.now(),
+          enable_video: isVideoEnabled,
         }));
         
         addMessage('assistant', 'MARZ is online. I\'m listening.');
@@ -311,6 +348,7 @@ export default function MARZChatPage() {
             const videoMimeType = videoFormat === 'mp4' ? 'video/mp4' : 'video/webm';
             const videoBlob = base64ToBlob(data.video_b64, videoMimeType);
             const videoUrl = URL.createObjectURL(videoBlob);
+            setLatestVideoUrl(videoUrl);
             latestVideoUrl = videoUrl;
             
             if (videoRef.current) {
@@ -361,6 +399,7 @@ export default function MARZChatPage() {
       
       ws.onerror = () => {
         setConnectionStatus('error');
+        addMessage('assistant', 'Connection error: unable to reach MARZ Neural Core. If you just deployed, wait 60–120s for cold start and try again.');
       };
       
       ws.onclose = () => {
@@ -370,7 +409,7 @@ export default function MARZChatPage() {
       console.error('Connection error:', error);
       setConnectionStatus('error');
     }
-  }, [isAudioEnabled]);
+  }, [addMessage, isAudioEnabled, isVideoEnabled]);
   
   // Disconnect from MARZ
   const disconnectFromMARZ = useCallback(() => {
@@ -556,6 +595,8 @@ export default function MARZChatPage() {
           {/* Text input */}
           <input
             type="text"
+            id="marz-chat-input"
+            name="marzChatInput"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage(inputText)}
