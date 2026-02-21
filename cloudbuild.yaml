@@ -41,6 +41,14 @@ steps:
     - '-c'
     - |
       set -euo pipefail
+
+      # Cleanup is intentionally optional. During forced deploys we want fast builds,
+      # and registry cleanup can take long enough to hit Cloud Build timeouts.
+      if [ "${_RUN_REGISTRY_CLEANUP:-false}" != "true" ]; then
+        echo "[cleanup] skipping (set _RUN_REGISTRY_CLEANUP=true to enable)"
+        exit 0
+      fi
+
       echo "[cleanup] Removing images older than 24h from Container Registry (gcr.io)"
       cutoff="$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
       for repo in "gcr.io/$PROJECT_ID/opsvantage-ai-builder" "gcr.io/$PROJECT_ID/marz-neural-core"; do
@@ -51,6 +59,7 @@ steps:
           echo "[cleanup] no digests to delete for ${repo}"
           continue
         fi
+        deleted=0
         while read -r digest; do
           if [ -z "${digest}" ]; then
             continue
@@ -70,6 +79,12 @@ steps:
 
           echo "[cleanup] deleting ${repo}@${normalized}"
           gcloud container images delete "${repo}@${normalized}" --force-delete-tags --quiet || true
+
+          deleted=$((deleted + 1))
+          if [ "${deleted}" -ge 25 ]; then
+            echo "[cleanup] reached deletion cap (25) for ${repo}; stopping early"
+            break
+          fi
         done <<< "${digests}"
       done
 
@@ -92,5 +107,6 @@ substitutions:
   _DATABASE_URL_SECRET: 'DATABASE_URL'
   _HUGGINGFACE_TOKEN_SECRET: 'HUGGINGFACE_TOKEN'
   _GEMINI_API_KEY_SECRET: 'GEMINI_API_KEY'
+  _RUN_REGISTRY_CLEANUP: 'false'
 
 timeout: '1600s'
