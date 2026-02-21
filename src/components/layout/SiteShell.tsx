@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { Footer } from "@/components/layout/Footer";
 
-const HIDDEN_PREFIXES = ["/dashboard", "/admin", "/studio", "/generate", "/sites"];
+const HIDDEN_PREFIXES = ["/dashboard", "/admin", "/studio", "/generate", "/sites", "/marz"];
 
 function shouldHideChrome(pathname: string) {
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
