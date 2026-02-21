@@ -55,8 +55,21 @@ steps:
           if [ -z "${digest}" ]; then
             continue
           fi
-          echo "[cleanup] deleting ${repo}@${digest}"
-          gcloud container images delete "${repo}@${digest}" --force-delete-tags --quiet || true
+
+          # list-tags returns digests without the sha256: prefix in some environments.
+          # Normalize to the required form: sha256:<digest>
+          if [[ "${digest}" == sha256:* ]]; then
+            normalized="${digest}"
+          else
+            normalized="sha256:${digest}"
+          fi
+
+          if [ -z "${normalized}" ]; then
+            continue
+          fi
+
+          echo "[cleanup] deleting ${repo}@${normalized}"
+          gcloud container images delete "${repo}@${normalized}" --force-delete-tags --quiet || true
         done <<< "${digests}"
       done
 
